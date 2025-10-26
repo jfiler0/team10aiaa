@@ -1,0 +1,39 @@
+matlabSetup();
+clear getSetting queryAtmosphere
+
+naca2412 = foil_class("NACA2412", 0.8, false); %Setting the last flag to  t
+
+build_atmosphere_lookup(-100, 20000, 200)
+
+hornet = plane_class("F18E");
+
+V = [100 0 4];
+W = [0 0 0];
+h = 1000;
+
+flaps = 0;
+aileron = 20;
+rudder = 0;
+elevator = 2.51;
+
+deflections = [flaps aileron rudder elevator];
+
+[F, M] = hornet.queryPlane(V, W, h, deflections, false);
+
+AOA = rad2deg(atan2(V(3), V(1)));
+
+Y = [0 F(2) 0]; % Side force
+D = proj(F-Y, -V); % Drag
+L = F - Y - D; % Lift
+
+fprintf("At an AOA of %.3f [deg], L = %.4f [kN], D = %.4f [kN], Y = %.4f [kN], and L/D = %.4f", AOA, norm(L)/1000,norm(D)/1000,norm(Y)/1000, norm(L)/norm(D))
+M
+
+% deflections = trimAircraft(obj, V, W, h, an, n, M0)
+% an = [0.1 0 1];
+% deflections = hornet.trimAircraft(V, W, h, an, 1, [0 0 0])
+% 
+function R = proj(A, B)
+    % Projection of A onto B
+    R = (dot(A, B) / norm(B)^2) * B;
+end

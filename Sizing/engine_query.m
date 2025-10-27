@@ -1,0 +1,94 @@
+function [TA, TSFC, alpha] = engine_query(engine, M, h, AB_perc)
+    % engine - should be a string. It will be the name looked up for engine data
+    % M - - mach number
+    % h - m - altitude
+    % AB_perc - - afterburner percentage (0 to 1)
+
+    % TA - N - available thrust
+    % TSFC - (kg/s)/N - thrust specific fuel consumption
+    % alpha - - lapse rate
+
+    % check if the engine_lookup table is already loaded. This helps signficiantly with speed. If it is not loaded, load it
+    if(exist('engine_lookup', 'var') == false)
+        engine_lookup = readtable("./Sizing/engine_lookup.xlsx");
+    end
+    % table names: EngineName, SealevelMaxThrust_noAB_, SealevelMaxThrust_AB_, CompressorPRC, FanPRC, BypassRatio, T04_BurnerOutletTemp_K_, QR_LowerHeatingValue_J_kg_
+
+    selectedEngine=engine_lookup(ismember(engine_lookup.EngineName,engine),:); % get the table row asked for and return as a table
+    
+    % Find the engine thrust from afterburner percentage and engine data if at sealevel
+    thrust0 = selectedEngine.SealevelMaxThrust_noAB_ + AB_perc * (selectedEngine.SealevelMaxThrust_AB_ - selectedEngine.SealevelMaxThrust_noAB_);
+
+    % Using sealevel data to calibrate mass flow
+    [~, a0, ~, rho0, ~] = queryAtmosphere(0, [0 1 0 1 0]); % properties if at sea level
+    [~, ah, ~, rhoh, ~] = queryAtmosphere(h, [0 1 0 1 0]); % properties if at altitude
+    vinf = ah*M; % velocity
+
+    [ST0, ~] = engineData(selectedEngine, 0, vinf/a0);
+
+    % T = ST*mdot_air, mdot_air = vinf*A*rho
+    A = (thrust0 / ST0) / (vinf*rho0); % capture area if flying at sea level
+
+    mdot_air = vinf*A*rhoh; % new air mass flow with lower atmospheric density
+
+    [STh, TSFCh] = engineData(selectedEngine, h, M);
+
+    TSFC = TSFCh;
+    TA = STh * mdot_air;
+    alpha = TA / thrust0;
+
+end
+function [ST, TSFC] = engineData(selectedEngine, h, M)
+
+    % INPUTS to turbofan_func
+
+    %Flight conditions:
+    %[T, a, P, rho, mu]
+    [T, ~, P, ~, ~] = queryAtmosphere(h, [1 0 1 0 0]);
+
+    conditions.Ta=T; %flight static temperature, K
+    conditions.pa=P; %flight static pressure, Pa
+    conditions.R_air=287; %gas constant for air, J/kgK
+    conditions.gamma=1.4; %flight specific heat ratio
+    
+    %Burner products:
+    conditions.R_products=conditions.R_air; %gas constant for combustion product, J/kgK
+    
+    %Station efficiencies and specific heat ratios:
+    %Diffuser/inlet:
+    gammas.d=1.4;
+    etas.d=0.97;
+    
+    %Fan:
+    gammas.f=1.4;
+    etas.f=0.85;
+    
+    %Compressor:
+    gammas.c=1.37;
+    etas.c=0.85;
+    %Burner:
+    gammas.b=1.35;
+    etas.b=1.0;
+    %Turbine:
+    gammas.t=1.33;
+    etas.t=0.90;
+    %Nozzle:
+    gammas.n=1.36;
+    etas.n=0.98;
+    %Fan nozzle:
+    gammas.nf=1.4;
+    etas.nf=0.97;
+
+    gammas.a=conditions.gamma;
+
+    performance=turbofan_func(conditions,gammas,etas, M, ...
+        selectedEngine.CompressorPRC, ...
+        selectedEngine.FanPRC, ...
+        selectedEngine.BypassRatio, ...
+        selectedEngine.T04_BurnerOutletTemp_K_, ...
+        selectedEngine.QR_LowerHeatingValue_J_kg_);
+
+    TSFC = performance.TSFC;
+    ST = performance.ST;
+
+end

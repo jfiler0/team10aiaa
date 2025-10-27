@@ -1,5 +1,13 @@
 function [T, a, P, rho, mu] = queryAtmosphere(alt, values_to_get)
-    % values_to_get: [T a P rho] logical array
+    % values_to_get: [T a P rho mu] logical array, assign 1 or 0. More speed improvements
+    % For example, if you just want temperature you can call queryAtmosphere(0, [1 0 0 0 0])
+
+    % T - K - Free Stream Temperature
+    % a - m/s - Speed of Sound
+    % P - Pa - Free Stream Pressure
+    % rho - kg/m3 - Free Stream Density
+    % mu - Pa - Dynamic Viscosity
+
     persistent cachedAtmosphere
     
    if isempty(cachedAtmosphere)

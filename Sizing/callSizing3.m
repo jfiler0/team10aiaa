@@ -1,4 +1,4 @@
-%% Formatting
+%% Formatting - cause plots must be beautiful
 clear;clc;close all;
 set(0,'defaultfigureposition',[50 80 1300 650]')
 
@@ -19,23 +19,25 @@ set(groot, 'defaultLegendInterpreter', 'latex');
 set(groot, 'defaultLineLineWidth', 2);
 
 %% Atmosphere table
+% This only needs to be run if atmoshper_lookup.mat is not created. But it should already be downloaded
 % build_atmosphere_lookup(0, 50000, 1000)
 
 %% Notes
 
-% Mising good queryTSFC, engineLookup fuctions
 % Current script does not actually find the optimal cruise and endurance points
 % No corrections to TSFC right now for afterburner
 
 %% Start with a single call and can make optimization later
 
 % These can be varyed to optimze (especially if we can get correllations for weight + cost)
+% They are apart of L/D induced drag calcs for mission weight
 AR = 4;
 e = 0.85;
-W_TO_O_S = constraintAnalysis(false); % Wing loading [N/m2] from constrain analyisis
 
-% Removing S so it is calculated in the loop
-plane = make_aircraft("F16", AR, e, lb2N(2000), lb2N(10000), "F404");
+% Note the engine input by name at the end here
+% Using constructors = much cleaner code
+% Payload and fixed weights are driven here
+plane = make_aircraft("FAXX", AR, e, lb2N(2000), lb2N(10000), "F404");
 
 % Constructor for cleaner code
 function aircraft = make_aircraft(name, AR, e, W_F, W_P, engine)
@@ -48,12 +50,14 @@ function aircraft = make_aircraft(name, AR, e, W_F, W_P, engine)
     aircraft.S = 1; % Is updated in the loop
 end
 
-Cd0_dirty = 0.026996; % Carrying payload
-Cd0_clean = 0.016996; % No external stores
-
-% Note TSFC, alphas are now computed inside as functions of throtte, h, and M
+% SOLVE CONSTRAINT ANALYSIS. First variable toggles constraint plot
+W_TO_O_S = constraintAnalysis(false, plane.engine); % Wing loading [N/m2] from constrain analyisis
 
 %% Create missions
+
+% Input into L/D calculations for paraiste drag
+Cd0_dirty = 0.026996; % Carrying payload
+Cd0_clean = 0.016996; % No external stores
 
 % % Ferry mission
 ferry = [...
@@ -79,13 +83,17 @@ air2ground = [...
     flightSegment("LOITER", NaN, ft2m(10000), Cd0_clean, 20) % 20 min loiter
     flightSegment("LANDING") ];
 
+%% Solve for W0
+
+% SET WHICH MISSION YOU WANT TO ANALYZE HERE
 mission = ferry;
 
 % Initial guess
-W0_init = 1e3;  
+W0_init = 1e5;  
 
 W0 = fminsearch(@(W) W0_res(W, mission, plane, W_TO_O_S), W0_init);
 
+% Alot of trial and error was needed to make this function robust as it has multiple local minimums that arent solutions
 function res = W0_res(W0_guess, mission, plane, W_TO_O_S)
     plane.S = W0_guess / W_TO_O_S;
     Wj = W0_guess;
@@ -117,5 +125,7 @@ function res = W0_res(W0_guess, mission, plane, W_TO_O_S)
     end
 end
 
-S = W0/W_TO_O_S;
+%% Final Output
+
+S = W0/W_TO_O_S; % Final surface area
 fprintf("\nW0 = %.3f kN (%.0f lb), S = %.4f, Wingspan = %.3f", W0/1000, N2lb(W0), S, sqrt(S*AR));

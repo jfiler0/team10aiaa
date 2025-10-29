@@ -87,13 +87,16 @@ M = 0.87;
 % alpha_CmbtTrn1 = find_lapse_rate_og(0.555662, 0.681777, 1);
 [~, ~, alpha_CmbtTrn1] = engine_query(engine, M, h, 1);
 
-Cd0 = 0.016996;
-K1 = 0.116031;
-K2 = -0.0063;
-beta = 0.899666;
-n = 4.5; % 4.5g turn
+Cd0 = 0.016996; % need to find estimate for f/18
+K1 = 0.116031; % need to find estimate for f/18
+K2 = -0.0063; % need to find estimate for f/18
+beta = 0.899666; $ need to find estimate for f/18
+n = 7; % 7g turn,max loading requirement 
 
 TW_CmbtTrn1 = (beta/alpha_CmbtTrn1)*(K1 * n^2 * (beta/q) * Wto_S_range + K2*n + Cd0./( (beta/q)*Wto_S_range ) );
+psidot_degs = 8; %deg/s, max turn rate requirement 
+psidot_rads = psidot_degs*pi/180; 
+W_S_turnrate = 0.5*rho*CL*g^2 / (psidot_rads^2) * (n^2 - 1)/n
 
 %% Turn 2
 

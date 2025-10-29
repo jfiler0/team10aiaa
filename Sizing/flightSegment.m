@@ -75,11 +75,11 @@ classdef flightSegment
                 if isnan(obj.M) && ~isnan(obj.h) % mach is free
                     fun = @(M) obj.Cruise_WF([M obj.h], W_IN, plane);
                     [M_opt, WF] = fminbnd(fun, M_bounds(1), M_bounds(2), options);
-                    fprintf("\nOptimal Mach for Cruise = %.4f", M_opt)
+                    % fprintf("\nOptimal Mach for Cruise = %.4f", M_opt)
                 elseif isnan(obj.h) && ~isnan(obj.M) % height is free
                     fun = @(h) obj.Cruise_WF([obj.M h], W_IN, plane);
                     [h_opt, WF] = fminbnd(fun, h_bounds(1), h_bounds(2), options);
-                    fprintf("\nOptimal altitude for Cruise = %.4f", h_opt)
+                    % fprintf("\nOptimal altitude for Cruise = %.4f", h_opt)
                 else % both are fixed
                     WF = obj.Cruise_WF([obj.M obj.h], W_IN, plane);
                 end
@@ -87,11 +87,11 @@ classdef flightSegment
                 if isnan(obj.M) && ~isnan(obj.h) % mach is free
                     fun = @(M) obj.Loiter_WF([M obj.h], W_IN, plane);
                     [M_opt, WF] = fminbnd(fun, M_bounds(1), M_bounds(2), options);
-                    fprintf("\nOptimal Mach for Loiter = %.4f", M_opt)
+                    % fprintf("\nOptimal Mach for Loiter = %.4f", M_opt)
                 elseif isnan(obj.h) && ~isnan(obj.M) % height is free
                     fun = @(h) obj.Loiter_WF([obj.M h], W_IN, plane);
                     [h_opt, WF] = fminbnd(fun, h_bounds(1), h_bounds(2), options);
-                    fprintf("\nOptimal altitude for Loiter = %.4f", h_opt)
+                    % fprintf("\nOptimal altitude for Loiter = %.4f", h_opt)
                 else % both are fixed
                     WF = obj.Loiter_WF([obj.M obj.h], W_IN, plane);
                 end

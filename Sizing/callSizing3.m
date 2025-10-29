@@ -51,7 +51,7 @@ function aircraft = make_aircraft(name, AR, e, W_F, W_P, engine)
 end
 
 % SOLVE CONSTRAINT ANALYSIS. First variable toggles constraint plot
-W_TO_O_S = constraintAnalysis(false, plane.engine); % Wing loading [N/m2] from constrain analyisis
+W_TO_O_S = constraintAnalysis(true, plane.engine); % Wing loading [N/m2] from constrain analyisis
 
 %% Create missions
 

@@ -18,7 +18,7 @@ function [T, a, P, rho, mu] = queryAtmosphere(alt, values_to_get)
     end
     
     % Initialize
-    T = 0; a = 0; P = 0; rho = 0;
+    T = 0; a = 0; P = 0; rho = 0; mu = 0;
 
     if values_to_get(1)
         T = cachedAtmosphere.T_interp(alt);

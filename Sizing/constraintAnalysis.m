@@ -47,7 +47,7 @@ Cd0 = 0.016996;
 % alpha_Cruise = find_lapse_rate_og(0.27111, 1, 0);
 [~, ~, alpha_Cruise] = engine_query(engine, M, h, 0);
 
-beta = 0.899666;
+beta = 0.899665;
 K1 = 0.116031;
 
 A = q*Cd0/alpha_Cruise;

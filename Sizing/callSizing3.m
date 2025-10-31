@@ -126,7 +126,6 @@ function res = W0_res(W0_guess, mission, plane, W_TO_O_S)
 end
 
 %% Final Output
-W_load = W_loading_turnrate()
 S = W0/W_TO_O_S; % Final surface area
 
 fprintf("\nW0 = %.3f kN (%.0f lb), S = %.4f, Wingspan = %.3f", W0/1000, N2lb(W0), S, sqrt(S*AR));

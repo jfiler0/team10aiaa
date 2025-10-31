@@ -10,7 +10,7 @@ function [TA, TSFC, alpha] = engine_query(engine, M, h, AB_perc)
     persistent engine_lookup
     % check if the engine_lookup table is already loaded. This helps signficiantly with speed. If it is not loaded, load it
     if isempty(engine_lookup)
-        engine_lookup = readtable("./Sizing/engine_lookup.xlsx");
+        engine_lookup = readtable("engine_lookup.xlsx");
     end
     % table names: EngineName, SealevelMaxThrust_noAB_, SealevelMaxThrust_AB_, CompressorPRC, FanPRC, BypassRatio, T04_BurnerOutletTemp_K_, QR_LowerHeatingValue_J_kg_
 

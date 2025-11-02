@@ -1,4 +1,15 @@
 classdef planeObj
+    % Missing
+    % -- Cost estimate
+    % -- Return max mach number
+    % -- Either input or derive fuselage length and area (hitorical relation with W0?)
+    % -- Improve performance function (especially above M1.75)
+    % -- Compare lift and drag data to super hornet performance data
+    % -- Calculate core parameters (approach speed, max speed, max climb rate, best turn rate) and compare to F18
+    % -- Tie plane object back into sizing code
+    % -- Make a function that prints out all these big parameters
+    % -- Incorporate functions like range, endurance, combat, etc. to be callable in planeObj
+
     properties
         % Whenever you start a class object like this, you have to tell MATLAB every obj.VARIABLE type variables exist
         name
@@ -624,6 +635,9 @@ classdef planeObj
             sgtitle(t, sprintf('Performance Maps (%s)', obj.name));
         end
         
+        % function speed = min_approach(obj)
+        %     [CL_max_clean, CL_max_flapped, CLa] = obj.calcCL(1.2)
+        % end
         %% Helper function (nested or local file)
         function r = residual_T_minus_D(M, h, obj, Sref, W0, AB_perc, mvec)
             % compute residual TA(M,h) - D(M,h) in N

@@ -16,6 +16,7 @@ classdef planeObj
         E_WD
 
         % Parameters that remain fixed
+        num_engine
         mission_set % array of flightSegment objects
         engine % string identifier for query_engine
         W_F % fixed weight
@@ -57,7 +58,7 @@ classdef planeObj
     end
 
     methods
-        function obj = planeObj(name, W0, Lambda_LE, Lambda_TE, c_avg, tr, mission_set, engine, W_F, W_P) 
+        function obj = planeObj(name, W0, Lambda_LE, Lambda_TE, c_avg, tr, num_engine, mission_set, engine, W_F, W_P) 
             % When creating a plane object, you call this function. The fact that it is the same name as the class is not important. Note it
             % returns the obj variable to be used
 
@@ -69,6 +70,7 @@ classdef planeObj
             obj.Lambda_TE = Lambda_TE; % deg
             obj.c_avg = c_avg; % m
             obj.tr = tr; % taper ratio
+            obj.num_engine = num_engine;
             
             %% Bunch of fixed parameters (***)
 
@@ -88,7 +90,7 @@ classdef planeObj
             obj.tc = 0.04; % airfoil thickness
             obj.max_alpha = 15; % deg 
 
-            obj.mach_range = [0.2 2];
+            obj.mach_range = [0.2 2]; % Anything above 2 and prop equations go wild
             obj.transonic_range = [0.95 1.3];
 
             obj = obj.updateDerivedVariables(); %% Fills in the remaining constructor variables we need
@@ -203,6 +205,11 @@ classdef planeObj
             CL_max_clean = CLa * (obj.max_alpha - obj.a0);
             CL_max_flapped = CL_max_clean + obj.Delta_flap_param *obj.S_flapped/obj.S_ref * cosd(obj.Lambda_HL);
         end
+        function [TA, TSFC, alpha, mdotf] = calcProp(obj, M, h, AB_perc)
+            [TA, TSFC, alpha] = engine_query(obj.engine, M, h, AB_perc);
+            TA = TA * obj.num_engine;
+            mdotf = TA * TSFC;
+        end
         function valBlended = getBlend(obj, M, val_lower, val_upper, range)
             % returns a smoothly blended value between two values moving from val_lower to val_upper across obj.blend_range
             % GPTs ideas for smooth blends
@@ -296,7 +303,7 @@ classdef planeObj
             end
         
             % --- PLOTTING ---
-            figure('Color','w','Position',[100 100 1200 900]); % white figure background for clean plots
+            figure; % white figure background for clean plots
             t = tiledlayout(3,2,'TileSpacing','compact','Padding','compact');
         
             % consistent color map for CL series
@@ -384,7 +391,7 @@ classdef planeObj
             %   [CL_max_clean, CL_max_flapped, CLa] = obj.calcCL(M)
             %   [CD_total, CD0, CDi, CD_wave] = obj.calcCD(CL, M)
             %   [q, V, a, rho] = metricFreestream(h, M)
-            %   [TA, TSFC, alpha] = engine_query(obj.engine, M, h, AB_perc)
+            %   [TA, TSFC, alpha, ~] = obj.calcProp(M, h, AB_perc)
             %
             % Plots:
             %   1) n_max vs Mach for a set of altitude_samples (y-limit 20, yline 6.5G)
@@ -472,7 +479,7 @@ classdef planeObj
         
                     % Thrust available from engine model
                     try
-                        [TA, ~, ~] = engine_query(obj.engine, M, h, AB_perc); % returns N
+                        [TA, ~, ~] = obj.calcProp(M, h, AB_perc); % returns N
                     catch
                         TA = NaN;
                     end
@@ -488,7 +495,7 @@ classdef planeObj
             end
         
             % --------- Plotting: 2x2 layout ----------
-            figure('Color','w','Position',[120 80 1400 900]);
+            figure;
             t = tiledlayout(2,2,'TileSpacing','compact','Padding','compact');
         
             % Convert altitudes for plotting (ft) for labels & samples
@@ -512,10 +519,10 @@ classdef planeObj
             % y-limit and 6.5G line
             ylim(ax1, [0 20]);
             yline(ax1, 6.5, '--r', '6.5G', 'LabelHorizontalAlignment','left', 'LineWidth', 1.5);
-            xlabel(ax1, 'Mach'); ylabel(ax1, 'n_{max}');
+            xlabel(ax1, 'Mach'); ylabel(ax1, '$n_{max}$');
             title(ax1, 'Max Load Factor vs Mach');
             xlim(ax1, [min(mvec) obj.mach_range(2)]);
-            legend(ax1,'Location','best');
+            % legend(ax1,'Location','best');
             hold(ax1,'off');
         
             % ---------- Plot 2: Drag vs Mach for multiple altitudes; overlay TA dashed ----------
@@ -563,7 +570,7 @@ classdef planeObj
             hold(ax3,'on');
             % Red contour for zero excess; if data range spans zero, draw
             try
-                contour(ax3, Mgrid, Hgrid/0.3048, excess_map, [0 0], 'r', 'LineWidth', 2);
+                contour(ax3, Mgrid, Hgrid/0.3048, excess_map, [0 0], 'r', 'LineWidth', 6);
             catch
                 % If contour fails due to NaNs, ignore
             end
@@ -632,7 +639,7 @@ classdef planeObj
         
             % Thrust available
             try
-                [TA, ~, ~] = engine_query(obj.engine, M, h, AB_perc);
+                [TA, ~, ~] = obj.calcProp(M, h, AB_perc);
             catch
                 r = NaN; return;
             end

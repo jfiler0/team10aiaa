@@ -15,6 +15,10 @@ function [TA, TSFC, alpha] = engine_query(engine, M, h, AB_perc)
     % table names: EngineName, SealevelMaxThrust_noAB_, SealevelMaxThrust_AB_, CompressorPRC, FanPRC, BypassRatio, T04_BurnerOutletTemp_K_, QR_LowerHeatingValue_J_kg_
 
     selectedEngine=engine_lookup(ismember(engine_lookup.EngineName,engine),:); % get the table row asked for and return as a table
+
+    if(isempty(selectedEngine))
+        error("Did not find engine: " + obj.engine)
+    end
     
     % Find the engine thrust from afterburner percentage and engine data if at sealevel
     thrust0 = selectedEngine.SealevelMaxThrust_noAB_ + AB_perc * (selectedEngine.SealevelMaxThrust_AB_ - selectedEngine.SealevelMaxThrust_noAB_);

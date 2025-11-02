@@ -21,7 +21,7 @@ function [T, a, P, rho, mu] = queryAtmosphere(alt, values_to_get)
     end
 
     % Quick bounds check
-    if alt < cachedAtmosphere.alt(1) || alt > cachedAtmosphere.alt(end)
+    if min(alt) < cachedAtmosphere.alt(1) || max(alt) > cachedAtmosphere.alt(end)
         error("Altitude call is out of lookup range.");
     end
     

@@ -47,7 +47,7 @@ Cd0 = 0.016996;
 % alpha_Cruise = find_lapse_rate_og(0.27111, 1, 0);
 [~, ~, alpha_Cruise] = engine_query(engine, M, h, 0);
 
-beta = 0.899666;
+beta = 0.899665;
 K1 = 0.116031;
 
 A = q*Cd0/alpha_Cruise;
@@ -117,6 +117,9 @@ beta = 0.899666;
 n = 1.4; % 4.5g turn
 
 TW_CmbtTrn2 = (beta/alpha_CmbtTrn2)*(K1 * n^2 * (beta/q) * Wto_S_range + K2*n + Cd0./( (beta/q)*Wto_S_range ) );
+
+%% Wing loading for max turn rate
+W_load = W_loading_turnrate();
 
 %% Excess Power
 h = ft2m(10000);
@@ -194,6 +197,7 @@ if(do_plot)
     plot(Wto_S_range, TW_Takeoff, DisplayName="Takeoff");
     plot(optimal_WS, min_TW, 'b.', DisplayName="Optimum", MarkerSize=25);
     xline(WS_Landing, DisplayName="Landing", LineWidth=2);
+    xline(W_load, DisplayName="Max Turn Rate", LineWidth=2);
     
     legend;
     xlabel("$\frac{W_{TO}}{S}$, Wing Loading, [$\frac{N}{m^2}$]")

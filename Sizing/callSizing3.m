@@ -125,7 +125,13 @@ function res = W0_res(W0_guess, mission, plane, W_TO_O_S)
     end
 end
 
+%% Get Cost
+empty_weight_fraction = 2.34*N2lb(W0)^(-0.13);
+empty_weight=empty_weight_fraction*W0;
+KLOC = 20000;
+cost=getcost(N2lb(empty_weight), KLOC);
+
+
 %% Final Output
 S = W0/W_TO_O_S; % Final surface area
-
 fprintf("\nW0 = %.3f kN (%.0f lb), S = %.4f, Wingspan = %.3f", W0/1000, N2lb(W0), S, sqrt(S*AR));

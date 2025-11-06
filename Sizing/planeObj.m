@@ -1,4 +1,18 @@
 classdef planeObj
+    % MATLAB classes are quite powerful. They enable you to pass and update a large amount of information without needing to keep track of
+    % many variables and worrying about matching syntax across external function. The planeObj class holds all the geometric, aerodynamic,
+    % and mission information about a plane design. This class does not include optimization or does it solve for the actual geometry to do
+    % anything. However, it will tell you how well specific set of parameters performs.
+
+    % In other words, this class holds all the pure analysis calls when it comes to quantifying how well a design performs.
+
+    % When combined with a set of constraints and an optimization function this will identify viable designs. This can either be used to
+    % apply a fixed W0 and fuselage parameters and solve for a wing. Or see how fixing the wing sweep influences the optimial design. All
+    % that fun will use the analyisis setup in the plane Obj function.
+
+    % Notice that functions inside the class (as long as you pass in obj by calling it as obj.fun) will have access to all the properties
+    % defined in the properties function below and all the methods in the methods section.
+
     properties
         % Whenever you start a class object like this, you have to tell MATLAB every obj.VARIABLE type variables exist
         name
@@ -10,12 +24,12 @@ classdef planeObj
         tr % taper ratio
 
         % How can these become inputs...
-        L_fuselage
-        A_max
-        A_0
-        E_WD
+        L_fuselage % m
+        A_max % m2
+        A_0 % m2
+        E_WD % no idea what this is
 
-        % Parameters that remain fixed
+        % Parameters that remain fixed (need to edit the input function if you want them moved into the deisgn space)
         num_engine
         mission_set % array of flightSegment objects
         engine % string identifier for query_engine
@@ -29,28 +43,29 @@ classdef planeObj
         transonic_range % spline interpolation range
 
         % Parameters that are derived
-        c_t
-        c_r
-        span
+        c_t % m
+        c_r % m
+        span % m
         AR
-        S_wing
-        S_ref
-        Lambda_qc
-        S_wet
+        S_wing % m2
+        S_ref % m2
+        Lambda_qc % deg
+        S_wet  % m2
         e_notoswald
         e_osw       
         k1_sub
         k2_sub
         CD0
-        M_CD0_max % Although is really max wave drag
-        D
-        Lambda_max_t
-        S_exposed
-        F
-        S_flapped
-        Delta_flap_param
-        Lambda_HL
+        M_CD0_max % Although it is really max wave drag (parasite drag is friction)
+        D % m (fuselage diameter currently assumed to be circular and taken from A_max)
+        Lambda_max_t % max
+        S_exposed % m2
+        F % lift parameter
+        S_flapped  % m2
+        Delta_flap_param % effects the amount of extra lift gained
+        Lambda_HL % deg
 
+        % filling out these interpolation function helps considerably with speed
         CLa_interp
         CDW_interp
         K1_interp
@@ -58,9 +73,10 @@ classdef planeObj
     end
 
     methods
+        
+        % Primary class defenition functions (used on creation and updates)
         function obj = planeObj(name, W0, Lambda_LE, Lambda_TE, c_avg, tr, num_engine, mission_set, engine, W_F, W_P) 
-            % When creating a plane object, you call this function. The fact that it is the same name as the class is not important. Note it
-            % returns the obj variable to be used
+            % Note it returns the obj variable to be used. Use as plane = planeObj(...)
 
             obj.name = name;
 
@@ -75,9 +91,9 @@ classdef planeObj
             %% Bunch of fixed parameters (***)
 
             % Current FA18E parameters from VSP
-            obj.L_fuselage = 17.54; %m
-            obj.A_max = 1.46; %m (*** These have a huge impact of lift parameter F and can almost double lift)
-            obj.A_0 = 0;
+            obj.L_fuselage = 17.54; % m
+            obj.A_max = 1.46; % m (*** These have a huge impact of lift parameter F and can almost double lift)
+            obj.A_0 = 0; % m2
             obj.E_WD = 2.2; 
     
             % Parameters that remain fixed
@@ -85,7 +101,7 @@ classdef planeObj
             obj.engine = engine; % string identifier for query_engine
             obj.W_F = W_F; % fixed weight
             obj.W_P = W_P; % payload
-            obj.a0 = -1;
+            obj.a0 = -1; % deg (zero lift aoa)
             obj.cl_alpha = 0.1; % foil lift sope
             obj.tc = 0.04; % airfoil thickness
             obj.max_alpha = 15; % deg 
@@ -95,7 +111,8 @@ classdef planeObj
 
             obj = obj.updateDerivedVariables(); %% Fills in the remaining constructor variables we need
         end
-        function updateInputsAsVector(obj, input) % Streamlines changing class variables later when doing optimization
+        function obj = updateInputsAsVector(obj, input) 
+            % Streamlines changing class variables later when doing optimization
             obj.W0 = input(1);
             obj.Lambda_LE = input(2);
             obj.Lambda_TE = input(3);
@@ -158,11 +175,18 @@ classdef planeObj
             obj.K2_interp = obj.buildK2Interpolant(M_vec);
 
         end
-        function [CD, CD0, CDi, CDW] = calcCD(obj, CL, M)
-            CD0 = obj.CD0;
-            CDi = obj.K1_interp(M) * CL^2 + obj.K2_interp(M) * CL;
-            CDW = obj.CDW_interp(M);
-            CD = CD0 + CDi + CDW;
+        
+        % Iterpolation creators for updateDerviedVariables
+        function CLa_interp = buildCLaInterpolant(obj, M_vec)
+            beta = sqrt((1-M_vec.^2)); %MACH - real to try try and fix things above M 1 (*** is this fine)
+            eta = rad2deg(obj.cl_alpha) ./ (2*pi./beta); % Airfoil Efficiency - MACH
+
+            % CL_alpha_sub = (2*pi*obj.AR) ./ (2+ sqrt(4 + (obj.AR.^2 * beta.^2)/eta.^2 .* (1 + ( tand(obj.Lambda_max_t).^2 )./beta.^2) ) ) * (obj.S_exposed/obj.S_ref)* obj.F; % Ssurface = Sref
+            CL_alpha_sub = deg2rad( 2*pi./sqrt(1-M_vec.^2) ); % The difference between these is pretty big ***
+            CL_alpha_supersonic = deg2rad( 4./sqrt(M_vec.^2-1) );
+
+            CLa = obj.generateTransonicSpline(CL_alpha_sub, CL_alpha_supersonic, M_vec);
+            CLa_interp = griddedInterpolant(M_vec, CLa, 'spline');
         end
         function CDW_interp = buildCDWInterpolant(obj, M_vec)
             CD_wave = 4.5 * pi / obj.S_ref * ((obj.A_max - obj.A_0)/obj.L_fuselage)^2 * obj.E_WD * (0.74 + 0.37 * cosd(obj.Lambda_LE)) * (1 - 0.3*sqrt(M_vec - obj.M_CD0_max));
@@ -179,17 +203,8 @@ classdef planeObj
             k2 = obj.generateTransonicSpline(obj.k2_sub * ones(size(M_vec)), k2_sup, M_vec);
             K2_interp = griddedInterpolant(M_vec, k2, 'spline');
         end
-        function CLa_interp = buildCLaInterpolant(obj, M_vec)
-            beta = sqrt((1-M_vec.^2)); %MACH - real to try try and fix things above M 1 (*** is this fine)
-            eta = rad2deg(obj.cl_alpha) ./ (2*pi./beta); % Airfoil Efficiency - MACH
-
-            % CL_alpha_sub = (2*pi*obj.AR) ./ (2+ sqrt(4 + (obj.AR.^2 * beta.^2)/eta.^2 .* (1 + ( tand(obj.Lambda_max_t).^2 )./beta.^2) ) ) * (obj.S_exposed/obj.S_ref)* obj.F; % Ssurface = Sref
-            CL_alpha_sub = deg2rad( 2*pi./sqrt(1-M_vec.^2) ); % The difference between these is pretty big ***
-            CL_alpha_supersonic = deg2rad( 4./sqrt(M_vec.^2-1) );
-
-            CLa = obj.generateTransonicSpline(CL_alpha_sub, CL_alpha_supersonic, M_vec);
-            CLa_interp = griddedInterpolant(M_vec, CLa, 'spline');
-        end
+        
+        % Helper function for iterpolations (needed for transonic regime)
         function out_vec = generateTransonicSpline(obj, subsonic_range, supersonic_range, M_vec)
             subsonic_range(obj.transonic_range(1) < M_vec) = NaN;
             supersonic_range(obj.transonic_range(2) > M_vec) = NaN;
@@ -200,32 +215,27 @@ classdef planeObj
 
             out_vec = interp1(x, y, 1:numel(range), 'spline', 'extrap');
         end
+        
         function [CL_max_clean, CL_max_flapped, CLa] = calcCL(obj, M) % *** These CL values are wayyyyy too high
             CLa = obj.CLa_interp(M);
             CL_max_clean = CLa * (obj.max_alpha - obj.a0);
             CL_max_flapped = CL_max_clean + obj.Delta_flap_param *obj.S_flapped/obj.S_ref * cosd(obj.Lambda_HL);
+        end
+        function [CD, CD0, CDi, CDW] = calcCD(obj, CL, M)
+            CD0 = obj.CD0;
+            CDi = obj.K1_interp(M) * CL^2 + obj.K2_interp(M) * CL;
+            CDW = obj.CDW_interp(M);
+            CD = CD0 + CDi + CDW;
         end
         function [TA, TSFC, alpha, mdotf] = calcProp(obj, M, h, AB_perc)
             [TA, TSFC, alpha] = engine_query(obj.engine, M, h, AB_perc);
             TA = TA * obj.num_engine;
             mdotf = TA * TSFC;
         end
-        function valBlended = getBlend(obj, M, val_lower, val_upper, range)
-            % returns a smoothly blended value between two values moving from val_lower to val_upper across obj.blend_range
-            % GPTs ideas for smooth blends
-            if(M < range(1))
-                valBlended = val_lower;
-            elseif(M > range(2))
-                valBlended = val_upper;
-            else
-                x = (M - range(1)) / (range(2) - range(1)); % normalized 0–1
-                x = max(0, min(1, x)); % clamp
-                w = 3*x^2 - 2*x^3;
-    
-                valBlended = val_lower + w * (val_upper - val_lower);
-            end
+        function turn_rate = getTurnRate(obj, h, M)
+            
         end
-        
+
         %% Some helpful functions to generate debug plots
         function buildPolars(obj)
             % buildPolars - compute aerodynamic polars and plot them in a 3x2 tiled layout
@@ -623,7 +633,10 @@ classdef planeObj
         
             sgtitle(t, sprintf('Performance Maps (%s)', obj.name));
         end
-        
+        function buildTurnRateMap(obj)
+
+        end
+
         %% Helper function (nested or local file)
         function r = residual_T_minus_D(M, h, obj, Sref, W0, AB_perc, mvec)
             % compute residual TA(M,h) - D(M,h) in N

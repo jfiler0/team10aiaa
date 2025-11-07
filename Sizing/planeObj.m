@@ -41,6 +41,7 @@ classdef planeObj
         max_alpha % max angle of attack in deg
         mach_range % vector [min mach, max mach] for interpolation range
         transonic_range % spline interpolation range
+        alt_range % vecot [min alt, max alt] in meters
 
         % Parameters that are derived
         c_t % m
@@ -106,8 +107,9 @@ classdef planeObj
             obj.tc = 0.04; % airfoil thickness
             obj.max_alpha = 15; % deg 
 
-            obj.mach_range = [0.2 2]; % Anything above 2 and prop equations go wild
+            obj.mach_range = [0.2 3]; % Anything above 2 and prop equations go wild
             obj.transonic_range = [0.95 1.3];
+            obj.alt_range = [0 ft2m(60000)];
 
             obj = obj.updateDerivedVariables(); %% Fills in the remaining constructor variables we need
         end
@@ -232,8 +234,29 @@ classdef planeObj
             TA = TA * obj.num_engine;
             mdotf = TA * TSFC;
         end
-        function turn_rate = getTurnRate(obj, h, M)
+        function [turn_rate, n] = getMaxTurn(obj, h, M, W)
+            % Input: h (alt) = m, M (mach number), W (weight) = N
+            % Output: turn_rate = deg/s, n (load factor)
+            % Example: [turn_rate, n] = f18.getMaxTurn(1000, 0.8, f18.W0)
+
+            [CL_max_clean, ~, ~] = calcCL(obj, M);
+            [q, V, ~, ~] = metricFreestream(h, M);
+            L_max = q * CL_max_clean * obj.S_ref;
+            n = L_max / W;
+            turn_rate = rad2deg( n * 9.8051 / V);
             
+        end
+        function trimCL = calcTrimCL(obj, h, M, W)
+            % Can simulate higher load factors by just multiplying W
+
+            [~, CL_max_flapped, ~] = obj.calcCL(M);
+
+            [q, ~, ~, ~] = metricFreestream(h, M);
+
+            trimCL = W / (q * obj.S_ref); % n = 1
+            if( trimCL > CL_max_flapped )
+                trimCL = NaN; % So that we can easily catch areas that are not trimmable
+            end
         end
 
         %% Some helpful functions to generate debug plots
@@ -394,7 +417,7 @@ classdef planeObj
             % overall title
             sgtitle(t, sprintf('Aerodynamic Polars (%s) — Mach range [%.2f, %.2f]', obj.name, obj.mach_range(1), obj.mach_range(2)));
         end
-        function buildPerformance(obj)
+        function buildPerformance(obj, AB_perc)
             % buildPerformance - performance maps using existing class methods
             %
             % Uses:
@@ -411,11 +434,10 @@ classdef planeObj
         
             % --------- User parameters ----------
             altitude_samples = [0, 10000, 20000, 30000, 40000]; % altitudes for lines (ft)
-            Nh = 40;                                           % altitude resolution for contour/solve
+            Nh = 60;                                           % altitude resolution for contour/solve
             Nm = 160;                                          % Mach resolution for sweeps
-            hvec_m = linspace(0, ft2m(40000), Nh);            % altitudes (m) for maps
+            hvec_m = linspace(obj.alt_range(1), obj.alt_range(2), Nh);            % altitudes (m) for maps
             mvec = linspace(obj.mach_range(1), obj.mach_range(2), Nm); % Mach sweep for maps
-            AB_perc = 0;                                       % afterburner fraction
             Sref = obj.S_ref;
             W0 = obj.W0;                                       % assume weight in N
         
@@ -461,16 +483,7 @@ classdef planeObj
                         n_max_map(ih,im) = NaN;
                     end
         
-                    % Drag for level flight: compute CL_level = W/(q*S)
-                    if ~isnan(q) && q>0
-                        CL_level = W0 / (q * Sref);
-                        % enforce plausible CL_level bounds (prevent crazy values)
-                        if CL_level > 10 || CL_level < -10
-                            CL_level = NaN;
-                        end
-                    else
-                        CL_level = NaN;
-                    end
+                    CL_level = calcTrimCL(obj, h, M, W0);
         
                     % Get CD at CL_level (if valid)
                     if ~isnan(CL_level)
@@ -555,7 +568,7 @@ classdef planeObj
             D_labels = arrayfun(@(k) sprintf('D (%.0f ft)', altitude_samples(k)), 1:length(idx_samples), 'UniformOutput', false);
             % Create an invisible line to use for a single TA legend entry (dashed)
             dummyTA = plot(ax2, NaN, NaN, '--k', 'LineWidth', lw);
-            legend(ax2, [findall(ax2,'Type','line','-not','DisplayName','')], 'Location', 'best'); %#ok<UNRCH>
+            legend(ax2, [findall(ax2,'Type','line','-not','DisplayName','')], 'Location', 'best'); 
             % Instead create legend explicitly:
             legend(ax2, [findobj(ax2,'DisplayName',D_labels{1}), findobj(ax2,'DisplayName',D_labels{2}), ...
                          findobj(ax2,'DisplayName',D_labels{3}), findobj(ax2,'DisplayName',D_labels{4}), ...
@@ -632,6 +645,70 @@ classdef planeObj
             hold(ax4,'off');
         
             sgtitle(t, sprintf('Performance Maps (%s)', obj.name));
+        end
+        function buildEngineMap(obj, AB_perc)
+
+            % Resolution of Mach and altitude grids
+            N = 20;
+            
+            % Define altitude (m) and Mach number ranges
+            hvec = linspace(obj.alt_range(1), obj.alt_range(2), N);  % Altitude from 100 m to 40,000 ft but still in m here
+            Mvec = linspace(obj.mach_range(1), obj.mach_range(2), N);            % Mach from 0.2 to 2.0
+            
+            % Create meshgrid for evaluation
+            [M, h] = meshgrid(Mvec, hvec);
+            
+            % Preallocate result matrices
+            TA    = zeros(size(M));
+            TSFC  = zeros(size(M));
+            alpha = zeros(size(M));
+            qinf = zeros(size(M));
+            
+            % Query engine model for each point
+            for i = 1:numel(M)
+                [TA(i), TSFC(i), alpha(i)] = engine_query(obj.engine, M(i), h(i), AB_perc);
+                [qinf(i)] = metricFreestream( h(i), M(i));
+            end
+            
+
+            % Thrust Available
+            subplot(2,2,1)
+            surf(M, m2ft(h), TA*obj.num_engine, 'EdgeColor', 'none')
+            xlabel('Mach Number')
+            ylabel('Altitude [ft]')
+            zlabel('Thrust Available [N]')
+            title('Thrust Available (TA)')
+            grid on; colorbar
+            
+            % TSFC
+            subplot(2,2,2)
+            surf(M, m2ft(h), TSFC, 'EdgeColor', 'none')
+            xlabel('Mach Number')
+            ylabel('Altitude [ft]')
+            zlabel('TSFC [kg/N-s]')
+            title('Thrust Specific Fuel Consumption (TSFC)')
+            grid on; colorbar
+            
+            % Alpha (mass flow parameter)
+            subplot(2,2,3)
+            surf(M, m2ft(h), alpha, 'EdgeColor', 'none')
+            xlabel('Mach Number')
+            ylabel('Altitude [ft]')
+            zlabel('$\alpha$')
+            title('Thrust Lapse ($\alpha$)')
+            grid on; colorbar
+            
+            % Dynamic Pressure
+            subplot(2,2,4)
+            surf(M, m2ft(h), alpha, 'EdgeColor', 'none')
+            xlabel('Mach Number')
+            ylabel('Altitude [ft]')
+            zlabel('$q_{inf}$')
+            title('Dyanamic Pressure (Pa)')
+            grid on; colorbar
+            
+            sgtitle(sprintf("Engine Performance Map - " + obj.engine + " , AB = %.1f perc", AB_perc * 100), fontsize=25)
+
         end
         function buildTurnRateMap(obj)
 

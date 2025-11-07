@@ -19,80 +19,20 @@ function [TA, TSFC, alpha] = engine_query(engine, M, h, AB_perc)
     if(isempty(selectedEngine))
         error("Did not find engine: " + obj.engine)
     end
+
+    % Run Kevin's function
+    [F_th_mil, TSFC_mil, F_th_AB, TSFC_AB] = engine_regr(h, M, selectedEngine.SealevelMaxThrust_noAB_, selectedEngine.SealevelMaxThrust_AB_);
     
-    % Find the engine thrust from afterburner percentage and engine data if at sealevel
-    thrust0 = selectedEngine.SealevelMaxThrust_noAB_ + AB_perc * (selectedEngine.SealevelMaxThrust_AB_ - selectedEngine.SealevelMaxThrust_noAB_);
+    % TA if at sea level
+    TA0 = selectedEngine.SealevelMaxThrust_noAB_ + AB_perc * (selectedEngine.SealevelMaxThrust_AB_ - selectedEngine.SealevelMaxThrust_noAB_);
+    TA = F_th_mil + AB_perc * ( F_th_AB - F_th_mil );
 
-    % Using sealevel data to calibrate mass flow
-    [~, a0, ~, rho0, ~] = queryAtmosphere(0, [0 1 0 1 0]); % properties if at sea level
-    [~, ah, ~, rhoh, ~] = queryAtmosphere(h, [0 1 0 1 0]); % properties if at altitude
-    vinf = ah*M; % velocity
+    TSFC = TSFC_mil + AB_perc * ( TSFC_AB - TSFC_mil );
+    if( TA < 0)
+        TA = NaN;
+        TSFC = NaN;
+    end
 
-    [ST0, ~] = engineData(selectedEngine, 0, vinf/a0);
-
-    % T = ST*mdot_air, mdot_air = vinf*A*rho
-    A = (thrust0 / ST0) / (vinf*rho0); % capture area if flying at sea level
-
-    mdot_air = vinf*A*rhoh; % new air mass flow with lower atmospheric density
-
-    [STh, TSFCh] = engineData(selectedEngine, h, M);
-
-    TSFC = TSFCh;
-    TA = STh * mdot_air;
-    alpha = TA / thrust0;
-
-end
-function [ST, TSFC] = engineData(selectedEngine, h, M)
-
-    % INPUTS to turbofan_func
-
-    %Flight conditions:
-    %[T, a, P, rho, mu]
-    [T, ~, P, ~, ~] = queryAtmosphere(h, [1 0 1 0 0]);
-
-    conditions.Ta=T; %flight static temperature, K
-    conditions.pa=P; %flight static pressure, Pa
-    conditions.R_air=287; %gas constant for air, J/kgK
-    conditions.gamma=1.4; %flight specific heat ratio
-    
-    %Burner products:
-    conditions.R_products=conditions.R_air; %gas constant for combustion product, J/kgK
-    
-    %Station efficiencies and specific heat ratios:
-    %Diffuser/inlet:
-    gammas.d=1.4;
-    etas.d=0.97;
-    
-    %Fan:
-    gammas.f=1.4;
-    etas.f=0.85;
-    
-    %Compressor:
-    gammas.c=1.37;
-    etas.c=0.85;
-    %Burner:
-    gammas.b=1.35;
-    etas.b=1.0;
-    %Turbine:
-    gammas.t=1.33;
-    etas.t=0.90;
-    %Nozzle:
-    gammas.n=1.36;
-    etas.n=0.98;
-    %Fan nozzle:
-    gammas.nf=1.4;
-    etas.nf=0.97;
-
-    gammas.a=conditions.gamma;
-
-    performance=turbofan_func(conditions,gammas,etas, M, ...
-        selectedEngine.CompressorPRC, ...
-        selectedEngine.FanPRC, ...
-        selectedEngine.BypassRatio, ...
-        selectedEngine.T04_BurnerOutletTemp_K_, ...
-        selectedEngine.QR_LowerHeatingValue_J_kg_);
-
-    TSFC = performance.TSFC;
-    ST = performance.ST;
+    alpha = TA / TA0;
 
 end

@@ -17,7 +17,8 @@ classdef planeObj
         % Whenever you start a class object like this, you have to tell MATLAB every obj.VARIABLE type variables exist
         name
         % Parameters that should be optimized (inputs)
-        W0 % MTOW
+        WE % Empty weight
+        MTOW % Max takeoff weight
         Lambda_LE % deg
         Lambda_TE % deg
         c_avg % m
@@ -76,13 +77,13 @@ classdef planeObj
     methods
         
         % Primary class defenition functions (used on creation and updates)
-        function obj = planeObj(name, W0, Lambda_LE, Lambda_TE, c_avg, tr, num_engine, mission_set, engine, W_F, W_P) 
+        function obj = planeObj(name, WE, Lambda_LE, Lambda_TE, c_avg, tr, num_engine, mission_set, engine, W_F, W_P) 
             % Note it returns the obj variable to be used. Use as plane = planeObj(...)
 
             obj.name = name;
 
             %% Asign inputs
-            obj.W0 = W0; % Newtons
+            obj.WE = WE; % Newtons
             obj.Lambda_LE = Lambda_LE; % deg
             obj.Lambda_TE = Lambda_TE; % deg
             obj.c_avg = c_avg; % m
@@ -115,7 +116,7 @@ classdef planeObj
         end
         function obj = updateInputsAsVector(obj, input) 
             % Streamlines changing class variables later when doing optimization
-            obj.W0 = input(1);
+            obj.WE = input(1);
             obj.Lambda_LE = input(2);
             obj.Lambda_TE = input(3);
             obj.c_avg = input(4);
@@ -125,6 +126,9 @@ classdef planeObj
         end
         function obj = updateDerivedVariables(obj)
            
+            % empty_weight_fraction = obj.WE / obj.MTOW = 2.34*N2lb(obj.WTOW)^(-0.13) ; % Use historical data
+            obj.MTOW = lb2N( ( N2lb(obj.WE) / 2.34)^(1/0.87) );
+
             %% Standard Wing Geometry Stuff
             obj.c_t = 2*obj.c_avg / (1 + 1 / obj.tr);
             obj.c_r = obj.c_t / obj.tr;
@@ -137,7 +141,7 @@ classdef planeObj
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4
             
             c = -0.1289; d = 0.7506;
-            obj.S_wet = 0.09290304*(10^c  * N2lb(obj.W0)^d); % Converting S_wet in ft and W0 in lb
+            obj.S_wet = 0.09290304*(10^c  * N2lb(obj.WE)^d); % Converting S_wet in ft and W0 in lb
             Cf = 0.0035; % For fighters?
             CD_min = Cf * obj.S_wet/obj.S_ref;
             
@@ -205,7 +209,8 @@ classdef planeObj
             k2 = obj.generateTransonicSpline(obj.k2_sub * ones(size(M_vec)), k2_sup, M_vec);
             K2_interp = griddedInterpolant(M_vec, k2, 'spline');
         end
-        
+
+
         % Helper function for iterpolations (needed for transonic regime)
         function out_vec = generateTransonicSpline(obj, subsonic_range, supersonic_range, M_vec)
             subsonic_range(obj.transonic_range(1) < M_vec) = NaN;
@@ -219,7 +224,7 @@ classdef planeObj
         end
         
         % Core analyisis functions
-        function [CL_max_clean, CL_max_flapped, CLa] = calcCL(obj, M) % *** These CL values are wayyyyy too high
+        function [CL_max_clean, CL_max_flapped, CLa] = calcCL(obj, M)
             CLa = obj.CLa_interp(M);
             CL_max_clean = CLa * (obj.max_alpha - obj.a0);
             CL_max_flapped = CL_max_clean + obj.Delta_flap_param *obj.S_flapped/obj.S_ref * cosd(obj.Lambda_HL);
@@ -256,7 +261,7 @@ classdef planeObj
         function [turn_rate, n] = getMaxTurn(obj, h, M, W, g_limit)
             % Input: h (alt) = m, M (mach number), W (weight) = N, g_limit
             % Output: turn_rate = deg/s, n (load factor)
-            % Example: [turn_rate, n] = f18.getMaxTurn(1000, 0.8, f18.W0)
+            % Example: [turn_rate, n] = f18.getMaxTurn(1000, 0.8, f18.MTOW)
 
             % g_limit will cap the load factor. If you want it to be uncapped you can enter inf
 
@@ -271,7 +276,7 @@ classdef planeObj
         function cost = calcUnitCost(obj)
             % Exports cost in the millions per aircraft
             KLOC = 20000; % This is what Xander had
-            cost= ( getcost(N2lb(obj.W0), KLOC) / 500 )  / 1000000; % Divide by 500 since getcost assumes 500 aircraft in the program, and convert to mil
+            cost= ( getcost(N2lb(obj.WE), KLOC) / 500 )  / 1000000; % Divide by 500 since getcost assumes 500 aircraft in the program, and convert to mil
         end
        
         function excessPower = calcExcessPower(obj, h, M, W, AB_perc)
@@ -307,6 +312,7 @@ classdef planeObj
 
         end
         
+        % function 
         % TODO
         % - Max Mach (Fixed Alt & Overall)
         % - Max Speed (Fixed Alt & Overall)
@@ -315,7 +321,6 @@ classdef planeObj
         % - Max Endurance State ( max L / D)
         % - Max Longitudianl Accelleration
         % - Takeoff & Landing Distance
-        % - Fix the CL values
         % - Make new performance plots
 
 
@@ -501,7 +506,7 @@ classdef planeObj
             hvec_m = linspace(obj.alt_range(1), obj.alt_range(2), Nh);            % altitudes (m) for maps
             mvec = linspace(obj.mach_range(1), obj.mach_range(2), Nm); % Mach sweep for maps
             Sref = obj.S_ref;
-            W0 = obj.W0;                                       % assume weight in N
+            MTOW = obj.MTOW;                                       % assume weight in N
         
             lw = 2; % line width
         
@@ -538,14 +543,14 @@ classdef planeObj
                     CLmax = interp1(mvec, CLmax_clean_vec, M, 'linear', NaN);
         
                     % Lmax and n_max
-                    if ~isnan(q) && ~isnan(CLmax) && Sref>0 && W0>0
+                    if ~isnan(q) && ~isnan(CLmax) && Sref>0 && MTOW>0
                         Lmax = q * Sref * CLmax; % N
-                        n_max_map(ih,im) = Lmax / W0;
+                        n_max_map(ih,im) = Lmax / MTOW;
                     else
                         n_max_map(ih,im) = NaN;
                     end
         
-                    CL_level = calcTrimCL(obj, h, M, W0);
+                    CL_level = calcTrimCL(obj, h, M, MTOW);
         
                     % Get CD at CL_level (if valid)
                     if ~isnan(CL_level)
@@ -571,8 +576,8 @@ classdef planeObj
                     TAmap(ih,im) = TA;
         
                     % Excess normalized by weight (dimensionless)
-                    if ~isnan(TA) && ~isnan(D) && W0>0
-                        excess_map(ih,im) = (TA - D) / W0;
+                    if ~isnan(TA) && ~isnan(D) && MTOW>0
+                        excess_map(ih,im) = (TA - D) / MTOW;
                     else
                         excess_map(ih,im) = NaN;
                     end
@@ -670,7 +675,7 @@ classdef planeObj
             for ih = 1:length(hvec_m)
                 h = hvec_m(ih);
                 % Define residual function: TA(M) - D(M)
-                f = @(M) residual_T_minus_D(M, h, obj, Sref, W0, AB_perc, mvec);
+                f = @(M) residual_T_minus_D(M, h, obj, Sref, MTOW, AB_perc, mvec);
                 % find sign changes in sample to bracket root
                 rvals = arrayfun(@(M) f(M), mvec);
                 % find indices where sign changes or rvals >= 0
@@ -777,7 +782,7 @@ classdef planeObj
         end
 
         %% Helper function (nested or local file)
-        function r = residual_T_minus_D(M, h, obj, Sref, W0, AB_perc, mvec)
+        function r = residual_T_minus_D(M, h, obj, Sref, MTOW, AB_perc, mvec)
             % compute residual TA(M,h) - D(M,h) in N
             % If metricFreestream or calcCD fails, return NaN
             try
@@ -797,7 +802,7 @@ classdef planeObj
             end
         
             % Level-flight CL
-            CL_level = W0 / (q * Sref);
+            CL_level = MTOW / (q * Sref);
         
             % Get CD at that CL and Mach
             try

@@ -235,6 +235,24 @@ classdef planeObj
             TA = TA * obj.num_engine;
             mdotf = TA * TSFC;
         end
+        
+        function trimCL = calcTrimCL(obj, h, M, W)
+            % Can simulate higher load factors by just multiplying W
+
+            [~, CL_max_flapped, ~] = obj.calcCL(M);
+
+            [q, ~, ~, ~] = metricFreestream(h, M);
+
+            trimCL = W / (q * obj.S_ref); % n = 1
+            if( trimCL > CL_max_flapped )
+                trimCL = NaN; % So that we can easily catch areas that are not trimmable
+            end
+        end
+        function stallSpeed = calcStallSpeed(obj, h, W)
+            [~, a, ~, rho, ~] = queryAtmosphere(h, [0 1 0 1 0]);
+            f = @(V) W - get_output_at_index(@() obj.calcCL(V / a), 2) * obj.S_ref * rho * V^2; % I don't know why @() is required but it does work
+            stallSpeed = fzero(f , 0.3 * a);
+        end
         function [turn_rate, n] = getMaxTurn(obj, h, M, W, g_limit)
             % Input: h (alt) = m, M (mach number), W (weight) = N, g_limit
             % Output: turn_rate = deg/s, n (load factor)
@@ -249,28 +267,59 @@ classdef planeObj
             turn_rate = rad2deg( n * 9.8051 / V);
             
         end
-        function trimCL = calcTrimCL(obj, h, M, W)
-            % Can simulate higher load factors by just multiplying W
 
-            [~, CL_max_flapped, ~] = obj.calcCL(M);
-
-            [q, ~, ~, ~] = metricFreestream(h, M);
-
-            trimCL = W / (q * obj.S_ref); % n = 1
-            if( trimCL > CL_max_flapped )
-                trimCL = NaN; % So that we can easily catch areas that are not trimmable
-            end
-        end
         function cost = calcUnitCost(obj)
             % Exports cost in the millions per aircraft
             KLOC = 20000; % This is what Xander had
             cost= ( getcost(N2lb(obj.W0), KLOC) / 500 )  / 1000000; % Divide by 500 since getcost assumes 500 aircraft in the program, and convert to mil
         end
-        function stall_speed = calcStallSpeed(obj, h)
-            [~, a, ~, rho, ~] = queryAtmosphere(h, [0 1 0 1 0]);
-            f = @(V) obj.W0 - get_output_at_index(@() obj.calcCL(V / a), 2) * obj.S_ref * rho * V^2; % I don't know why @() is required but it does work
-            stall_speed = fzero(f , 0.3 * a);
+       
+        function excessPower = calcExcessPower(obj, h, M, W, AB_perc)
+            % IN: h (alt) = m , M (mach number), W (current weight) = N, AB_perc
+            % OUT: excessPower = m/s
+           
+            [q, V, ~, ~] = metricFreestream(h, M);
+            trimCL = obj.calcTrimCL(h, M, W);
+            [CD, ~, ~, ~] = obj.calcCD(trimCL, M);
+
+            [TA, ~, ~, ~] = obj.calcProp(M, h, AB_perc);
+
+            excessPower = V * (TA - CD * obj.S_ref * q) / W;
         end
+        function [excessPower, speed] = calcMaxExcessPower(obj, h, W, AB_perc)
+            [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
+            fun = @(V) -obj.calcExcessPower(h, V / a, W, AB_perc); % negative for maximization
+            opts = optimset('Display','off','TolX',1e-3,'MaxFunEvals',200);
+        
+            % Solve for max excess power speed
+            [speed, excessPower] = fminsearch(fun, 0.5 * a, opts);
+        
+            excessPower = -excessPower;
+        end
+        function [climbRate, climbAngle, climbSpeed] = calcMaxClimbRate(obj, h, W, AB_perc)
+            [climbRate, climbSpeed] = obj.calcMaxExcessPower(h, W, AB_perc);
+
+            if(climbRate > climbSpeed) % The aircraft can climb directly vertical
+                climbAngle = 90;
+            else
+                climbAngle = atand(climbRate / climbSpeed);
+            end
+
+        end
+        
+        % TODO
+        % - Max Mach (Fixed Alt & Overall)
+        % - Max Speed (Fixed Alt & Overall)
+        % - Max Altitude
+        % - Max Range State ( max L ^ 1/2 / D )
+        % - Max Endurance State ( max L / D)
+        % - Max Longitudianl Accelleration
+        % - Takeoff & Landing Distance
+        % - Fix the CL values
+        % - Make new performance plots
+
+
+    
 
         % Some helpful functions to generate debug plots
         function buildPolars(obj)

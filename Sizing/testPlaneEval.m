@@ -13,4 +13,12 @@ f18 = planeObj("FA18", lb2N(60000), 29.3, 0, 5.02, 0.374, 2, [], "F414", lb2N(10
 % f18.buildEngineMap(1)
 % [turn_rate, n] = f18.getMaxTurn(1000, 0.8, f18.W0, 6.5)
 
-fprintf("The F18 has a unit cost of %.2f million dollars and a stall speed of %.2f kt", f18.calcUnitCost(), ms2kt( f18.calcStallSpeed(0) ) )
+fprintf("The F18 has a unit cost of %.2f million dollars and a stall speed of %.2f kt", f18.calcUnitCost(), ms2kt( f18.calcStallSpeed(0, f18.W0) ) );
+
+[climbRate, climbAngle, climbSpeed] = f18.calcMaxClimbRate(0, f18.W0, 1);
+fprintf("\nSealevel max climb rate = %.3f kft/min with a climb angle of %.2f deg at a speed of %.3f m/s", m2ft(climbRate) * 60 / 1000, climbAngle, climbSpeed);
+
+[turn_rate, n] = f18.getMaxTurn(0, 0.5, f18.W0, 6.5);
+fprintf("\nSealevel, Mach 0.5 max turn rate = %.2f deg/s at a load factor of %.2f", turn_rate, n)
+
+% [excessPower, speed] = f18.calcMaxExcessPower( 0, f18.W0, 1)

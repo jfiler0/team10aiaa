@@ -218,6 +218,7 @@ classdef planeObj
             out_vec = interp1(x, y, 1:numel(range), 'spline', 'extrap');
         end
         
+        % Core analyisis functions
         function [CL_max_clean, CL_max_flapped, CLa] = calcCL(obj, M) % *** These CL values are wayyyyy too high
             CLa = obj.CLa_interp(M);
             CL_max_clean = CLa * (obj.max_alpha - obj.a0);
@@ -234,15 +235,17 @@ classdef planeObj
             TA = TA * obj.num_engine;
             mdotf = TA * TSFC;
         end
-        function [turn_rate, n] = getMaxTurn(obj, h, M, W)
-            % Input: h (alt) = m, M (mach number), W (weight) = N
+        function [turn_rate, n] = getMaxTurn(obj, h, M, W, g_limit)
+            % Input: h (alt) = m, M (mach number), W (weight) = N, g_limit
             % Output: turn_rate = deg/s, n (load factor)
             % Example: [turn_rate, n] = f18.getMaxTurn(1000, 0.8, f18.W0)
+
+            % g_limit will cap the load factor. If you want it to be uncapped you can enter inf
 
             [CL_max_clean, ~, ~] = calcCL(obj, M);
             [q, V, ~, ~] = metricFreestream(h, M);
             L_max = q * CL_max_clean * obj.S_ref;
-            n = L_max / W;
+            n = min( L_max / W, g_limit);
             turn_rate = rad2deg( n * 9.8051 / V);
             
         end
@@ -258,8 +261,18 @@ classdef planeObj
                 trimCL = NaN; % So that we can easily catch areas that are not trimmable
             end
         end
+        function cost = calcUnitCost(obj)
+            % Exports cost in the millions per aircraft
+            KLOC = 20000; % This is what Xander had
+            cost= ( getcost(N2lb(obj.W0), KLOC) / 500 )  / 1000000; % Divide by 500 since getcost assumes 500 aircraft in the program, and convert to mil
+        end
+        function stall_speed = calcStallSpeed(obj, h)
+            [~, a, ~, rho, ~] = queryAtmosphere(h, [0 1 0 1 0]);
+            f = @(V) obj.W0 - get_output_at_index(@() obj.calcCL(V / a), 2) * obj.S_ref * rho * V^2; % I don't know why @() is required but it does work
+            stall_speed = fzero(f , 0.3 * a);
+        end
 
-        %% Some helpful functions to generate debug plots
+        % Some helpful functions to generate debug plots
         function buildPolars(obj)
             % buildPolars - compute aerodynamic polars and plot them in a 3x2 tiled layout
             %

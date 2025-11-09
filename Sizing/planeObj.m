@@ -29,6 +29,7 @@ classdef planeObj
         A_max % m2
         A_0 % m2
         E_WD % no idea what this is
+        g_limit
 
         % Parameters that remain fixed (need to edit the input function if you want them moved into the deisgn space)
         num_engine
@@ -97,6 +98,8 @@ classdef planeObj
             obj.A_max = 1.46; % m (*** These have a huge impact of lift parameter F and can almost double lift)
             obj.A_0 = 0; % m2
             obj.E_WD = 2.2; 
+
+            obj.g_limit = 6.5; % Just fixing
     
             % Parameters that remain fixed
             obj.mission_set = mission_set; % array of flightSegment objects
@@ -258,7 +261,16 @@ classdef planeObj
             f = @(V) W - get_output_at_index(@() obj.calcCL(V / a), 2) * obj.S_ref * rho * V^2; % I don't know why @() is required but it does work
             stallSpeed = fzero(f , 0.3 * a);
         end
-        function [turn_rate, n] = getMaxTurn(obj, h, M, W, g_limit)
+        function takeoffSpeed = calcTakeoffSpeed(obj, h, W)
+            % Can vary h to see change with alt. W is likely obj.MTOW
+            takeoffSpeed = 1.2 * obj.calcStallSpeed(h, W);
+        end
+        function landingSpeed = calcLandingSpeed(obj, h, W)
+            % Can vary h to see change with alt.
+            landingSpeed = 1.3 * obj.calcStallSpeed(h, W);
+        end
+        
+        function [turn_rate, n] = getMaxTurn(obj, h, M, W)
             % Input: h (alt) = m, M (mach number), W (weight) = N, g_limit
             % Output: turn_rate = deg/s, n (load factor)
             % Example: [turn_rate, n] = f18.getMaxTurn(1000, 0.8, f18.MTOW)
@@ -268,7 +280,7 @@ classdef planeObj
             [CL_max_clean, ~, ~] = calcCL(obj, M);
             [q, V, ~, ~] = metricFreestream(h, M);
             L_max = q * CL_max_clean * obj.S_ref;
-            n = min( L_max / W, g_limit);
+            n = min( L_max / W, obj.g_limit);
             turn_rate = rad2deg( n * 9.8051 / V);
             
         end
@@ -277,6 +289,23 @@ classdef planeObj
             % Exports cost in the millions per aircraft
             KLOC = 20000; % This is what Xander had
             cost= ( getcost(N2lb(obj.WE), KLOC) / 500 )  / 1000000; % Divide by 500 since getcost assumes 500 aircraft in the program, and convert to mil
+        end
+
+        function area = calcFoldedWingProjection(obj, fold_ratio)
+            % fold_ratio = 0.1 -> 10% of the wing is folded
+
+            % The FA18E has a wingspan of 40.4 ft and when folded goes to 27.5. Thus for it, fold_ratio = 1 - 27.5 / 40.4 = 0.3193
+            % We then get a area of 49.1823 when projected which is now the spot facto = 1 reference
+
+            fold_span = obj.span * ( 1 - fold_ratio);
+            fold_tipChord = obj.c_r + (obj.c_r - obj.c_t) * ( 1 - fold_ratio);
+            area = fold_span * ( fold_tipChord + obj.c_r) / 2;
+        end
+        function spotFactor = calcSpotFactor(obj, fold_ratio)
+            % fold_ratio = 0.1 -> 10% of the wing is folded
+            % f18.calcSpotFactor(0.3193)
+            area = obj.calcFoldedWingProjection(fold_ratio);
+            spotFactor = area / 49.1823;
         end
        
         function excessPower = calcExcessPower(obj, h, M, W, AB_perc)
@@ -290,15 +319,22 @@ classdef planeObj
             [TA, ~, ~, ~] = obj.calcProp(M, h, AB_perc);
 
             excessPower = V * (TA - CD * obj.S_ref * q) / W;
+
         end
-        function [excessPower, speed] = calcMaxExcessPower(obj, h, W, AB_perc)
+        function [excessPower, speed, mach] = calcMaxExcessPower(obj, h, W, AB_perc, M_guess)
+            % If the guess was not provided use fall back (should be standard)
+            % This is needeed in calcMaxAltHelper for stability
+            if(nargin < 5)
+                M_guess = 0.5;
+            end
+
             [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
             fun = @(V) -obj.calcExcessPower(h, V / a, W, AB_perc); % negative for maximization
             opts = optimset('Display','off','TolX',1e-3,'MaxFunEvals',200);
         
             % Solve for max excess power speed
-            [speed, excessPower] = fminsearch(fun, 0.5 * a, opts);
-        
+            [speed, excessPower] = fminsearch(fun, M_guess * a, opts);
+            mach = speed / a;
             excessPower = -excessPower;
         end
         function [climbRate, climbAngle, climbSpeed] = calcMaxClimbRate(obj, h, W, AB_perc)
@@ -309,24 +345,235 @@ classdef planeObj
             else
                 climbAngle = atand(climbRate / climbSpeed);
             end
+        end
+        
+        function [maxAlt, maxAltMach, excessPower] = calcMaxAlt(obj, W, AB_perc)
+            climb_rate_min = 0.508; % m/s -> this comes from the standard 100 ft / min excess power req for service ceiling 
+            mach_save = 0.5; % Tracking mach between iterations is an enormous help for speed and stability
+
+            % Ode to matlab nested functions in new versions
+            function diff = helper(h)
+                [excessPower, ~, mach_save] = obj.calcMaxExcessPower(h, W, AB_perc, mach_save);
+                diff = excessPower - climb_rate_min;
+                if isnan(diff), diff = -1e2; end
+            end
+
+            maxAlt = fzero(@helper, [1000 20000]);
+            [excessPower, ~, maxAltMach] = calcMaxExcessPower(obj, maxAlt, W, AB_perc, mach_save); % Have to recalculate to get remaining output
+        end
+        function maxMach = calcMaxMachFixedAlt(obj, h, W, AB_perc, M_guess)
+            if nargin < 5 % So that we can pass in guesses with calcMaxMach
+                M_guess = 0.6;
+            end
+            % This function likely is not that stable. And I'm not sure how to improve it right now
+            function res = helper(M)
+                res = obj.calcExcessPower(h, max(M, 0.5), W, AB_perc);
+            end
+            maxMach = fzero(@helper, M_guess);
+        end
+        function [maxMach, maxMachAlt] = calcMaxMach(obj, W, AB_perc)
+            M_save = 0.6;
+
+            function objf = helper(h)
+                maxMach = obj.calcMaxMachFixedAlt(h, W, AB_perc, M_save);
+                M_save = maxMach;
+                objf = 1/maxMach;
+            end
+
+            opts = optimset('Display','off','TolX',1e-3,'MaxFunEvals',200);
+            maxMachAlt = fminsearch(@helper, 1000, opts); % Bit sensitive to the initial guess here but 1000 seems to work
+        end
+
+        function [h, M, V, L2D] = findMaxRangeState(obj, W) % Maximize L ^ (1/2) / D
+
+            function objf = objective(x)
+                h = x(1);
+                M = x(2);
+                CL = obj.calcTrimCL(h, M, W);
+                [CD, ~, ~, ~] = obj.calcCD(CL, M);
+                L2Dr = CL ^ (0.5) / CD;
+                objf = 1 / L2Dr;
+            end
+
+            h0 = ft2m(30000);
+            M0 = 0.7;
+            x0 = [h0, M0];
+
+            opts = optimset('Display', 'off', 'TolX', 1e-4, 'TolFun', 1e-4, ...
+                    'MaxFunEvals', 500, 'MaxIter', 200);
+
+            % ---- 2D unconstrained optimization ----
+            [x_opt, fval, exitflag] = fminsearch(@objective, x0, opts);
+        
+            % ---- Extract results ----
+            h = x_opt(1);
+            M = x_opt(2);
+        
+            % Compute final performance values
+            CL = obj.calcTrimCL(h, M, W);
+            [CD, ~, ~, ~] = obj.calcCD(CL, M);
+            L2D = (CL^0.5) / CD;
+        
+            % Convert Mach to true airspeed
+            [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
+            V = a * M;
+
+        end
+        function [h, M, V, LD] = findMaxEnduranceState(obj, W) % Maximize L ^ (1/2) / D
+
+            function objf = objective(x)
+                h = x(1);
+                M = x(2);
+                CL = obj.calcTrimCL(h, M, W);
+                [CD, ~, ~, ~] = obj.calcCD(CL, M);
+                LDr = CL / CD;
+                objf = 1 / LDr;
+            end
+
+            h0 = ft2m(30000);
+            M0 = 0.7;
+            x0 = [h0, M0];
+
+            opts = optimset('Display', 'off', 'TolX', 1e-4, 'TolFun', 1e-4, ...
+                    'MaxFunEvals', 500, 'MaxIter', 200);
+
+            % ---- 2D unconstrained optimization ----
+            [x_opt, fval, exitflag] = fminsearch(@objective, x0, opts);
+        
+            % ---- Extract results ----
+            h = x_opt(1);
+            M = x_opt(2);
+        
+            % Compute final performance values
+            CL = obj.calcTrimCL(h, M, W);
+            [CD, ~, ~, ~] = obj.calcCD(CL, M);
+            LD = (CL^0.5) / CD;
+        
+            % Convert Mach to true airspeed
+            [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
+            V = a * M;
 
         end
         
-        % function 
         % TODO
-        % - Max Mach (Fixed Alt & Overall)
-        % - Max Speed (Fixed Alt & Overall)
-        % - Max Altitude
-        % - Max Range State ( max L ^ 1/2 / D )
-        % - Max Endurance State ( max L / D)
-        % - Max Longitudianl Accelleration
-        % - Takeoff & Landing Distance
+        % - Takeoff & Landing Distance https://archive.aoe.vt.edu/lutze/AOE3104/takeoff&landing.pdf
         % - Make new performance plots
+        % - Max sustained turn
 
+        % AERODYNAMICS
+        % CL_maxes vs Mach, CLa vs Mach
+        % CD Plots
+        % trimCL vs h and M
 
-    
+        % PROPULSION
+        % TA, TSFC, alpha, and mdotf vs h and M
+
+        % PERFORMANCE
+        % Stall speed, takeoff speed, and landing speed vs h
+        % Max turn rate (deg/s and n) vs h and M - AB and not
+        % Excess power vs h and M (With max alt plotted with a point) - AB and not
+        % Max excess power vs h (with the total max plotted with a point) - AB and not
+        % Max range and endurance h & M vs W varied from MTOW to WE
+
+        % Sensitivites
+        % Cost if W0 is 10% higher or lower
+        % Spot factor if wing folding is 10% higher or lower
+        % Max mach if sweep is increased 10% higher or lower
+
 
         % Some helpful functions to generate debug plots
+
+        function buildPlots(obj, W)
+
+            % Input the weight you want to check for all of these. Likely obj.MTOW
+
+            N = 10; % Resolution of Mach and alt grids
+            hvec = linspace(obj.alt_range(1), obj.alt_range(2), N);  % Altitude from 100 m to 40,000 ft but still in m here
+            Mvec = linspace(obj.mach_range(1), obj.mach_range(2), N);
+
+            [M, h] = meshgrid(Mvec, hvec);
+
+            emptyM = zeros(size(M));
+            % Preallocate result matrices - h and M
+
+                % AERODYNAMICS
+                trimCL = emptyM;
+                CD = emptyM;
+                CD0 = emptyM;
+                CDi = emptyM;
+                CDW = emptyM;
+                D = emptyM;
+                D0 = emptyM;
+                Di = emptyM;
+                DW = emptyM;
+                
+    
+                % PROPULSION
+                TA_AB    = zeros(size(M));
+                TSFC_AB  = zeros(size(M));
+                alpha_AB = zeros(size(M));
+                TA_NoAB    = zeros(size(M));
+                TSFC_NoAB  = zeros(size(M));
+                alpha_NoAB = zeros(size(M));
+                qinf = zeros(size(M));
+    
+                % PEFORMANCE
+                turn_rate = emptyM;
+                n_max = emptyM;
+                excessPower_AB = emptyM;
+                climbRate_AB = emptyM;
+                climbAngle_AB = emptyM;
+                climbSpeed_AB = emptyM;
+                excessPower_NoAB = emptyM;
+                climbRate_NoAB = emptyM;
+                climbAngle_NoAB = emptyM;
+                climbSpeed_NoAB = emptyM;
+            
+            % % Preallocate - just M
+            % CL_max_clean
+            % CL_max_flapped
+            % CLa
+            % 
+            % % Preallocate - just h
+            % stallSpeed
+            % takeoffSpeed
+            % landingSpeed
+            % excessPowerMax
+            % mach_maxExcess
+            % maxMach
+            
+
+            % Query functions for each point
+            for i = 1:numel(M)
+
+                [q, a, ~, rho, ~] = queryAtmosphere(h(i), [0 1 0 1 0]);
+
+                trimCL(i) = obj.calcTrimCL(h(i), M(i), W);
+                [CD(i), CD0(i), CDi(i), CDW(i)] = obj.calcCD(trimCL(i), M(i));
+                D(i) = CD(i) * q * obj.S_ref;
+                D0(i) = CD0(i) * q * obj.S_ref;
+                Di(i) = CDi(i) * q * obj.S_ref;
+                DW(i) = CDW(i) * q * obj.S_ref;
+
+                [TA_AB(i), TSFC_AB(i), alpha_AB(i)] = engine_query(obj.engine, M(i), h(i), 1);
+                [TA_NoAB(i), TSFC_NoAB(i), alpha_NoAB(i)] = engine_query(obj.engine, M(i), h(i), 0);
+                qinf(i) = q;
+
+                [turn_rate(i), n_max(i)] = obj.getMaxTurn( h(i), M(i), W);
+                excessPower_AB(i) = obj.calcExcessPower(h(i), M(i), W, 1);
+                excessPower_NoAB(i) = obj.calcExcessPower(h(i), M(i), W, 0);
+                [climbRate_AB(i), climbAngle_AB(i), climbSpeed_AB(i)] = obj.calcMaxClimbRate( h(i), W, 1);
+                [climbRate_NoAB(i), climbAngle_NoAB(i), climbSpeed_NoAB(i)] = obj.calcMaxClimbRate( h(i), W, 0);
+
+                fprintf("Solved %.0f / %.0f\n", i, numel(M))
+
+            end
+
+            disp("Finished")
+
+        end
+
+
         function buildPolars(obj)
             % buildPolars - compute aerodynamic polars and plot them in a 3x2 tiled layout
             %
@@ -777,9 +1024,7 @@ classdef planeObj
             sgtitle(sprintf("Engine Performance Map - " + obj.engine + " , AB = %.1f perc", AB_perc * 100), fontsize=25)
 
         end
-        function buildTurnRateMap(obj)
 
-        end
 
         %% Helper function (nested or local file)
         function r = residual_T_minus_D(M, h, obj, Sref, MTOW, AB_perc, mvec)

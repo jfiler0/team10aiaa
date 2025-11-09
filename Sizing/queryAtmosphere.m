@@ -18,11 +18,20 @@ function [T, a, P, rho, mu] = queryAtmosphere(alt, values_to_get)
         end
         tmp = load(atmFile, 'atmosphere');
         cachedAtmosphere = tmp.atmosphere;
-    end
+   end
+
+   if isnan(alt) % Going to use this as a special case to get alt limits. Bit scuffed but should work. No good reason for alt to be NaN otherwise
+        T = cachedAtmosphere.alt(1);
+        a = cachedAtmosphere.alt(end);
+        P = 0;
+        rho = 0;
+        mu = 0;
+        return
+   end
 
     % Quick bounds check
     if min(alt) < cachedAtmosphere.alt(1) || max(alt) > cachedAtmosphere.alt(end)
-        error("Altitude call is out of lookup range.");
+        error( sprintf("Altitude call is out of lookup range: %.2f meters", alt) );
     end
     
     % Initialize

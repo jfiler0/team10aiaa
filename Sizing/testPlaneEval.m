@@ -1,12 +1,16 @@
 %% Build atmo table
-% build_atmosphere_lookup(-100, ft2m(120000), 250);
+% build_atmosphere_lookup(-5000, ft2m(120000), 500);
+%% TO DO
+% - Plot atmosphere
+% - Read in atmosphere limits
+% - Sensitivties
+
 %% Rest of the script
 
 % function [obj, S, T] = planeEval(W0, Lambda_LE, Lambda_TE, c_avg, span, mission_set, engine, W_F, W_P)
 matlabSetup();
 
-% W0, Lambda_LE, Lambda_TE, c_avg, tr, mission_set, engine, W_F, W_P
-
+% WE, Lambda_LE, Lambda_TE, c_avg, tr, mission_set, engine, W_F, W_P
 f18 = planeObj("FA18", lb2N(34000), 29.3, 0, 5.02, 0.374, 2, [], "F414", lb2N(1000), lb2N(2000));
 % f18.buildPolars()
 % f18.buildPerformance(1)
@@ -18,7 +22,20 @@ fprintf("The F18 has a unit cost of %.2f million dollars and a stall speed of %.
 [climbRate, climbAngle, climbSpeed] = f18.calcMaxClimbRate(0, f18.MTOW, 1);
 fprintf("\nSealevel max climb rate = %.3f kft/min with a climb angle of %.2f deg at a speed of %.3f m/s", m2ft(climbRate) * 60 / 1000, climbAngle, climbSpeed);
 
-[turn_rate, n] = f18.getMaxTurn(0, 0.5, f18.MTOW, 6.5);
+[turn_rate, n] = f18.getMaxTurn(0, 0.5, f18.MTOW);
 fprintf("\nSealevel, Mach 0.5 max turn rate = %.2f deg/s at a load factor of %.2f", turn_rate, n)
 
-% [excessPower, speed] = f18.calcMaxExcessPower( 0, f18.W0, 1)
+fprintf("\nF18 spot factor = %.3f", f18.calcSpotFactor(0.3193) )
+
+[maxAlt, maxAltMach, excessPower] = f18.calcMaxAlt(f18.MTOW, 1);
+fprintf("\nThe F18 has a service ceiling of %.2f kf (does Mach %.2f at its ceiling with a CL of %.3f).", m2ft(maxAlt)/1000, maxAltMach, f18.calcTrimCL(maxAlt, maxAltMach, f18.MTOW))
+
+[maxMach, maxMachAlt] = f18.calcMaxMach(f18.MTOW, 1);
+fprintf("\nThe F18 has a maximum mach number of %.3f which it reaches at %.2f kf", maxMach, m2ft(maxMachAlt)/1000)
+
+[h_maxR, M_maxR, V_maxR, L2D_maxR] = f18.findMaxRangeState(f18.MTOW);
+[h_maxE, M_maxE, V_maxE, LD_maxE] = f18.findMaxEnduranceState(f18.MTOW);
+fprintf("\nMax range altitude = %.2f kf at Mach %.2f with a speed of %.2f m/s and L^(1/2)/D ratio of %.2f", m2ft(h_maxR)/1000, M_maxR, V_maxR, L2D_maxR);
+fprintf("\nMax endurance altitude = %.2f kf at Mach %.2f with a speed of %.2f m/s and L/D ratio of %.2f", m2ft(h_maxE)/1000, M_maxE, V_maxE, LD_maxE);
+
+% f18.buildPlots(f18.MTOW)

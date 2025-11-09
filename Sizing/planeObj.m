@@ -95,7 +95,8 @@ classdef planeObj
 
             % Current FA18E parameters from VSP
             obj.L_fuselage = 17.54; % m
-            obj.A_max = 1.46; % m (*** These have a huge impact of lift parameter F and can almost double lift)
+            % obj.A_max = 1.46; % m (*** These have a huge impact of lift parameter F and can almost double lift)
+            obj.A_max = 5; % This was tuned to match the expected M1.6 max mach for the F18
             obj.A_0 = 0; % m2
             obj.E_WD = 2.2; 
 
@@ -286,7 +287,7 @@ classdef planeObj
 
         function cost = calcUnitCost(obj)
             % Exports cost in the millions per aircraft
-            KLOC = 20000; % This is what Xander had
+            KLOC = 5000; % This is what Xander had
             cost= ( getcost(N2lb(obj.WE), KLOC) / 500 )  / 1000000; % Divide by 500 since getcost assumes 500 aircraft in the program, and convert to mil
         end
 
@@ -462,31 +463,11 @@ classdef planeObj
         
         % TODO
         % - Takeoff & Landing Distance https://archive.aoe.vt.edu/lutze/AOE3104/takeoff&landing.pdf
-        % - Make new performance plots
-        % - Max sustained turn
-
-        % AERODYNAMICS
-        % CL_maxes vs Mach, CLa vs Mach
-        % CD Plots
-        % trimCL vs h and M
-
-        % PROPULSION
-        % TA, TSFC, alpha, and mdotf vs h and M
-
-        % PERFORMANCE
-        % Stall speed, takeoff speed, and landing speed vs h
-        % Max turn rate (deg/s and n) vs h and M - AB and not
-        % Excess power vs h and M (With max alt plotted with a point) - AB and not
-        % Max excess power vs h (with the total max plotted with a point) - AB and not
-        % Max range and endurance h & M vs W varied from MTOW to WE
 
         % Sensitivites
         % Cost if W0 is 10% higher or lower
         % Spot factor if wing folding is 10% higher or lower
         % Max mach if sweep is increased 10% higher or lower
-
-
-        % Some helpful functions to generate debug plots
 
         function buildPlots(obj, W, N)
 

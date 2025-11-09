@@ -35,7 +35,7 @@ gamma = 1.4;
 TR = 1; % Note: Throttle Ratio ~1 for Fighter Aircraft (Sarojini + Mattingly)
 
 h_geom_SI = h_geom; % meters (its now passed  in as meters(
-[T_SI, a_SI, P_SI, rho_SI, ~ , ~] = atmosisa(h_geom_SI); % SI Temp (K), Sound Speed (m/s), Pressure (Pa), density (kg/m^3)
+[T_SI, ~, P_SI, ~, ~] = queryAtmosphere(h_geom_SI, [1 0 1 0 0]); % SI Temp (K), Sound Speed (m/s), Pressure (Pa), density (kg/m^3)
 
 T = T_SI * 9 / 5; %deg R
 % a = a_SI / 0.3048; %ft/s

@@ -5,10 +5,10 @@ function matlabSetup()
     
     set(groot, 'defaultAxesFontName', 'Times New Roman');
     set(groot, 'defaultTextFontName', 'Times New Roman');
-    set(groot, 'defaultAxesFontSize', 18);
-    set(groot, 'defaultTextFontSize', 14);
-    set(groot, 'defaultLegendFontSize', 14);
-    set(groot, 'defaultColorbarFontSize', 14);
+    set(groot, 'defaultAxesFontSize', 16);
+    set(groot, 'defaultTextFontSize', 12);
+    set(groot, 'defaultLegendFontSize', 10);
+    set(groot, 'defaultColorbarFontSize', 12);
     set(groot, 'defaultAxesTitleFontWeight', 'normal');
     
     % Set default interpreter to LaTeX

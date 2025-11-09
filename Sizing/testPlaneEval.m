@@ -38,4 +38,6 @@ fprintf("\nThe F18 has a maximum mach number of %.3f which it reaches at %.2f kf
 fprintf("\nMax range altitude = %.2f kf at Mach %.2f with a speed of %.2f m/s and L^(1/2)/D ratio of %.2f", m2ft(h_maxR)/1000, M_maxR, V_maxR, L2D_maxR);
 fprintf("\nMax endurance altitude = %.2f kf at Mach %.2f with a speed of %.2f m/s and L/D ratio of %.2f", m2ft(h_maxE)/1000, M_maxE, V_maxE, LD_maxE);
 
-% f18.buildPlots(f18.MTOW)
+% f18.buildPlots(f18.MTOW, 100)
+
+% f18.calcMaxMachFixedAlt(10000, f18.MTOW, 1)

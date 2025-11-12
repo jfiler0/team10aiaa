@@ -1,7 +1,7 @@
 function matlabSetup()
     
     clear;clc;close all;
-    set(0,'defaultfigureposition',[50 80 1800 950]')
+    set(0,'defaultfigureposition',[50 120 1800 950]')
     
     set(groot, 'defaultAxesFontName', 'Times New Roman');
     set(groot, 'defaultTextFontName', 'Times New Roman');

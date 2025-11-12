@@ -16,6 +16,7 @@ classdef planeObj
     properties
         % Whenever you start a class object like this, you have to tell MATLAB every obj.VARIABLE type variables exist
         name
+
         % Parameters that should be optimized (inputs)
         WE % Empty weight
         MTOW % Max takeoff weight
@@ -31,12 +32,15 @@ classdef planeObj
         E_WD % no idea what this is
         g_limit
 
+        % Parameters when missions and loadouts are applied
+        CD0_payload
+        loadout
+        W_P % payload weight
+
         % Parameters that remain fixed (need to edit the input function if you want them moved into the deisgn space)
         num_engine
-        mission_set % array of flightSegment objects
         engineData % [T0_NoAB, T0_AB]
         W_F % fixed weight
-        W_P % payload
         a0 % deg
         cl_alpha = 0.1; % foil lift sope
         tc = 0.04; % airfoil thickness
@@ -49,6 +53,7 @@ classdef planeObj
         c_t % m
         c_r % m
         span % m
+        semi_span % m
         AR
         S_wing % m2
         S_ref % m2
@@ -78,39 +83,37 @@ classdef planeObj
     methods
         
         % Primary class defenition functions (used on creation and updates)
-        function obj = planeObj(name, WE, Lambda_LE, Lambda_TE, c_avg, tr, num_engine, mission_set, engine, W_F, W_P) 
+        function obj = planeObj(fixed_input, name, WE, Lambda_LE, c_r, c_t, span, num_engine, engine, W_F) 
             % Note it returns the obj variable to be used. Use as plane = planeObj(...)
-
             obj.name = name;
 
             %% Asign inputs
             obj.WE = WE; % Newtons
             obj.Lambda_LE = Lambda_LE; % deg
-            obj.Lambda_TE = Lambda_TE; % deg
-            obj.c_avg = c_avg; % m
-            obj.tr = tr; % taper ratio
+            obj.c_r = c_r;
+            obj.c_t = c_t;
+            obj.span = span;
             obj.num_engine = num_engine;
             
             %% Bunch of fixed parameters (***)
-
-            % Current FA18E parameters from VSP
-            obj.L_fuselage = 17.54; % m
-            % obj.A_max = 1.46; % m (*** These have a huge impact of lift parameter F and can almost double lift)
-            obj.A_max = 5; % This was tuned to match the expected M1.6 max mach for the F18
+            obj.L_fuselage = fixed_input.L_fuselage; % m
+            obj.A_max = fixed_input.A_max; 
             obj.A_0 = 0; % m2
-            obj.E_WD = 2.2; 
-
-            obj.g_limit = 6.5; % Just fixing
+            obj.E_WD = 2.2; % *** Still don't know what this is
+            obj.g_limit = fixed_input.g_limit; % Just fixing for performance code
     
+            % Parameters depending on loadout
+            obj.W_P = 0; % payload - set when loadout is applied
+            obj.CD0_payload = 0;
+
             % Parameters that remain fixed
-            obj.mission_set = mission_set; % array of flightSegment objects
             obj.engineData = engine_getData(engine); % Saves key engien data as an array [T0_NoAB, T0_AB]
             obj.W_F = W_F; % fixed weight
-            obj.W_P = W_P; % payload
+            
             obj.a0 = -1; % deg (zero lift aoa)
             obj.cl_alpha = 0.1; % foil lift sope
             obj.tc = 0.04; % airfoil thickness
-            obj.max_alpha = 15; % deg 
+            obj.max_alpha = fixed_input.max_alpha; % deg 
 
             obj.mach_range = [0.2 3]; % Anything above 2 and prop equations go wild
             obj.transonic_range = [0.95 1.3];
@@ -134,9 +137,10 @@ classdef planeObj
             obj.MTOW = lb2N( ( N2lb(obj.WE) / 2.34)^(1/0.87) );
 
             %% Standard Wing Geometry Stuff
-            obj.c_t = 2*obj.c_avg / (1 + 1 / obj.tr);
-            obj.c_r = obj.c_t / obj.tr;
-            obj.span = 2*(obj.c_r - obj.c_avg) / ( tand(obj.Lambda_LE) - tand(obj.Lambda_TE) );
+            obj.c_avg = 0.5*(obj.c_t + obj.c_r); % Average chord
+            obj.tr = obj.c_t / obj.c_r; % Taper Ratio
+            obj.semi_span = obj.span / 2;
+            obj.Lambda_TE =  atand( tand(obj.Lambda_LE) - 2*(obj.c_r - obj.c_avg) / obj.semi_span );
             obj.AR = obj.span / obj.c_avg;
             obj.S_wing = obj.span*obj.c_avg;
             obj.S_ref = obj.S_wing; % Typical defenition for reference area
@@ -185,7 +189,12 @@ classdef planeObj
             obj.K2_interp = obj.buildK2Interpolant(M_vec);
 
         end
-        
+        function obj = applyLoadout(obj, loadout)
+            % loadout variable must compre from buildLoadout function
+            obj.W_P = loadout.weight;
+            obj.CD0_payload = loadout.CD0;
+            obj.loadout = loadout;
+        end
         % Iterpolation creators for updateDerviedVariables
         function CLa_interp = buildCLaInterpolant(obj, M_vec)
             beta = sqrt((1-M_vec.^2)); %MACH - real to try try and fix things above M 1 (*** is this fine)
@@ -233,7 +242,7 @@ classdef planeObj
             CL_max_flapped = CL_max_clean + obj.Delta_flap_param *obj.S_flapped/obj.S_ref * cosd(obj.Lambda_HL);
         end
         function [CD, CD0, CDi, CDW] = calcCD(obj, CL, M)
-            CD0 = obj.CD0;
+            CD0 = obj.CD0 + obj.CD0_payload;
             CDi = obj.K1_interp(M) * CL^2 + obj.K2_interp(M) * CL;
             CDW = obj.CDW_interp(M);
             CD = CD0 + CDi + CDW;
@@ -305,7 +314,7 @@ classdef planeObj
             % fold_ratio = 0.1 -> 10% of the wing is folded
             % f18.calcSpotFactor(0.3193)
             area = obj.calcFoldedWingProjection(fold_ratio);
-            spotFactor = area / 49.1823;
+            spotFactor = area / 51.033; % From F18 comparison. Setting it to 1 when area matches
         end
        
         function excessPower = calcExcessPower(obj, h, M, W, AB_perc)

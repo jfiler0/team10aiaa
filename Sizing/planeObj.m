@@ -38,6 +38,7 @@ classdef planeObj
         W_P % payload weight
 
         % Parameters that remain fixed (need to edit the input function if you want them moved into the deisgn space)
+        type % Name of the regrssion to use in Raymer for We/W0
         num_engine
         engineData % [T0_NoAB, T0_AB]
         W_F % fixed weight
@@ -101,6 +102,7 @@ classdef planeObj
             obj.A_0 = 0; % m2
             obj.E_WD = 2.2; % *** Still don't know what this is
             obj.g_limit = fixed_input.g_limit; % Just fixing for performance code
+            obj.type = fixed_input.type; % For regression lookup
     
             % Parameters depending on loadout
             obj.W_P = 0; % payload - set when loadout is applied
@@ -134,7 +136,10 @@ classdef planeObj
         function obj = updateDerivedVariables(obj)
            
             % empty_weight_fraction = obj.WE / obj.MTOW = 2.34*N2lb(obj.WTOW)^(-0.13) ; % Use historical data
-            obj.MTOW = lb2N( ( N2lb(obj.WE) / 2.34)^(1/0.87) );
+            % obj.WE = obj.MTOW * 2.34 * N2lb(obj.MTOW)^(-0.13)
+            % obj.MTOW = lb2N( ( N2lb(obj.WE) / 2.34)^(1/0.87) );
+            [A, C] = getRaymerCoefficents(obj.type);
+            obj.MTOW = lb2N( ( N2lb(obj.WE) / A )^(1 / (1 + C) ) );
 
             %% Standard Wing Geometry Stuff
             obj.c_avg = 0.5*(obj.c_t + obj.c_r); % Average chord
@@ -175,7 +180,7 @@ classdef planeObj
             obj.D = 2*sqrt(obj.A_max/pi); % Assuming roughly circular cross section to get fuselage diameter/width
             obj.S_exposed = obj.S_wing * 1.3; % *** Trying to account for body lift/strakes/tail anything not in here
             obj.F = 1.07 * (1 + obj.D/obj.span)^2; % Lift Factor
-            obj.F = 1;
+            obj.F = 1; % *** Needs to be fixed
 
             obj.S_flapped = obj.S_wing * 0.6; % *** Obviously has a big impact on landing CL
             obj.Delta_flap_param = 0.9; % Factor depending on the type of flap
@@ -370,7 +375,7 @@ classdef planeObj
                 if isnan(diff), diff = -1e2; end
             end
 
-            maxAlt = fzero(@helper, [1000 20000]); % This might be problamatic
+            maxAlt = fzero(@helper, [10 30000]); % This might be problamatic
             [excessPower, ~, maxAltMach] = calcMaxExcessPower(obj, maxAlt, W, AB_perc, mach_save); % Have to recalculate to get remaining output
         end
         function maxMach = calcMaxMachFixedAlt(obj, h, W, AB_perc, M_guess)

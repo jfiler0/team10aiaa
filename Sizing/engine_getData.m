@@ -1,7 +1,8 @@
 function engineData = engine_getData(name)
-
     % Before, the table was searched and loaded in every time propulsion was called. This was EXTRMELY slow. With the regression, all we
-    % actuall need is the two max thrust values. So they are just saved into the plane engine_data object upon loading
+    % actually need is the two max thrust values. So they are just saved into the plane engine_data object upon loading
+
+    % Thrust in engine_lookup is all in N
 
     persistent engine_lookup
     % check if the engine_lookup table is already loaded. This helps signficiantly with speed. If it is not loaded, load it

@@ -24,6 +24,7 @@ fixed_input.L_fuselage = 17.54; % m -> FA18 fuselage length
 fixed_input.A_max = 4.5; % m2 -> trying to get the right FA18 wave drag. This was tuned to get M1.6
 fixed_input.g_limit = 7; % G -> FA18 limit
 fixed_input.max_alpha = 12; % deg -> Guess
+fixed_input.type = "Jet fighter"; % Which empty weight coefficents to take from Raymer. In weight_regression_lookup
 
 geom.empty_weight = lb2N(34000); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
 geom.Lambda_LE = 29.3; % deg - Leading Edge Sweep

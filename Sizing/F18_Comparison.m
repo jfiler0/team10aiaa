@@ -1,11 +1,11 @@
 %% GOAL: Compare calculated F18E Super Hornet specs calculated from is general geometry, engine, and weight to the detailed performance specs seen in the NATOPS to check confidence in analyisis method
     % Note on the structure of the code here: Note that none of the functions called in this script have hard number embedded in them
-    % anymore. The analysisis should work just the same for a 747, F16, UAS, or pretty much anything with a jet engine and wings. You can
+    % anymore. The analysis should work just the same for a 747, F16, UAS, or pretty much anything with a jet engine and wings. You can
     % adjust the main geometry inputs to control wing & fuselage dimensions. You can add additional stores and engines by adding rows to the
     % two lookup tables engine_lookup and stores_lookup. EVERY function takes input and gives outputs in metric with weights always being in
     % Newtons instread of kg.
 
-    % This script demonsrates most of the code functionaity (besides optimizaton) and sets geoemtry for the F18. YOu can use it a reference
+    % This script demonsrates most of the code functionaity (besides optimizaton) and sets geoemtry for the F18. You can use it a reference
     % on how to build planeObj variables and get useful analysis outputs.
     
 %% Build atmo table -> Does not need to always be run as it is saved in atmosphere_lookup.mat
@@ -30,15 +30,15 @@ geom.span = 12.05; % m - Wing Span
 geom.W_F = lb2N(2000); % N - Fixed Weight (Avionics)
 geom.engine = "F414"; % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
 
-%% Make the f18 object
-%                                     empty_weight,       Lambda_LE,     c_r,       c_t,    span,    num_engine,      engine,      W_F
-f18 = planeObj(fixed_input, "FA18", geom.empty_weight, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,    2,         geom.engine, geom.W_F);
-f18 = f18.applyLoadout(clean_loadout); % Just two sidewinders
-
 %% Define Loadouts
 % When applied to a plane they set extra payload weight, can add to potential fuel volume (if a tank), and add to CD0
 clean_loadout = buildLoadout(["AIM-9X", "AIM-9X"]);
 strike_loadout = buildLoadout(["AIM-9X", "FPU-12", "AIM-120", "AIM-120", "FPU-12", "AIM-9X"]);
+
+%% Make the f18 object
+%                                     empty_weight,       Lambda_LE,     c_r,       c_t,    span,    num_engine,      engine,      W_F
+f18 = planeObj(fixed_input, "FA18", geom.empty_weight, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,    2,         geom.engine, geom.W_F);
+f18 = f18.applyLoadout(clean_loadout); % Just two sidewinders
 
 %% Define Missions
 % The flightSegment2 and planeObj classes work together to calculate fuel burned from missions with flightSegment2 requiring the aerodynamic

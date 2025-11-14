@@ -14,22 +14,18 @@
 %% Initial Setup
 matlabSetup(); % Clears and sets plot defaults
 
-%% Define Loadouts
-% When applied to a plane they set extra payload weight, can add to potential fuel volume (if a tank), and add to CD0
-clean_loadout = buildLoadout(["AIM-9X", "AIM-9X"]);
-strike_loadout = buildLoadout(["AIM-9X", "FPU-12", "AIM-120", "AIM-120", "FPU-12", "AIM-9X"]);
-
 %% Set Geometry Inputs - All FA-18E Super Hornet
 fixed_input.L_fuselage = 17.54; % m -> FA18 fuselage length
 fixed_input.A_max = 4.5; % m2 -> trying to get the right FA18 wave drag. This was tuned to get M1.6
 fixed_input.g_limit = 7; % G -> FA18 limit
 fixed_input.max_alpha = 12; % deg -> Guess
 fixed_input.type = "Jet fighter"; % Which empty weight coefficents to take from Raymer. In weight_regression_lookup
+fixed_input.KLOC = 15000; % in kilo-lines of code
 
-geom.empty_weight = lb2N(34000); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
+geom.empty_weight = lb2N(28450); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
 geom.Lambda_LE = 29.3; % deg - Leading Edge Sweep
 geom.c_r = 5.07; % m - Root Chord
-geom.c_t = 1.686; % m - Tip Chord
+geom.c_t = 1.686; % m - Tip Chordf1
 geom.span = 12.05; % m - Wing Span
 geom.W_F = lb2N(2000); % N - Fixed Weight (Avionics)
 geom.engine = "F414"; % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
@@ -39,30 +35,46 @@ geom.engine = "F414"; % engine: A string code which you can see in engine_lookup
 f18 = planeObj(fixed_input, "FA18", geom.empty_weight, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,    2,         geom.engine, geom.W_F);
 f18 = f18.applyLoadout(clean_loadout); % Just two sidewinders
 
+%% Define Loadouts
+% When applied to a plane they set extra payload weight, can add to potential fuel volume (if a tank), and add to CD0
+clean_loadout = buildLoadout(["AIM-9X", "AIM-9X"]);
+strike_loadout = buildLoadout(["AIM-9X", "FPU-12", "AIM-120", "AIM-120", "FPU-12", "AIM-9X"]);
+
 %% Define Missions
 % The flightSegment2 and planeObj classes work together to calculate fuel burned from missions with flightSegment2 requiring the aerodynamic
 % data driven by planeObj. And planeObj getting fuel burn info from flightSegment
-% ferry = [...
-%     flightSegment2("TAKEOFF") 
-%     flightSegment2("CLIMB", 0.7) 
-%     flightSegment2("CRUISE", 0.6, NaN, nm2m(1000)) % 800 nm flight
-%     flightSegment2("LOITER", NaN, 10000, 20) % 20 min loiter
-%     flightSegment2("COMBAT", 0.8, 1000, [8 0]) % 8 minutes of combat, deploy payload***
-%     flightSegment2("CRUISE", 0.6, NaN, nm2m(1000)) % 800 nm flight
-%     flightSegment2("LANDING") ];
-% air2ground = [...
-%     flightSegment2("TAKEOFF") 
-%     flightSegment2("CLIMB", 0.85) % Check this mach
-%     flightSegment2("CRUISE", 0.85, ft2m(30000), nm2m(700)) % 700 nm flight
-%     flightSegment2("LANDING") % Saying this is decent
-%     flightSegment2("LOITER", NaN, ft2m(10000), 10) % 10 min loiter
-%     flightSegment2("CLIMB", 0.85) % Check this mach
-%     flightSegment2("CRUISE", 0.85, NaN, nm2m(50)) % Penetrate
-%     flightSegment2("COMBAT", 0.85, 1000, [30/60 0]) % quick combat ***
-%     flightSegment2("CLIMB", 0.85) % Check this mach
-%     flightSegment2("CRUISE", 0.85, ft2m(30000), nm2m(700)) % 700 nm flight
-%     flightSegment2("LOITER", NaN, ft2m(10000), 20) % 20 min loiter
-%     flightSegment2("LANDING") ];
+ferry = mission( [...
+    flightSegment2("TAKEOFF") 
+    flightSegment2("CLIMB", 0.7) 
+    flightSegment2("CRUISE", 0.6, NaN, nm2m(1000)) % 800 nm flight
+    flightSegment2("LOITER", NaN, 10000, 20) % 20 min loiter
+    flightSegment2("COMBAT", 0.8, 1000, [8 0.5]) % 8 minutes of combat, deploy 50% of payload
+    flightSegment2("CRUISE", 0.6, NaN, nm2m(1000)) % 800 nm flight
+    flightSegment2("LANDING") ] , ...
+    ...
+    clean_loadout);
+
+[fuel_burned, W_End] = ferry.solveMission(f18);
+fprintf("\nFERRY MISSION: fuel_burned = %.2f lb, Ending Weight = %.2f lb", N2lb(fuel_burned), N2lb(W_End) )
+
+air2ground = mission( [...
+    flightSegment2("TAKEOFF") 
+    flightSegment2("CLIMB", 0.85) % Check this mach
+    flightSegment2("CRUISE", 0.85, ft2m(30000), nm2m(700)) % 700 nm flight
+    flightSegment2("LANDING") % Saying this is decent
+    flightSegment2("LOITER", NaN, ft2m(10000), 10) % 10 min loiter
+    flightSegment2("CLIMB", 0.85) % Check this mach
+    flightSegment2("CRUISE", 0.85, NaN, nm2m(50)) % Penetrate
+    flightSegment2("COMBAT", 0.85, 1000, [30/60 0]) % quick combat ***
+    flightSegment2("CLIMB", 0.85) % Check this mach
+    flightSegment2("CRUISE", 0.85, ft2m(30000), nm2m(700)) % 700 nm flight
+    flightSegment2("LOITER", NaN, ft2m(10000), 20) % 20 min loiter
+    flightSegment2("LANDING") ] , ...
+    ...
+    strike_loadout);
+
+[fuel_burned, W_End] = air2ground.solveMission(f18);
+fprintf("\nSTRIKE MISSION: fuel_burned = %.2f lb, Ending Weight = %.2f lb", N2lb(fuel_burned), N2lb(W_End) )
 
 %% Run anaylisis comparisons
 
@@ -87,6 +99,4 @@ fprintf("\nThe F18 has a maximum mach number of %.3f which it reaches at %.2f kf
 fprintf("\nMax range altitude = %.2f kf at Mach %.2f with a speed of %.2f m/s and L^(1/2)/D ratio of %.2f", m2ft(h_maxR)/1000, M_maxR, V_maxR, L2D_maxR);
 fprintf("\nMax endurance altitude = %.2f kf at Mach %.2f with a speed of %.2f m/s and L/D ratio of %.2f", m2ft(h_maxE)/1000, M_maxE, V_maxE, LD_maxE);
 
-% f18.buildPlots(f18.MTOW, 50)
-
-% f18.calcMaxMachFixedAlt(10000, f18.MTOW, 1)
+f18.buildPlots(f18.MTOW, 50)

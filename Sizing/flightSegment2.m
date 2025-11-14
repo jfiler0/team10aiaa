@@ -11,7 +11,7 @@ classdef flightSegment2
         input % varies depending on what segement
         % CRUISE -> Range in meters
         % LOTIER -> Time in minutes
-        % COMBAT -> [Time, Payload] [min, N]
+        % COMBAT -> [Time, Payload] [min, *], Payload deployed in fraction of total stores loaded. 0.5 -> drop half. 0 -> drop nothing. 1 -> Everything
         % CLIMB -> NaN
         % LANDING -> NaN
         % TAKEOFF -> NaN
@@ -34,22 +34,12 @@ classdef flightSegment2
 
            % --- Validation checks for flight segment setup ---
 
-            % Case 1: Cruise or Loiter must have at least one of M or h
-            if isnan(M) && isnan(h) && ismember(obj.type, ["CRUISE","LOITER"])
-                error("Cruise or loiter require either M or h be defined");
-            end
-            
-            % Case 2: Cruise, Loiter, Combat all require extra input
-            if all(isnan(obj.input)) && ismember(obj.type, ["CRUISE","LOITER","COMBAT"])
-                error("Combat, cruise, and loiter require an additional input");
-            end
-            
-            % Case 3: Combat requires both M and h defined
+            % Combat requires both M and h defined
             if (isnan(M) || isnan(h)) && strcmp(obj.type, "COMBAT")
                 error("Combat requires both M & h be defined");
             end
             
-            % Case 4: Climb requires M defined
+            % Climb requires M defined
             if isnan(M) && strcmp(obj.type, "CLIMB")
                 error("Climb requires M be defined");
             end
@@ -73,33 +63,53 @@ classdef flightSegment2
             elseif(obj.type == "CLIMB")
                 WF = 1.0065 - 0.0325*obj.M;
             elseif(obj.type == "CRUISE")
-                if isnan(obj.M) && ~isnan(obj.h) % mach is free
-                    fun = @(M) obj.Cruise_WF([M obj.h], W_IN, plane);
-                    [M_opt, WF] = fminbnd(fun, M_bounds(1), M_bounds(2), options);
-                    % fprintf("\nOptimal Mach for Cruise = %.4f", M_opt)
+
+                if isnan(obj.M) && isnan(obj.h) % both are free
+                    [h, M, ~, L2D] = plane.findMaxRangeState(W_IN);
+                elseif isnan(obj.M) && ~isnan(obj.h) % mach is free
+                    fun = @(M) plane.calcL2D(obj.h, M, W_IN);
+                    [M, L2D] = fminbnd(fun, M_bounds(1), M_bounds(2), options);
+                    h = obj.h;
                 elseif isnan(obj.h) && ~isnan(obj.M) % height is free
-                    fun = @(h) obj.Cruise_WF([obj.M h], W_IN, plane);
-                    [h_opt, WF] = fminbnd(fun, h_bounds(1), h_bounds(2), options);
-                    % fprintf("\nOptimal altitude for Cruise = %.4f", h_opt)
+                    fun = @(h) plane.calcL2D(h, obj.M, W_IN);
+                    [h, L2D] = fminbnd(fun, h_bounds(1), h_bounds(2), options);
+                    M = obj.M;
                 else % both are fixed
-                    WF = obj.Cruise_WF([obj.M obj.h], W_IN, plane);
+                    M = obj.M;
+                    h = obj.h;
+                    L2D = plane.calcL2D(h, M, W_IN);
                 end
+
+                WF = obj.Cruise_WF(L2D, h, M, plane);
+
             elseif(obj.type == "LOITER")
-                if isnan(obj.M) && ~isnan(obj.h) % mach is free
-                    fun = @(M) obj.Loiter_WF([M obj.h], W_IN, plane);
-                    [M_opt, WF] = fminbnd(fun, M_bounds(1), M_bounds(2), options);
-                    % fprintf("\nOptimal Mach for Loiter = %.4f", M_opt)
+
+                if isnan(obj.M) && isnan(obj.h) % both are free
+                    [h, M, ~, LD] = plane.findMaxEnduranceState(W_IN);
+                elseif isnan(obj.M) && ~isnan(obj.h) % mach is free
+                    fun = @(M) plane.calcLD(obj.h, M, W_IN);
+                    [M, LD] = fminbnd(fun, M_bounds(1), M_bounds(2), options);
+                    h = obj.h;
                 elseif isnan(obj.h) && ~isnan(obj.M) % height is free
-                    fun = @(h) obj.Loiter_WF([obj.M h], W_IN, plane);
-                    [h_opt, WF] = fminbnd(fun, h_bounds(1), h_bounds(2), options);
-                    % fprintf("\nOptimal altitude for Loiter = %.4f", h_opt)
+                    fun = @(h) plane.calcLD(h, obj.M, W_IN);
+                    [h, LD] = fminbnd(fun, h_bounds(1), h_bounds(2), options);
+                    M = obj.M;
                 else % both are fixed
-                    WF = obj.Loiter_WF([obj.M obj.h], W_IN, plane);
+                    M = obj.M;
+                    h = obj.h;
+                    LD = plane.calcLD(h, M, W_IN);
                 end
+
+                WF = obj.Loiter_WF(LD, h, M, plane);
+
             elseif(obj.type == "COMBAT")
-                [TA, TSFC, ~] = engine_query(plane.engine, obj.M, obj.h, 1);% TSFC is in kg/Ns, input time is in minutes
+                % [TA, TSFC, alpha, mdotf] = calcProp(obj, M, h, AB_perc)
+                [TA, TSFC, ~, ~] = plane.calcProp(obj.M, obj.h, 1); % Assume AB for combat
                 fuel_burned = 60*obj.input(1)*TSFC*TA;
-                W_OUT = W_IN - fuel_burned - obj.input(2);
+
+                payload_to_drop = plane.W_P * obj.input(2); % Weight in N of payload to deploy. This REQUIRES plane.applyLoadout has been done at some point
+
+                W_OUT = W_IN - fuel_burned - payload_to_drop;
                 WF = W_OUT/W_IN;
             else
                 erorr("Unrecognized flight segment type.")
@@ -108,26 +118,15 @@ classdef flightSegment2
             fuel_burned = W_IN * (1 - WF);
             W_OUT = W_IN*WF;
         end
-        function WF = Cruise_WF(obj, in, W_IN, plane)
-            % Making this vectorized for optimization
-            M = in(1);
-            h = in(2);
-
-            [q, V, ~, ~] = metricFreestream(h, M);
-            LD = 1 / ( (q*obj.Cd0) / (W_IN/plane.S) + (W_IN/plane.S) / (q * pi * plane.e * plane.AR) );
-
-            [~, TSFC, ~] = engine_query(plane.engine, M, h, 0);
-            WF = exp( -(obj.input*TSFC) / (V*LD) ); % input distance is in meters
+        function WF = Cruise_WF(obj, L2D, h, M, plane)
+            [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
+            V = M * a;
+            
+            [~, TSFC, ~, ~] = plane.calcProp(M, h, 0); % No AB
+            WF = exp( -(obj.input*TSFC) / (V*L2D) ); % input distance is in meters
         end
-        function WF = Loiter_WF(obj, in, W_IN, plane)
-            % Making this vectorized for optimization
-            M = in(1);
-            h = in(2);
-
-            [q, V, ~, ~] = metricFreestream(h, M);
-            LD = 1 / ( (q*obj.Cd0) / (W_IN/plane.S) + (W_IN/plane.S) / (q * pi * plane.e * plane.AR) );
-
-            [~, TSFC, ~] = engine_query(plane.engine, M, h, 0);
+        function WF = Loiter_WF(obj, LD, h, M, plane)
+            [~, TSFC, ~, ~] = plane.calcProp(M, h, 0); % No AB
             WF = exp( (-60*obj.input*TSFC/LD) ); % input time is in minutes
         end
     end

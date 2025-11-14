@@ -5,3 +5,7 @@ TODO:
 -Max turn rate, deg/s
 -A single function that will get set of aircraft data and show in a nice table
 -Geometry visualizer
+
+THE ESTIMATED L/D IS NOT CLOSE AT ALL >:$
+
+Mission analysis should break down long range or endurance segments into smaller ones to be more accurate

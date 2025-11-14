@@ -39,6 +39,7 @@ classdef planeObj
 
         % Parameters that remain fixed (need to edit the input function if you want them moved into the deisgn space)
         type % Name of the regrssion to use in Raymer for We/W0
+        KLOC % kilo lines of code
         num_engine
         engineData % [T0_NoAB, T0_AB]
         W_F % fixed weight
@@ -103,6 +104,7 @@ classdef planeObj
             obj.E_WD = 2.2; % *** Still don't know what this is
             obj.g_limit = fixed_input.g_limit; % Just fixing for performance code
             obj.type = fixed_input.type; % For regression lookup
+            obj.KLOC = fixed_input.KLOC;
     
             % Parameters depending on loadout
             obj.W_P = 0; % payload - set when loadout is applied
@@ -123,6 +125,7 @@ classdef planeObj
 
             obj = obj.updateDerivedVariables(); %% Fills in the remaining constructor variables we need
         end
+        
         function obj = updateInputsAsVector(obj, input) 
             % Streamlines changing class variables later when doing optimization
             obj.WE = input(1);
@@ -133,6 +136,7 @@ classdef planeObj
 
             obj = obj.updateDerivedVariables();
         end
+        
         function obj = updateDerivedVariables(obj)
            
             % empty_weight_fraction = obj.WE / obj.MTOW = 2.34*N2lb(obj.WTOW)^(-0.13) ; % Use historical data
@@ -153,7 +157,7 @@ classdef planeObj
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4
             
-            c = -0.1289; d = 0.7506;
+            c = -0.1289; d = 0.7506; % Regression from somewhere lol
             obj.S_wet = 0.09290304*(10^c  * N2lb(obj.WE)^d); % Converting S_wet in ft and W0 in lb
             Cf = 0.0035; % For fighters?
             CD_min = Cf * obj.S_wet/obj.S_ref;
@@ -161,7 +165,8 @@ classdef planeObj
             % Induced Drag Polar
             obj.e_notoswald = 2/(2 - obj.AR + sqrt(4 + obj.AR^2 * (1 + (tand(obj.Lambda_LE))^2))); % Lambda_LE, not Lmabda_max
             obj.e_osw = (4.61 * (1-0.045*obj.AR^0.68)) * cosd(obj.Lambda_LE)^0.15 - 3.1; %MUST USE RAYMER 12.50
-            
+            % *** May want substitution for low swept wings
+
             %CL_alpha - for the wing?
             CL_alpha_wing = obj.cl_alpha/(1 + 57.3 * obj.cl_alpha/(pi * obj.e_notoswald * obj.AR));
             CL_min_D = CL_alpha_wing*-obj.a0/2;
@@ -194,12 +199,14 @@ classdef planeObj
             obj.K2_interp = obj.buildK2Interpolant(M_vec);
 
         end
+
         function obj = applyLoadout(obj, loadout)
             % loadout variable must compre from buildLoadout function
             obj.W_P = loadout.weight;
             obj.CD0_payload = loadout.CD0;
             obj.loadout = loadout;
         end
+        
         % Iterpolation creators for updateDerviedVariables
         function CLa_interp = buildCLaInterpolant(obj, M_vec)
             beta = sqrt((1-M_vec.^2)); %MACH - real to try try and fix things above M 1 (*** is this fine)
@@ -212,23 +219,26 @@ classdef planeObj
             CLa = obj.generateTransonicSpline(CL_alpha_sub, CL_alpha_supersonic, M_vec);
             CLa_interp = griddedInterpolant(M_vec, CLa, 'spline');
         end
+        
         function CDW_interp = buildCDWInterpolant(obj, M_vec)
             CD_wave = 4.5 * pi / obj.S_ref * ((obj.A_max - obj.A_0)/obj.L_fuselage)^2 * obj.E_WD * (0.74 + 0.37 * cosd(obj.Lambda_LE)) * (1 - 0.3*sqrt(M_vec - obj.M_CD0_max));
             CDW = obj.generateTransonicSpline(zeros(size(CD_wave)), CD_wave, M_vec);
             CDW_interp = griddedInterpolant(M_vec, CDW, 'spline');
         end
+        
         function K1_interp = buildK1Interpolant(obj, M_vec)
             k1_sup = obj.AR * (M_vec.^2 - 1) ./ (4*obj.AR*sqrt(M_vec.^2 - 1) -2) * cosd(obj.Lambda_LE); % supersonic range
             k1 = obj.generateTransonicSpline(obj.k1_sub * ones(size(k1_sup)), k1_sup, M_vec);
             K1_interp = griddedInterpolant(M_vec, k1, 'spline');
         end
+        
         function K2_interp = buildK2Interpolant(obj, M_vec)
             k2_sup = zeros(size(M_vec));
             k2 = obj.generateTransonicSpline(obj.k2_sub * ones(size(M_vec)), k2_sup, M_vec);
             K2_interp = griddedInterpolant(M_vec, k2, 'spline');
         end
 
-        % Helper function for iterpolations (needed for transonic regime)
+        %% Helper function for iterpolations (needed for transonic regime)
         function out_vec = generateTransonicSpline(obj, subsonic_range, supersonic_range, M_vec)
             subsonic_range(obj.transonic_range(1) < M_vec) = NaN;
             supersonic_range(obj.transonic_range(2) > M_vec) = NaN;
@@ -246,12 +256,14 @@ classdef planeObj
             CL_max_clean = CLa * (obj.max_alpha - obj.a0);
             CL_max_flapped = CL_max_clean + obj.Delta_flap_param *obj.S_flapped/obj.S_ref * cosd(obj.Lambda_HL);
         end
+        
         function [CD, CD0, CDi, CDW] = calcCD(obj, CL, M)
             CD0 = obj.CD0 + obj.CD0_payload;
             CDi = obj.K1_interp(M) * CL^2 + obj.K2_interp(M) * CL;
             CDW = obj.CDW_interp(M);
             CD = CD0 + CDi + CDW;
         end
+        
         function [TA, TSFC, alpha, mdotf] = calcProp(obj, M, h, AB_perc)
             [TA, TSFC, alpha] = engine_query(obj.engineData, M, h, AB_perc);
             TA = TA * obj.num_engine;
@@ -270,20 +282,24 @@ classdef planeObj
                 trimCL = NaN; % So that we can easily catch areas that are not trimmable
             end
         end
+        
         function stallSpeed = calcStallSpeed(obj, h, W)
             [~, a, ~, rho, ~] = queryAtmosphere(h, [0 1 0 1 0]);
             f = @(V) W - get_output_at_index(@() obj.calcCL(V / a), 2) * obj.S_ref * rho * V^2; % I don't know why @() is required but it does work
             stallSpeed = fzero(f , 0.3 * a);
         end
+        
         function takeoffSpeed = calcTakeoffSpeed(obj, h, W)
             % Can vary h to see change with alt. W is likely obj.MTOW
             takeoffSpeed = 1.2 * obj.calcStallSpeed(h, W);
         end
+        
         function landingSpeed = calcLandingSpeed(obj, h, W)
             % Can vary h to see change with alt.
             landingSpeed = 1.3 * obj.calcStallSpeed(h, W);
         end
         
+        % Note the absolute max turn rate seems to always be at sea level
         function [turn_rate, n] = getMaxTurn(obj, h, M, W)
             % Input: h (alt) = m, M (mach number), W (weight) = N, g_limit
             % Output: turn_rate = deg/s, n (load factor)
@@ -298,11 +314,27 @@ classdef planeObj
             turn_rate = rad2deg( n * 9.8051 / V);
             
         end
+        
+        function [excessPower, speed, mach] = getMaxTurnOverall(obj, AB_perc, M_guess)
+            % If the guess was not provided use fall back (should be standard)
+            % This is needeed in calcMaxAltHelper for stability
+            if(nargin < 5)
+                M_guess = 0.5;
+            end
+
+            [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
+            fun = @(V) -obj.calcExcessPower(h, V / a, W, AB_perc); % negative for maximization
+            opts = optimset('Display','off','TolX',1e-3,'MaxFunEvals',200);
+        
+            % Solve for max excess power speed
+            [speed, excessPower] = fminsearch(fun, M_guess * a, opts);
+            mach = speed / a;
+            excessPower = -excessPower;
+        end
 
         function cost = calcUnitCost(obj)
             % Exports cost in the millions per aircraft
-            KLOC = 5000; % This is what Xander had
-            cost= ( getcost(N2lb(obj.WE), KLOC) / 500 )  / 1000000; % Divide by 500 since getcost assumes 500 aircraft in the program, and convert to mil
+            cost= ( getcost(N2lb(obj.WE), obj.KLOC) / 500 )  / 1000000; % Divide by 500 since getcost assumes 500 aircraft in the program, and convert to mil
         end
 
         function area = calcFoldedWingProjection(obj, fold_ratio)
@@ -315,6 +347,7 @@ classdef planeObj
             fold_tipChord = obj.c_r + (obj.c_r - obj.c_t) * ( 1 - fold_ratio);
             area = fold_span * ( fold_tipChord + obj.c_r) / 2;
         end
+        
         function spotFactor = calcSpotFactor(obj, fold_ratio)
             % fold_ratio = 0.1 -> 10% of the wing is folded
             % f18.calcSpotFactor(0.3193)
@@ -335,6 +368,8 @@ classdef planeObj
             excessPower = V * (TA - CD * obj.S_ref * q) / W;
 
         end
+        
+        % Note the absolute excess power seems to always be at sea level
         function [excessPower, speed, mach] = calcMaxExcessPower(obj, h, W, AB_perc, M_guess)
             % If the guess was not provided use fall back (should be standard)
             % This is needeed in calcMaxAltHelper for stability
@@ -351,6 +386,7 @@ classdef planeObj
             mach = speed / a;
             excessPower = -excessPower;
         end
+        
         function [climbRate, climbAngle, climbSpeed] = calcMaxClimbRate(obj, h, W, AB_perc)
             [climbRate, climbSpeed] = obj.calcMaxExcessPower(h, W, AB_perc);
 
@@ -378,8 +414,8 @@ classdef planeObj
             maxAlt = fzero(@helper, [10 30000]); % This might be problamatic
             [excessPower, ~, maxAltMach] = calcMaxExcessPower(obj, maxAlt, W, AB_perc, mach_save); % Have to recalculate to get remaining output
         end
+        
         function maxMach = calcMaxMachFixedAlt(obj, h, W, AB_perc, M_guess)
-            
             if nargin < 5 % So that we can pass in guesses with calcMaxMach
                 M_guess = 2;
             end
@@ -391,6 +427,7 @@ classdef planeObj
             opts = optimset('Display','off','TolX',1e-3,'MaxFunEvals',100);
             maxMach = fminsearch(@helper, M_guess, opts); % Bit sensitive to the initial guess here but 1000 seems to work
         end
+        
         function [maxMach, maxMachAlt] = calcMaxMach(obj, W, AB_perc)
             M_save = 0.6;
 
@@ -404,15 +441,11 @@ classdef planeObj
             maxMachAlt = fminsearch(@helper, 1000, opts); % Bit sensitive to the initial guess here but 1000 seems to work
         end
 
-        function [h, M, V, L2D] = findMaxRangeState(obj, W) % Maximize L ^ (1/2) / D
+        function [h, M, V, L2D] = findMaxRangeState(obj, W) 
+            % Maximize L ^ (1/2) / D
 
             function objf = objective(x)
-                h = x(1);
-                M = x(2);
-                CL = obj.calcTrimCL(h, M, W);
-                [CD, ~, ~, ~] = obj.calcCD(CL, M);
-                L2Dr = CL ^ (0.5) / CD;
-                objf = 1 / L2Dr;
+                objf = 1 / obj.calcL2D(x(1), x(2), W); % x = [h, M]
             end
 
             h0 = ft2m(30000);
@@ -439,15 +472,19 @@ classdef planeObj
             V = a * M;
 
         end
-        function [h, M, V, LD] = findMaxEnduranceState(obj, W) % Maximize L ^ (1/2) / D
+
+        function L2D = calcL2D(obj, h, M, W) % This is L ^ (1/2) / D -> When maximized it is max range condition
+            % Weight, W in N
+            CL = obj.calcTrimCL(h, M, W);
+            [CD, ~, ~, ~] = obj.calcCD(CL, M);
+            L2D = CL ^ (0.5) / CD;
+        end
+        
+        function [h, M, V, LD] = findMaxEnduranceState(obj, W) 
+            % Maximize L ^ (1/2) / D
 
             function objf = objective(x)
-                h = x(1);
-                M = x(2);
-                CL = obj.calcTrimCL(h, M, W);
-                [CD, ~, ~, ~] = obj.calcCD(CL, M);
-                LDr = CL / CD;
-                objf = 1 / LDr;
+                objf = 1 / obj.calcLD(x(1), x(2), W); % x = [h, M]
             end
 
             h0 = ft2m(30000);
@@ -473,6 +510,13 @@ classdef planeObj
             [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
             V = a * M;
 
+        end
+
+        function LD = calcLD(obj, h, M, W) % This is L / D -> When maximized it is max endurance condition
+            % Weight, W in N
+            CL = obj.calcTrimCL(h, M, W);
+            [CD, ~, ~, ~] = obj.calcCD(CL, M);
+            LD = CL / CD;
         end
         
         % TODO
@@ -581,10 +625,12 @@ classdef planeObj
                 end
 
             end
+
             for i = 1:numel(Mvec)
                 [CL_max_clean(i), CL_max_flapped(i), CLa(i)] = obj.calcCL(Mvec(i));
                 CDW(i) = obj.CDW_interp(Mvec(i));
             end
+
             for i = 1:numel(hvec)
                 [CL_max_clean(i), CL_max_flapped(i), CLa(i)] = obj.calcCL(Mvec(i));
 
@@ -621,6 +667,7 @@ classdef planeObj
             end
 
             %% AERODYNAMICS PLOT
+
             figure(1)
             subplot(3, 3, 1);
             surf(M, m2ft(h)/1000, trimCL, 'EdgeColor', 'none')
@@ -678,15 +725,11 @@ classdef planeObj
             title("Lift Slope")
 
             subplot(3, 3, 9)
-            plot(m2ft(hvec)/1000, stallSpeed, DisplayName="Stall")
-            hold on;
-            plot(m2ft(hvec)/1000, landingSpeed, DisplayName="Landing")
-            hold on;
-            plot(m2ft(hvec)/1000, takeoffSpeed, DisplayName="Takeoff")
-            xlabel('$h$ [kft]')
-            ylabel('Flight Speed [m/s]')
-            title("Stall, Landing, and Takeoff Speeds")
-            legend(Location="best");
+            surf(M, m2ft(h)/1000, trimCL./CD, 'EdgeColor', 'none')
+            xlabel('$M$')
+            ylabel('$h$ [kft]')
+            zlabel('$\frac{L}{D}$')
+            title('Lift over Drag')
 
             sgtitle("AERODYNAMICS")
 
@@ -852,10 +895,7 @@ classdef planeObj
             legend(Location="best")
             hold off;
 
-            
-
 
         end
-
     end
 end

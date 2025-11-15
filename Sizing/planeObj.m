@@ -25,6 +25,10 @@ classdef planeObj
         c_avg % m
         tr % taper ratio
 
+            % Tail Parameters
+            VH % Horizontal Tail Volume Ratio
+            VV % Vertical Tail Volume Ratio
+
         % How can these become inputs...
         L_fuselage % m
         A_max % m2
@@ -74,6 +78,37 @@ classdef planeObj
         S_flapped  % m2
         Delta_flap_param % effects the amount of extra lift gained
         Lambda_HL % deg
+            
+            % Tail parameters that are derived
+                % Horizontal
+                S_h % Planform Area
+                l_ht % Tail arm
+                v_hc % Airfoil Thickness
+                AR_h % Aspect Ratio
+                lam_h % Taper ratio
+                c_t_h % tip chord
+                c_r_h % root chord
+                MAC_h % mean aerodynamic chord
+                b_h % span
+                LAM_h % sweep angle
+                GAM_h % dihedral angle
+                inc_h % angle of incidence
+
+                % Vertical
+                S_v % Planform Area
+                l_vt % Tail arm
+                v_tc % Airfoil Thickness
+                AR_v % Aspect Ratio
+                lam_v % Taper ratio
+                c_t_v % tip chord
+                c_r_v % root chord
+                MAC_v % mean aerodynamic chord
+                b_v % span
+                LAM_v % sweep angle
+                GAM_v % dihedral angle
+                inc_v % angle of incidence
+
+
 
         % filling out these interpolation function helps considerably with speed
         CLa_interp
@@ -84,12 +119,12 @@ classdef planeObj
 
     methods
         
-        % Primary class defenition functions (used on creation and updates)
+        % Primary class definition functions (used on creation and updates)
         function obj = planeObj(fixed_input, name, WE, Lambda_LE, c_r, c_t, span, num_engine, engine, W_F) 
             % Note it returns the obj variable to be used. Use as plane = planeObj(...)
             obj.name = name;
 
-            %% Asign inputs
+            %% Assign inputs
             obj.WE = WE; % Newtons
             obj.Lambda_LE = Lambda_LE; % deg
             obj.c_r = c_r;
@@ -154,6 +189,8 @@ classdef planeObj
             obj.S_wing = obj.span*obj.c_avg;
             obj.S_ref = obj.S_wing; % Typical defenition for reference area
             
+            %% Tail Geometry
+
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4
             

@@ -30,13 +30,6 @@ geom.span = 12.05; % m - Wing Span
 geom.W_F = lb2N(2000); % N - Fixed Weight (Avionics)
 geom.engine = "F414"; % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
 
-<<<<<<< Updated upstream
-=======
-%% Make the f18 object
-%                                     empty_weight,       Lambda_LE,     c_r,       c_t,    span,    num_engine,      engine,      W_F
-f18 = planeObj(fixed_input, "FA18", geom.empty_weight, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,    2,         geom.engine, geom.W_F);
-
->>>>>>> Stashed changes
 %% Define Loadouts
 % When applied to a plane they set extra payload weight, can add to potential fuel volume (if a tank), and add to CD0
 clean_loadout = buildLoadout(["AIM-9X", "AIM-9X"]);

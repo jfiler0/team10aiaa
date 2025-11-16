@@ -120,11 +120,7 @@ classdef planeObj
 
     methods
         
-<<<<<<< Updated upstream
-        % Primary class definition functions (used on creation and updates)
-=======
         %% Primary class defenition functions (used on creation and updates)
->>>>>>> Stashed changes
         function obj = planeObj(fixed_input, name, WE, Lambda_LE, c_r, c_t, span, num_engine, engine, W_F) 
             % Note it returns the obj variable to be used. Use as plane = planeObj(...)
             obj.name = name;

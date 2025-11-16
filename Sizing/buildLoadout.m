@@ -8,6 +8,8 @@ function loadout = buildLoadout(storesList)
     % This function still misses the weight of jettison equipment and their drag
 
     loadout.weight = 0;
+    loadout.weight_tanks_empty = 0;
+    loadout.weight_weapons = 0;
     loadout.CD0 = 0;
     loadout.external_fuel_N = 0;
     loadout.storesList = storesList;
@@ -23,6 +25,12 @@ function loadout = buildLoadout(storesList)
         loadout.CD0 = loadout.CD0 + store.drag_index / 1000; % *** Likely not totally correct but close enough
         loadout.external_fuel_N = loadout.external_fuel_N + lb2N( store.fuel_volume_gal * 6.7); % Found 6.7 lb/gal online
         loadout.storesNames(i) = store.full_name;
+
+        if(store.store_type == "Drop Tank")
+            loadout.weight_tanks_empty = loadout.weight_tanks_empty + lb2N(store.weight_lbf);
+        else
+            loadout.weight_weapons = loadout.weight_weapons + lb2N(store.weight_lbf);
+        end
     
     end
 

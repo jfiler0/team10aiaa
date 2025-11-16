@@ -9,3 +9,5 @@ TODO:
 THE ESTIMATED L/D IS NOT CLOSE AT ALL >:$
 
 Mission analysis should break down long range or endurance segments into smaller ones to be more accurate
+
+Might want some checks for resonable values

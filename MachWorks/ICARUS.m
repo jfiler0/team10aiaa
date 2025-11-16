@@ -20,7 +20,7 @@ geom.Lambda_LE = 8; % deg - Leading Edge Sweep
 geom.c_r = 0.36; % m - Root Chord
 geom.c_t = 0.213; % m - Tip Chord
 geom.span = 2.283; % m - Wing Span
-geom.W_F = lb2N(10); % N - Fixed Weight (Avionics)
+geom.W_F = lb2N(2); % N - Fixed Weight (Avionics)
 geom.engine = "H20"; % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
 
 %% Make the icarus object
@@ -76,4 +76,4 @@ fprintf("\nICARUS has a maximum mach number of %.3f which it reaches at %.2f kf"
 fprintf("\nMax range altitude = %.2f kf at Mach %.2f with a speed of %.2f m/s and L^(1/2)/D ratio of %.2f", m2ft(h_maxR)/1000, M_maxR, V_maxR, L2D_maxR);
 fprintf("\nMax endurance altitude = %.2f kf at Mach %.2f with a speed of %.2f m/s and L/D ratio of %.2f", m2ft(h_maxE)/1000, M_maxE, V_maxE, LD_maxE);
 
-% icarus.buildPlots(icarus.MTOW, 50)
+icarus.buildPlots(icarus.MTOW, 50)

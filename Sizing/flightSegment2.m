@@ -44,7 +44,6 @@ classdef flightSegment2
                 error("Climb requires M be defined");
             end
 
-
         end
         function [W_OUT, WF, fuel_burned] = queryWF(obj, W_IN, plane)
             % LD = 1 / ( (q*obj.Cd0) / (W_IN/plane.S) + (W_IN/plane.S) / (q * pi * plane.e * plane.AR) );
@@ -115,6 +114,7 @@ classdef flightSegment2
                 erorr("Unrecognized flight segment type.")
             end
 
+            % Note that this update fuel_burned to inclue payload deploye now
             fuel_burned = W_IN * (1 - WF);
             W_OUT = W_IN*WF;
         end

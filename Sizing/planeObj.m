@@ -39,7 +39,8 @@ classdef planeObj
         % Parameters when missions and loadouts are applied
         CD0_payload
         loadout
-        W_P % payload weight
+        W_P % payload weight (weapon type stores)
+        W_Tanks % external fuel tank EMPTY weight
 
         % Parameters that remain fixed (need to edit the input function if you want them moved into the deisgn space)
         type % Name of the regrssion to use in Raymer for We/W0
@@ -119,7 +120,11 @@ classdef planeObj
 
     methods
         
+<<<<<<< Updated upstream
         % Primary class definition functions (used on creation and updates)
+=======
+        %% Primary class defenition functions (used on creation and updates)
+>>>>>>> Stashed changes
         function obj = planeObj(fixed_input, name, WE, Lambda_LE, c_r, c_t, span, num_engine, engine, W_F) 
             % Note it returns the obj variable to be used. Use as plane = planeObj(...)
             obj.name = name;
@@ -161,15 +166,22 @@ classdef planeObj
             obj = obj.updateDerivedVariables(); %% Fills in the remaining constructor variables we need
         end
         
-        function obj = updateInputsAsVector(obj, input) 
-            % Streamlines changing class variables later when doing optimization
-            obj.WE = input(1);
-            obj.Lambda_LE = input(2);
-            obj.Lambda_TE = input(3);
-            obj.c_avg = input(4);
-            obj.tr = input(5);
+        % function obj = updateInputsAsVector(obj, input) 
+        %     % Streamlines changing class variables later when doing optimization
+        %     obj.WE = input(1);
+        %     obj.Lambda_LE = input(2);
+        %     obj.Lambda_TE = input(3);
+        %     obj.c_avg = input(4);
+        %     obj.tr = input(5);
+        % 
+        %     obj = obj.updateDerivedVariables();
+        % end
 
-            obj = obj.updateDerivedVariables();
+        function obj = updateWE(obj, MTOW)
+            % Function to let you adjust empty weight from a new takeoff weight (invese of below)
+            [A, C] = getRaymerCoefficents(obj.type);
+            obj.MTOW = MTOW;
+            obj.WE = MTOW * A * N2lb(obj.MTOW)^(C);
         end
         
         function obj = updateDerivedVariables(obj)
@@ -239,12 +251,13 @@ classdef planeObj
 
         function obj = applyLoadout(obj, loadout)
             % loadout variable must compre from buildLoadout function
-            obj.W_P = loadout.weight;
+            obj.W_P = loadout.weight_weapons;
+            obj.W_Tanks = loadout.weight_tanks_empty;
             obj.CD0_payload = loadout.CD0;
             obj.loadout = loadout;
         end
         
-        % Iterpolation creators for updateDerviedVariables
+        %% Iterpolation creators for updateDerviedVariables
         function CLa_interp = buildCLaInterpolant(obj, M_vec)
             beta = sqrt((1-M_vec.^2)); %MACH - real to try try and fix things above M 1 (*** is this fine)
             eta = rad2deg(obj.cl_alpha) ./ (2*pi./beta); % Airfoil Efficiency - MACH
@@ -287,7 +300,7 @@ classdef planeObj
             out_vec = interp1(x, y, 1:numel(range), 'spline', 'extrap');
         end
         
-        % Core analyisis functions
+        %% Core analyisis functions
         function [CL_max_clean, CL_max_flapped, CLa] = calcCL(obj, M)
             CLa = obj.CLa_interp(M);
             CL_max_clean = CLa * (obj.max_alpha - obj.a0);
@@ -478,6 +491,8 @@ classdef planeObj
             maxMachAlt = fminsearch(@helper, 1000, opts); % Bit sensitive to the initial guess here but 1000 seems to work
         end
 
+        %% Functions for mission calculations (Range/Endurance)
+
         function [h, M, V, L2D] = findMaxRangeState(obj, W) 
             % Maximize L ^ (1/2) / D
 
@@ -556,6 +571,8 @@ classdef planeObj
             LD = CL / CD;
         end
         
+        %% Sizing function
+
         % TODO
         % - Takeoff & Landing Distance https://archive.aoe.vt.edu/lutze/AOE3104/takeoff&landing.pdf
 

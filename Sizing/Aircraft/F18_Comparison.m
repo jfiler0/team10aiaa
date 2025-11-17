@@ -72,14 +72,14 @@ air2ground = mission( [...
 
 %% Run Aircraft Sizing
 
-f18 = sizeAircraft(f18, [ferry], @constraints_rfp, false, 1.25);
+% f18 = sizeAircraft(f18, [ferry], @constraints_rfp, true, 1.25);
 
 %% Solving missions
 
-[WTO_Next, fuel_burned, W_End] = ferry.solveMission(f18);
+[WTO_Next, fuel_burned, W_End] = ferry.solveMission(f18, true);
 fprintf("\nFERRY MISSION: fuel_burned = %.2f lb, Ending Weight = %.2f lb, Next = %.2f lb", N2lb(fuel_burned), N2lb(W_End), N2lb(WTO_Next))
 
-[fuel_burned, W_End] = air2ground.solveMission(f18);
+[fuel_burned, W_End] = air2ground.solveMission(f18, false);
 fprintf("\nSTRIKE MISSION: fuel_burned = %.2f lb, Ending Weight = %.2f lb", N2lb(fuel_burned), N2lb(W_End) )
 
 %% Run anaylisis comparisons

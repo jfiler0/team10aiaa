@@ -45,22 +45,47 @@ classdef flightSegment2
             end
 
         end
-        function [W_OUT, WF, fuel_burned] = queryWF(obj, W_IN, plane)
+        function [W_OUT, WF, fuel_burned, info] = queryWF(obj, W_IN, plane)
             % LD = 1 / ( (q*obj.Cd0) / (W_IN/plane.S) + (W_IN/plane.S) / (q * pi * plane.e * plane.AR) );
+
+            % info is a struct holding
+            % mach, altitude (meters), time (seconds), speed (m/s)
+            info = struct();
 
             % Lots taken from HW1
 
             % For the cruise & loiter minimization stuff - Its currently just taking the max bounds which isn't great
             options = optimset('Display', 'off');  % fminbnd is simpler and bounded
-            M_bounds = [0.4, 1];         % Mach range
-            h_bounds = [0, 20000];         % Altitude range [m]
+            M_bounds = [0.4, 1.5];         % Mach range
+            h_bounds = [0, ft2m(50000)];         % Altitude range [m]
 
             if(obj.type == "TAKEOFF")
                 WF = 0.95; % Hardcoding this feels wrong
+
+                info.speed = plane.calcTakeoffSpeed(0, W_IN);
+                [~, a, ~, ~, ~] = queryAtmosphere(0, [0 1 0 0 0]);
+                info.mach = info.speed / a;
+                info.altitude = 0;
+                info.time = 120; % Assume two minutes
+                [~, info.TSFC, ~, ~] = plane.calcProp(info.altitude, info.mach, 1);
             elseif(obj.type == "LANDING")
                 WF = 0.995;
+
+                info.speed = plane.calcLandingSpeed(0, W_IN);
+                [~, a, ~, ~, ~] = queryAtmosphere(0, [0 1 0 0 0]);
+                info.mach = info.speed / a;
+                info.altitude = 0;
+                info.time = 120; % Assume two minutes
+                [~, info.TSFC, ~, ~] = plane.calcProp(info.altitude, info.mach, 0);
             elseif(obj.type == "CLIMB")
                 WF = 1.0065 - 0.0325*obj.M;
+
+                info.mach = obj.M;
+                [~, a, ~, ~, ~] = queryAtmosphere(0, [0 1 0 0 0]);
+                info.speed = obj.M * a;
+                info.altitude = 0;
+                info.time = 120; % Assume two minutes
+                [~, info.TSFC, ~, ~] = plane.calcProp(info.altitude, info.mach, 0);
             elseif(obj.type == "CRUISE")
 
                 if isnan(obj.M) && isnan(obj.h) % both are free
@@ -79,7 +104,13 @@ classdef flightSegment2
                     L2D = plane.calcL2D(h, M, W_IN);
                 end
 
-                WF = obj.Cruise_WF(L2D, h, M, plane);
+                [WF, info.TSFC] = obj.Cruise_WF(L2D, h, M, plane);
+
+                info.altitude = h;
+                [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
+                info.mach = M;
+                info.speed = M * a;
+                info.time = obj.input / info.speed; % Input is distance in meters
 
             elseif(obj.type == "LOITER")
 
@@ -99,7 +130,13 @@ classdef flightSegment2
                     LD = plane.calcLD(h, M, W_IN);
                 end
 
-                WF = obj.Loiter_WF(LD, h, M, plane);
+                [WF, info.TSFC] = obj.Loiter_WF(LD, h, M, plane);
+
+                info.altitude = h;
+                [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
+                info.mach = M;
+                info.speed = M * a;
+                info.time = obj.input *60; % Input is time in minutes
 
             elseif(obj.type == "COMBAT")
                 % [TA, TSFC, alpha, mdotf] = calcProp(obj, M, h, AB_perc)
@@ -110,6 +147,11 @@ classdef flightSegment2
 
                 W_OUT = W_IN - fuel_burned - payload_to_drop;
                 WF = W_OUT/W_IN;
+
+                [~, info.speed, info.mach] = plane.calcMaxExcessPower(0, W_IN, 1, 0.5);
+                info.altitude = 0;
+                info.time = 60*obj.input(1); % Input is time in seconds
+                info.TSFC = TSFC;
             else
                 erorr("Unrecognized flight segment type.")
             end
@@ -117,15 +159,17 @@ classdef flightSegment2
             % Note that this update fuel_burned to inclue payload deploye now
             fuel_burned = W_IN * (1 - WF);
             W_OUT = W_IN*WF;
+
+            info.LD = plane.calcLD(info.altitude, info.mach, W_IN);
         end
-        function WF = Cruise_WF(obj, L2D, h, M, plane)
+        function [WF, TSFC] = Cruise_WF(obj, L2D, h, M, plane)
             [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
             V = M * a;
             
             [~, TSFC, ~, ~] = plane.calcProp(M, h, 0); % No AB
             WF = exp( -(obj.input*TSFC) / (V*L2D) ); % input distance is in meters
         end
-        function WF = Loiter_WF(obj, LD, h, M, plane)
+        function [WF, TSFC] = Loiter_WF(obj, LD, h, M, plane)
             [~, TSFC, ~, ~] = plane.calcProp(M, h, 0); % No AB
             WF = exp( (-60*obj.input*TSFC/LD) ); % input time is in minutes
         end

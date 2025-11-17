@@ -91,12 +91,14 @@ classdef flightSegment2
                 if isnan(obj.M) && isnan(obj.h) % both are free
                     [h, M, ~, L2D] = plane.findMaxRangeState(W_IN);
                 elseif isnan(obj.M) && ~isnan(obj.h) % mach is free
-                    fun = @(M) plane.calcL2D(obj.h, M, W_IN);
+                    fun = @(M) -plane.calcL2D(obj.h, M, W_IN);
                     [M, L2D] = fminbnd(fun, M_bounds(1), M_bounds(2), options);
+                    L2D = -L2D; % Since optimization needed minimization
                     h = obj.h;
                 elseif isnan(obj.h) && ~isnan(obj.M) % height is free
-                    fun = @(h) plane.calcL2D(h, obj.M, W_IN);
+                    fun = @(h) -plane.calcL2D(h, obj.M, W_IN);
                     [h, L2D] = fminbnd(fun, h_bounds(1), h_bounds(2), options);
+                    L2D = -L2D; % Since optimization needed minimization
                     M = obj.M;
                 else % both are fixed
                     M = obj.M;
@@ -117,12 +119,14 @@ classdef flightSegment2
                 if isnan(obj.M) && isnan(obj.h) % both are free
                     [h, M, ~, LD] = plane.findMaxEnduranceState(W_IN);
                 elseif isnan(obj.M) && ~isnan(obj.h) % mach is free
-                    fun = @(M) plane.calcLD(obj.h, M, W_IN);
+                    fun = @(M) -plane.calcLD(obj.h, M, W_IN);
                     [M, LD] = fminbnd(fun, M_bounds(1), M_bounds(2), options);
+                    LD = -LD; % Since was minimization
                     h = obj.h;
                 elseif isnan(obj.h) && ~isnan(obj.M) % height is free
-                    fun = @(h) plane.calcLD(h, obj.M, W_IN);
+                    fun = @(h) -plane.calcLD(h, obj.M, W_IN);
                     [h, LD] = fminbnd(fun, h_bounds(1), h_bounds(2), options);
+                    LD = -LD; % Since was minimization
                     M = obj.M;
                 else % both are fixed
                     M = obj.M;

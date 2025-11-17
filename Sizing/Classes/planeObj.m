@@ -491,7 +491,7 @@ classdef planeObj
             % Maximize L ^ (1/2) / D
 
             function objf = objective(x)
-                objf = 1 / obj.calcL2D(x(1), x(2), W); % x = [h, M]
+                objf = - obj.calcL2D(x(1), x(2), W); % x = [h, M]
             end
 
             h0 = ft2m(30000);
@@ -530,7 +530,7 @@ classdef planeObj
             % Maximize L ^ (1/2) / D
 
             function objf = objective(x)
-                objf = 1 / obj.calcLD(x(1), x(2), W); % x = [h, M]
+                objf = -obj.calcLD(x(1), x(2), W); % x = [h, M]
             end
 
             h0 = ft2m(30000);

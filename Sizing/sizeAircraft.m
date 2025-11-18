@@ -59,7 +59,7 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
         % -------------------------------
         N = 50;
         WE_range    = linspace(WE_opt/graphSize, graphSize*WE_opt, N);
-        scale_range = linspace(0.25/graphSize, graphSize*scale_opt, N);
+        scale_range = linspace(scale_opt/graphSize, graphSize*scale_opt, N);
         [WE_grid, scale_grid] = meshgrid(WE_range, scale_range);
     
         cost_grid = zeros(size(WE_grid));

@@ -109,8 +109,6 @@ classdef planeObj
                 GAM_v % dihedral angle
                 inc_v % angle of incidence
 
-
-
         % filling out these interpolation function helps considerably with speed
         CLa_interp
         CDW_interp
@@ -493,7 +491,7 @@ classdef planeObj
             % Maximize L ^ (1/2) / D
 
             function objf = objective(x)
-                objf = 1 / obj.calcL2D(x(1), x(2), W); % x = [h, M]
+                objf = - obj.calcL2D(x(1), x(2), W); % x = [h, M]
             end
 
             h0 = ft2m(30000);
@@ -532,7 +530,7 @@ classdef planeObj
             % Maximize L ^ (1/2) / D
 
             function objf = objective(x)
-                objf = 1 / obj.calcLD(x(1), x(2), W); % x = [h, M]
+                objf = -obj.calcLD(x(1), x(2), W); % x = [h, M]
             end
 
             h0 = ft2m(30000);
@@ -718,7 +716,7 @@ classdef planeObj
 
             %% AERODYNAMICS PLOT
 
-            figure(1)
+            figure;
             subplot(3, 3, 1);
             surf(M, m2ft(h)/1000, trimCL, 'EdgeColor', 'none')
             xlabel('$M$')
@@ -785,7 +783,7 @@ classdef planeObj
 
             %% ATMOSPHERE PLOT
 
-            figure(2)
+            figure;
             subplot(2, 2, 1)
             plot(m2ft(hvec)/1000, Tvec);
             ylabel("$T$ [K]")
@@ -817,7 +815,7 @@ classdef planeObj
             sgtitle("ATMOSPHERE")
 
             %% PROPULSION
-            figure(3)
+            figure;
             
             subplot(2, 2, 1);
             surf(M, m2ft(h)/1000, TA_NoAB/1000, 'EdgeColor', 'none', 'FaceAlpha', 1.0);
@@ -878,7 +876,7 @@ classdef planeObj
             sgtitle("PROPULSION")
 
             %% PERFORMANCE
-            figure(4)
+            figure;
             subplot(2, 3, 1);
             surf(M, m2ft(hvec)/1000, turn_rate, 'EdgeColor', 'none')
             xlabel('$M$')

@@ -17,6 +17,7 @@ function [g_vec, g_names] = constraints_rfp(plane, missionList)
 
     %% 3.2.3 -> Approach airspeed shall be greater than 10% above stall speed, but less than 145 knots.
     % What weight should this be?
+
     g2 = plane.calcLandingSpeed(0, plane.MTOW) / kt2ms(145) - 1;
     g_vec = [g_vec g2];
     g_names = [g_names "145kt Landing"];

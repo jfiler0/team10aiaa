@@ -9,7 +9,7 @@
     % on how to build planeObj variables and get useful analysis outputs.
     
 %% Build atmo table -> Does not need to always be run as it is saved in atmosphere_lookup.mat
-% build_atmosphere_lookup(-5000, ft2m(120000), 500);
+build_atmosphere_lookup(-5000, ft2m(120000), 500);
 
 %% Initial Setup
 matlabSetup(); % Clears and sets plot defaults
@@ -21,6 +21,11 @@ fixed_input.g_limit = 7; % G -> FA18 limit
 fixed_input.max_alpha = 12; % deg -> Guess
 fixed_input.type = "Jet fighter"; % Which empty weight coefficents to take from Raymer. In weight_regression_lookup
 fixed_input.KLOC = 15000; % in kilo-lines of code
+    
+% Some scalar corrections
+fixed_input.MTOW_Scalar = 66/50; % Since the Raymer fighter jet corrections is 16k lb lower than the F18
+fixed_input.SWET_Scalar = 243/152; % Shifting SWET historical regression to match VSP
+fixed_input.CDW_Scalar = 7/4; % Wave drag estimate is typically too low
 
 geom.empty_weight = lb2N(28450); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
 geom.Lambda_LE = 29.3; % deg - Leading Edge Sweep
@@ -46,13 +51,15 @@ f18 = f18.applyLoadout(clean_loadout); % Just two sidewinders
 ferry = mission( [...
     flightSegment2("TAKEOFF") 
     flightSegment2("CLIMB", 0.7) 
-    flightSegment2("CRUISE", 0.6, NaN, nm2m(300)) % 800 nm flight
-    flightSegment2("LOITER", NaN, 10000, 20) % 20 min loiter
+    flightSegment2("CRUISE", NaN, NaN, nm2m(1500)) % 800 nm flight
+    % flightSegment2("LOITER", NaN, 10000, 20) % 20 min loiter
     % flightSegment2("COMBAT", 0.8, 1000, [8 0.5]) % 8 minutes of combat, deploy 50% of payload
-    flightSegment2("CRUISE", 0.6, NaN, nm2m(300)) % 800 nm flight
+    flightSegment2("CRUISE", NaN, NaN, nm2m(1500)) % 800 nm flight
     flightSegment2("LANDING") ] , ...
     ...
     clean_loadout);
+
+% 5 cruise segments * 10 divisions * 93 function calls * 50 max internal function calls
 
 air2ground = mission( [...
     flightSegment2("TAKEOFF") 
@@ -72,19 +79,22 @@ air2ground = mission( [...
 
 %% Run Aircraft Sizing
 
-f18 = sizeAircraft(f18, [air2ground ferry], @constraints_rfp, false, 1.25);
+f18.findMaxRangeState(f18.MTOW) 
+
+f18 = sizeAircraft(f18, [ferry], @constraints_rfp, true, 3);
+% W0_diff(f18, [ferry])
 
 %% Solving missions
 
-[WTO_Next, fuel_burned, W_End] = ferry.solveMission(f18, true);
+[WTO_Next, fuel_burned, W_End] = ferry.solveMission(f18, false);
 fprintf("\nFERRY MISSION: fuel_burned = %.2f lb, Ending Weight = %.2f lb, Next = %.2f lb", N2lb(fuel_burned), N2lb(W_End), N2lb(WTO_Next))
 
-[fuel_burned, W_End] = air2ground.solveMission(f18, false);
-fprintf("\nSTRIKE MISSION: fuel_burned = %.2f lb, Ending Weight = %.2f lb", N2lb(fuel_burned), N2lb(W_End) )
+[WTO_Next, fuel_burned, W_End] = air2ground.solveMission(f18, false);
+fprintf("\nSTRIKE MISSION: fuel_burned = %.2f lb, Ending Weight = %.2f lb, Next = %.2f lb", N2lb(fuel_burned), N2lb(W_End), N2lb(WTO_Next))
 
 %% Run anaylisis comparisons
 
-fprintf("The F18 has a unit cost of %.2f million dollars and a stall speed of %.2f kt (lands at %.2f kt) for MTOW", f18.calcUnitCost(), ms2kt( f18.calcStallSpeed(0, f18.MTOW) ), ms2kt( f18.calcLandingSpeed(0, f18.MTOW) ) );
+fprintf("\nThe F18 has a unit cost of %.2f million dollars and a stall speed of %.2f kt (lands at %.2f kt) for MTOW", f18.calcUnitCost(), ms2kt( f18.calcStallSpeed(0, f18.MTOW) ), ms2kt( f18.calcLandingSpeed(0, f18.MTOW) ) );
 
 [climbRate, climbAngle, climbSpeed] = f18.calcMaxClimbRate(0, f18.MTOW, 1);
 fprintf("\nSealevel max climb rate = %.3f kft/min with a climb angle of %.2f deg at a speed of %.3f m/s", m2ft(climbRate) * 60 / 1000, climbAngle, climbSpeed);
@@ -105,4 +115,4 @@ fprintf("\nThe F18 has a maximum mach number of %.3f which it reaches at %.2f kf
 fprintf("\nMax range altitude = %.2f kf at Mach %.2f with a speed of %.2f m/s and L^(1/2)/D ratio of %.2f", m2ft(h_maxR)/1000, M_maxR, V_maxR, L2D_maxR);
 fprintf("\nMax endurance altitude = %.2f kf at Mach %.2f with a speed of %.2f m/s and L/D ratio of %.2f", m2ft(h_maxE)/1000, M_maxE, V_maxE, LD_maxE);
 
-% f18.buildPlots(f18.MTOW, 30)
+f18.buildPlots(f18.MTOW, 30)

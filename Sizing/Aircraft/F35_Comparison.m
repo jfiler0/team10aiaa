@@ -18,7 +18,7 @@ matlabSetup(); % Clears and sets plot defaults
 fixed_input.L_fuselage = 15.7; % m -> F35 fuselage length
 fixed_input.A_max = 4.5; %NOCHANGE m2 -> trying to get the right FA18 wave drag. This was tuned to get M1.6
 fixed_input.g_limit = 7.5; % G -> F35 limit
-fixed_input.max_alpha = 50; % deg -> Guess
+fixed_input.max_alpha = 8; % deg -> Guess
 fixed_input.type = "Jet fighter"; % Which empty weight coefficents to take from Raymer. In weight_regression_lookup
 fixed_input.KLOC = 10000; % in kilo-lines of code
 
@@ -45,16 +45,16 @@ f35 = f35.applyLoadout(clean_loadout); % Just two sidewinders
 % data driven by planeObj. And planeObj getting fuel burn info from flightSegment
 ferry = mission( [...
     flightSegment2("TAKEOFF") 
-    % flightSegment2("CLIMB", 0.7) 
-    % flightSegment2("CRUISE", 0.6, NaN, nm2m(400)) % 800 nm flight
-    % flightSegment2("LOITER", NaN, 10000, 20) % 20 min loiter
-    % flightSegment2("COMBAT", 0.8, 1000, [8 0.5]) % 8 minutes of combat, deploy 50% of payload
-    % flightSegment2("CRUISE", 0.6, NaN, nm2m(400)) % 800 nm flight
+    flightSegment2("CLIMB", 0.7) 
+    flightSegment2("CRUISE", 0.6, NaN, nm2m(400)) % 800 nm flight
+    flightSegment2("LOITER", NaN, 10000, 20) % 20 min loiter
+    flightSegment2("COMBAT", 0.8, 1000, [8 0.5]) % 8 minutes of combat, deploy 50% of payload
+    flightSegment2("CRUISE", 0.6, NaN, nm2m(400)) % 800 nm flight
     flightSegment2("LANDING") ] , ...
     ...
     clean_loadout);
 
-[fuel_burned, W_End] = ferry.solveMission(f35);
+[fuel_burned, W_End] = ferry.solveMission(f35, true);
 fprintf("\nFERRY MISSION: fuel_burned = %.2f lb, Ending Weight = %.2f lb", N2lb(fuel_burned), N2lb(W_End) )
 
 air2ground = mission( [...
@@ -73,7 +73,7 @@ air2ground = mission( [...
     ...
     strike_loadout);
 
-[fuel_burned, W_End] = air2ground.solveMission(f35);
+[fuel_burned, W_End] = air2ground.solveMission(f35, true);
 fprintf("\nSTRIKE MISSION: fuel_burned = %.2f lb, Ending Weight = %.2f lb", N2lb(fuel_burned), N2lb(W_End) )
 
 %% Run anaylisis comparisons
@@ -99,4 +99,4 @@ fprintf("\nThe F35 has a maximum mach number of %.3f which it reaches at %.2f kf
 fprintf("\nMax range altitude = %.2f kf at Mach %.2f with a speed of %.2f m/s and L^(1/2)/D ratio of %.2f", m2ft(h_maxR)/1000, M_maxR, V_maxR, L2D_maxR);
 fprintf("\nMax endurance altitude = %.2f kf at Mach %.2f with a speed of %.2f m/s and L/D ratio of %.2f", m2ft(h_maxE)/1000, M_maxE, V_maxE, LD_maxE);
 
-f35.buildPlots(f35.MTOW, 50)
+f35.buildPlots(f35.MTOW, 30)

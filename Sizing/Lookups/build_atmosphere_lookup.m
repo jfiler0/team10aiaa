@@ -7,11 +7,12 @@ function build_atmosphere_lookup(h_min, h_max, N)
     [T_vec, a_vec, P_vec, rho_vec, ~, mu_vec] = atmosisa(alt_range);
     
     atmosphere.alt = alt_range;
-    atmosphere.T_interp = griddedInterpolant(atmosphere.alt, T_vec, 'linear');
-    atmosphere.a_interp = griddedInterpolant(atmosphere.alt, a_vec, 'linear');
-    atmosphere.P_interp = griddedInterpolant(atmosphere.alt, P_vec, 'linear');
-    atmosphere.rho_interp = griddedInterpolant(atmosphere.alt, rho_vec, 'linear');
-    atmosphere.mu_interp = griddedInterpolant(atmosphere.alt, mu_vec, 'linear');
+    %                                                                    INTERP    EXTRAP
+    atmosphere.T_interp   = griddedInterpolant(atmosphere.alt, T_vec,   'linear', 'linear');
+    atmosphere.a_interp   = griddedInterpolant(atmosphere.alt, a_vec,   'linear', 'linear');
+    atmosphere.P_interp   = griddedInterpolant(atmosphere.alt, P_vec,   'linear', 'linear');
+    atmosphere.rho_interp = griddedInterpolant(atmosphere.alt, rho_vec, 'linear', 'linear');
+    atmosphere.mu_interp  = griddedInterpolant(atmosphere.alt, mu_vec,  'linear', 'linear');
 
     % Save to .mat file in the same folder
     funcDir = fileparts(mfilename('fullpath'));

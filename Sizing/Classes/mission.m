@@ -23,7 +23,7 @@ classdef mission
 
             obj.segment_list = segment_list;
             obj.loadout = loadout;
-            obj.N_divisions = 10; % How many times to run a segment like cruise/range to get more accuracy
+            obj.N_divisions = 5; % How many times to run a segment like cruise/range to get more accuracy
 
         end
         function [WTO_Next, fuel_burned, W_End] = solveMission(obj, plane, do_plot)

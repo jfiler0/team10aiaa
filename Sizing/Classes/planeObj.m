@@ -36,14 +36,17 @@ classdef planeObj
         E_WD % no idea what this is
         g_limit
 
+        fixed_input
+
         % Parameters when missions and loadouts are applied
-        CD0_payload
+        CD0_Payload
         loadout
         W_P % payload weight (weapon type stores)
         W_Tanks % external fuel tank EMPTY weight
 
         % Parameters that remain fixed (need to edit the input function if you want them moved into the deisgn space)
         type % Name of the regrssion to use in Raymer for We/W0
+        raymer % Stores raymer coefficents
         KLOC % kilo lines of code
         num_engine
         engineData % [T0_NoAB, T0_AB]
@@ -70,6 +73,7 @@ classdef planeObj
         e_osw       
         k1_sub
         k2_sub
+        CD0_Body
         CD0
         M_CD0_max % Although it is really max wave drag (parasite drag is friction)
         D % m (fuselage diameter currently assumed to be circular and taken from A_max)
@@ -137,12 +141,17 @@ classdef planeObj
             obj.A_0 = 0; % m2
             obj.E_WD = 2.2; % *** Still don't know what this is
             obj.g_limit = fixed_input.g_limit; % Just fixing for performance code
+            obj.fixed_input = fixed_input;
+
+            % Storing the raymer coefficents is much faster than reading the table every loop
             obj.type = fixed_input.type; % For regression lookup
+            obj.raymer = struct(); % Raymer coefficents
+            [obj.raymer.A, obj.raymer.C] = getRaymerCoefficents(obj.type);
             obj.KLOC = fixed_input.KLOC;
-    
+
             % Parameters depending on loadout
             obj.W_P = 0; % payload - set when loadout is applied
-            obj.CD0_payload = 0;
+            obj.CD0_Payload = 0;
 
             % Parameters that remain fixed
             obj.engineData = engine_getData(engine); % Saves key engien data as an array [T0_NoAB, T0_AB]
@@ -159,32 +168,19 @@ classdef planeObj
 
             obj = obj.updateDerivedVariables(); %% Fills in the remaining constructor variables we need
         end
-        
-        % function obj = updateInputsAsVector(obj, input) 
-        %     % Streamlines changing class variables later when doing optimization
-        %     obj.WE = input(1);
-        %     obj.Lambda_LE = input(2);
-        %     obj.Lambda_TE = input(3);
-        %     obj.c_avg = input(4);
-        %     obj.tr = input(5);
-        % 
-        %     obj = obj.updateDerivedVariables();
-        % end
 
         function obj = updateWE(obj, MTOW)
             % Function to let you adjust empty weight from a new takeoff weight (invese of below)
-            [A, C] = getRaymerCoefficents(obj.type);
             obj.MTOW = MTOW;
-            obj.WE = MTOW * A * N2lb(obj.MTOW)^(C);
+            obj.WE = MTOW * obj.raymer.A * N2lb(obj.MTOW)^(obj.raymer.C);
         end
         
         function obj = updateDerivedVariables(obj)
            
-            % empty_weight_fraction = obj.WE / obj.MTOW = 2.34*N2lb(obj.WTOW)^(-0.13) ; % Use historical data
+            % empty_weight_fraction = obj.WE / obj.MTOW = 2.34*N2lb(obj.MTOW)^(-0.13) ; % Use historical data
             % obj.WE = obj.MTOW * 2.34 * N2lb(obj.MTOW)^(-0.13)
             % obj.MTOW = lb2N( ( N2lb(obj.WE) / 2.34)^(1/0.87) );
-            [A, C] = getRaymerCoefficents(obj.type);
-            obj.MTOW = lb2N( ( N2lb(obj.WE) / A )^(1 / (1 + C) ) );
+            obj.MTOW = obj.fixed_input.MTOW_Scalar * lb2N( ( N2lb(obj.WE) / obj.raymer.A )^(1 / (1 + obj.raymer.C) ) );
 
             %% Standard Wing Geometry Stuff
             obj.c_avg = 0.5*(obj.c_t + obj.c_r); % Average chord
@@ -201,7 +197,7 @@ classdef planeObj
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4
             
             c = -0.1289; d = 0.7506; % Regression from somewhere lol
-            obj.S_wet = 0.09290304*(10^c  * N2lb(obj.WE)^d); % Converting S_wet in ft and W0 in lb
+            obj.S_wet = obj.fixed_input.SWET_Scalar * 0.09290304*(10^c  * N2lb(obj.WE)^d); % Converting S_wet in ft and W0 in lb
             Cf = 0.0035; % For fighters?
             CD_min = Cf * obj.S_wet/obj.S_ref;
             
@@ -219,7 +215,8 @@ classdef planeObj
             obj.k2_sub = -2 * obj.k1_sub * CL_min_D;
             
             % CD_0
-            obj.CD0 = CD_min + obj.k1_sub*CL_min_D^2 + obj.k2_sub*CL_min_D; % Actually has k2 term
+            obj.CD0_Body = CD_min + obj.k1_sub*CL_min_D^2 + obj.k2_sub*CL_min_D; % Actually has k2 term
+            obj.CD0 = obj.CD0_Body + obj.CD0_Payload;
 
             obj.M_CD0_max = 1/(cosd(obj.Lambda_LE))^0.2; % The only supersonic drag variable that is not dependent on Cl or M
 
@@ -247,39 +244,41 @@ classdef planeObj
             % loadout variable must compre from buildLoadout function
             obj.W_P = loadout.weight_weapons;
             obj.W_Tanks = loadout.weight_tanks_empty;
-            obj.CD0_payload = loadout.CD0;
+            obj.CD0_Payload = loadout.CD0;
+            obj.CD0 = obj.CD0_Body + obj.CD0_Payload;
             obj.loadout = loadout;
         end
         
         %% Iterpolation creators for updateDerviedVariables
         function CLa_interp = buildCLaInterpolant(obj, M_vec)
-            beta = sqrt((1-M_vec.^2)); %MACH - real to try try and fix things above M 1 (*** is this fine)
-            eta = rad2deg(obj.cl_alpha) ./ (2*pi./beta); % Airfoil Efficiency - MACH
+            % *** Where are these suppose to go?
+            %beta = sqrt((1-M_vec.^2)); %MACH - real to try try and fix things above M 1 (*** is this fine)
+            % eta = rad2deg(obj.cl_alpha) ./ (2*pi./beta); % Airfoil Efficiency - MACH
 
             % CL_alpha_sub = (2*pi*obj.AR) ./ (2+ sqrt(4 + (obj.AR.^2 * beta.^2)/eta.^2 .* (1 + ( tand(obj.Lambda_max_t).^2 )./beta.^2) ) ) * (obj.S_exposed/obj.S_ref)* obj.F; % Ssurface = Sref
             CL_alpha_sub = deg2rad( 2*pi./sqrt(1-M_vec.^2) ); % The difference between these is pretty big ***
             CL_alpha_supersonic = deg2rad( 4./sqrt(M_vec.^2-1) );
 
             CLa = obj.generateTransonicSpline(CL_alpha_sub, CL_alpha_supersonic, M_vec);
-            CLa_interp = griddedInterpolant(M_vec, CLa, 'spline');
+            CLa_interp = griddedInterpolant(M_vec, CLa, 'linear');
         end
         
         function CDW_interp = buildCDWInterpolant(obj, M_vec)
-            CD_wave = 4.5 * pi / obj.S_ref * ((obj.A_max - obj.A_0)/obj.L_fuselage)^2 * obj.E_WD * (0.74 + 0.37 * cosd(obj.Lambda_LE)) * (1 - 0.3*sqrt(M_vec - obj.M_CD0_max));
+            CD_wave = obj.fixed_input.CDW_Scalar * 4.5 * pi / obj.S_ref * ((obj.A_max - obj.A_0)/obj.L_fuselage)^2 * obj.E_WD * (0.74 + 0.37 * cosd(obj.Lambda_LE)) * (1 - 0.3*sqrt(M_vec - obj.M_CD0_max));
             CDW = obj.generateTransonicSpline(zeros(size(CD_wave)), CD_wave, M_vec);
-            CDW_interp = griddedInterpolant(M_vec, CDW, 'spline');
+            CDW_interp = griddedInterpolant(M_vec, CDW, 'linear');
         end
         
         function K1_interp = buildK1Interpolant(obj, M_vec)
             k1_sup = obj.AR * (M_vec.^2 - 1) ./ (4*obj.AR*sqrt(M_vec.^2 - 1) -2) * cosd(obj.Lambda_LE); % supersonic range
             k1 = obj.generateTransonicSpline(obj.k1_sub * ones(size(k1_sup)), k1_sup, M_vec);
-            K1_interp = griddedInterpolant(M_vec, k1, 'spline');
+            K1_interp = griddedInterpolant(M_vec, k1, 'linear');
         end
         
         function K2_interp = buildK2Interpolant(obj, M_vec)
             k2_sup = zeros(size(M_vec));
             k2 = obj.generateTransonicSpline(obj.k2_sub * ones(size(M_vec)), k2_sup, M_vec);
-            K2_interp = griddedInterpolant(M_vec, k2, 'spline');
+            K2_interp = griddedInterpolant(M_vec, k2, 'linear');
         end
 
         %% Helper function for iterpolations (needed for transonic regime)
@@ -302,7 +301,7 @@ classdef planeObj
         end
         
         function [CD, CD0, CDi, CDW] = calcCD(obj, CL, M)
-            CD0 = obj.CD0 + obj.CD0_payload;
+            CD0 = obj.CD0;
             CDi = obj.K1_interp(M) * CL^2 + obj.K2_interp(M) * CL;
             CDW = obj.CDW_interp(M);
             CD = CD0 + CDi + CDW;
@@ -329,8 +328,10 @@ classdef planeObj
         
         function stallSpeed = calcStallSpeed(obj, h, W)
             [~, a, ~, rho, ~] = queryAtmosphere(h, [0 1 0 1 0]);
-            f = @(V) W - get_output_at_index(@() obj.calcCL(V / a), 2) * obj.S_ref * rho * V^2; % I don't know why @() is required but it does work
-            stallSpeed = fzero(f , 0.3 * a);
+            % For some reason an imaginary comp shows up so real helps
+            f = @(V) real( W - get_output_at_index(@() obj.calcCL(V / a), 2) * obj.S_ref * rho * V^2 ); % I don't know why @() is required but it does work
+            x0 = 0.5 * a;
+            stallSpeed = fzero(f , x0);
         end
         
         function takeoffSpeed = calcTakeoffSpeed(obj, h, W)
@@ -491,15 +492,19 @@ classdef planeObj
             % Maximize L ^ (1/2) / D
 
             function objf = objective(x)
-                objf = - obj.calcL2D(x(1), x(2), W); % x = [h, M]
+                % max statement at the end penalize going below 0
+                objf = - obj.calcL2D(x(1), x(2), W) - max([0 -x(1)])  ; % x = [h, M]
+                % fprintf("h=%.1f  M=%.3f  f=%.6f\n", x(1), x(2), objf);
             end
 
             h0 = ft2m(30000);
             M0 = 0.7;
             x0 = [h0, M0];
 
-            opts = optimset('Display', 'off', 'TolX', 1e-4, 'TolFun', 1e-4, ...
-                    'MaxFunEvals', 500, 'MaxIter', 200);
+            % fminsearch will not print anything when inside a class ):
+            % Making the tolerance this low does woners for speed
+            opts = optimset('Display', 'off', 'TolX', 1e-2, 'TolFun', 1e-2, ...
+                    'MaxFunEvals', 50, 'MaxIter', 200);
 
             % ---- 2D unconstrained optimization ----
             [x_opt, fval, exitflag] = fminsearch(@objective, x0, opts);
@@ -509,9 +514,10 @@ classdef planeObj
             M = x_opt(2);
         
             % Compute final performance values
-            CL = obj.calcTrimCL(h, M, W);
-            [CD, ~, ~, ~] = obj.calcCD(CL, M);
-            L2D = (CL^0.5) / CD;
+            % CL = obj.calcTrimCL(h, M, W);
+            % [CD, ~, ~, ~] = obj.calcCD(CL, M);
+            % L2D = (CL^0.5) / CD;
+            L2D = -fval;
         
             % Convert Mach to true airspeed
             [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);

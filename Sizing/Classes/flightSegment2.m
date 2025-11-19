@@ -47,7 +47,10 @@ classdef flightSegment2
         end
         function [W_OUT, WF, fuel_burned, info] = queryWF(obj, W_IN, plane)
             % LD = 1 / ( (q*obj.Cd0) / (W_IN/plane.S) + (W_IN/plane.S) / (q * pi * plane.e * plane.AR) );
-
+            
+            if isnan(W_IN)
+                disp("BREAK")
+            end
             % info is a struct holding
             % mach, altitude (meters), time (seconds), speed (m/s)
             info = struct();
@@ -70,7 +73,6 @@ classdef flightSegment2
                 [~, info.TSFC, ~, ~] = plane.calcProp(info.altitude, info.mach, 1);
             elseif(obj.type == "LANDING")
                 WF = 0.995;
-
                 info.speed = plane.calcLandingSpeed(0, W_IN);
                 [~, a, ~, ~, ~] = queryAtmosphere(0, [0 1 0 0 0]);
                 info.mach = info.speed / a;

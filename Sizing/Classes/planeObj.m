@@ -554,9 +554,10 @@ classdef planeObj
             M = x_opt(2);
         
             % Compute final performance values
-            CL = obj.calcTrimCL(h, M, W);
-            [CD, ~, ~, ~] = obj.calcCD(CL, M);
-            LD = (CL^0.5) / CD;
+            % CL = obj.calcTrimCL(h, M, W);
+            % [CD, ~, ~, ~] = obj.calcCD(CL, M);
+            % LD = (CL^0.5) / CD;
+            LD = -objf;
         
             % Convert Mach to true airspeed
             [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);

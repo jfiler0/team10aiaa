@@ -81,7 +81,7 @@ air2ground = mission( [...
 
 f18.findMaxRangeState(f18.MTOW) 
 
-f18 = sizeAircraft(f18, [ferry], @constraints_rfp, true, 3);
+% f18 = sizeAircraft(f18, [ferry], @constraints_rfp, true, 3);
 % W0_diff(f18, [ferry])
 
 %% Solving missions

@@ -22,6 +22,10 @@ fixed_input.max_alpha = 8; % deg -> Guess
 fixed_input.type = "Jet fighter"; % Which empty weight coefficents to take from Raymer. In weight_regression_lookup
 fixed_input.KLOC = 10000; % in kilo-lines of code
 
+fixed_input.MTOW_Scalar = 66/50; % Since the Raymer fighter jet corrections is 16k lb lower than the F18
+fixed_input.SWET_Scalar = 243/152; % Shifting SWET historical regression to match VSP
+fixed_input.CDW_Scalar = 7/4; % Wave drag estimate is typically too low
+
 geom.empty_weight = lb2N(34800); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
 geom.Lambda_LE = 34.13; %FROM F-35A deg - Leading Edge Sweep
 geom.c_r = ft2m(21.19); %F-35A m - Root Chord

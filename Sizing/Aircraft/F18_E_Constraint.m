@@ -78,7 +78,7 @@ air2ground = mission( [...
 
 %% Run Aircraft Sizing
 
-f18 = sizeAircraft(f18, [air2ground ferry], @constraints_rfp, false, 1.25);
+% f18 = sizeAircraft(f18, [air2ground ferry], @constraints_rfp, false, 1.25);
 
 %% Solving missions
 

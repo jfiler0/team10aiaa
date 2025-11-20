@@ -86,7 +86,7 @@ f18.findMaxRangeState(f18.MTOW)
 
 %% Solving missions
 
-[WTO_Next, fuel_burned, W_End] = ferry.solveMission(f18, false);
+[WTO_Next, fuel_burned, W_End] = ferry.solveMission(f18, true);
 fprintf("\nFERRY MISSION: fuel_burned = %.2f lb, Ending Weight = %.2f lb, Next = %.2f lb", N2lb(fuel_burned), N2lb(W_End), N2lb(WTO_Next))
 
 [WTO_Next, fuel_burned, W_End] = air2ground.solveMission(f18, false);

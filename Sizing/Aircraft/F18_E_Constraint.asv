@@ -18,7 +18,7 @@ matlabSetup(); % Clears and sets plot defaults
 
 %% Set Geometry Inputs - All FA-18E Super Hornet
 fixed_input.L_fuselage = ft2m(60.2); % m -> FA18 fuselage length
-fixed_input.A_max = 4.5; % m2 -> trying to get the right FA18 wave drag. This was tuned to get M1.6 % Jeff, what is this again?
+fixed_input.A_max = 4.5; % m2 -> trying to get the right FA18 wave drag. This was tuned to get M1.6
 fixed_input.g_limit = 7.5; % G -> FA18 limit
 fixed_input.max_alpha = 14; % deg -> Guess
 fixed_input.type = "Jet fighter"; % Which empty weight coefficents to take from Raymer. In weight_regression_lookup

@@ -22,7 +22,7 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
     % Objective is now negative so goal is to MINIMIZE
     function [objf_cons, cost, g_vec] = objective_constrained(WE, scale)
         cost = objective(WE, scale);
-        objf =  - cost;
+        objf =  cost;
 
         [g_vec, g_names] = constrainFun(plane, missionList);
 
@@ -37,9 +37,9 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
 
     options = optimset( ...
         'Display', 'iter', ...      % Display iteration info
-        'TolX', 1e-6, ...           % Tolerance on x
-        'TolFun', 1e-6, ...         % Tolerance on function value
-        'MaxIter', 500, ...         % Maximum iterations
+        'TolX', 1e-5, ...           % Tolerance on x
+        'TolFun', 1e-5, ...         % Tolerance on function value
+        'MaxIter', 50, ...         % Maximum iterations
         'MaxFunEvals', 1000 ...     % Maximum function evaluations
     );
     
@@ -57,9 +57,9 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
         % -------------------------------
         % Generate coarse grid
         % -------------------------------
-        N = 50;
+        N = 30;
         WE_range    = linspace(WE_opt/graphSize, graphSize*WE_opt, N);
-        scale_range = linspace(0.25/graphSize, graphSize*scale_opt, N);
+        scale_range = linspace(scale_opt/graphSize, graphSize*scale_opt, N);
         [WE_grid, scale_grid] = meshgrid(WE_range, scale_range);
     
         cost_grid = zeros(size(WE_grid));
@@ -162,7 +162,7 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
         title('3D Surface of Penalized Objective');
         view(45,30); grid on; axis tight;
         % zlim([min(min(obj_grid_fine)) f(x0)])
-        zlim([min(min(obj_grid_fine)) 0])
+        % zlim([min(min(obj_grid_fine)) 0])
     
         % Plot points on 3D surface
         % plot3(x0(1), x0(2), f(x0), 'ko', 'MarkerFaceColor','k','MarkerSize',8);

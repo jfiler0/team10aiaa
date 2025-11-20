@@ -19,12 +19,12 @@ PROG_100_1977 = 550*AUW^(0.812);
 PROG_100_2025 = PROG_100_1977*1000*5.3461; % factor of 5.3461 for 1977-2025 CPI scaling
 % [2025 dollars]
 
-PROG_500_2025 = PROG_100_2025 + 0.7*PROG_100_2025 * (5^0.9) - 0.7*PROG_100_2025; 
+PROG_500_2025 = PROG_100_2025 + 0.7*PROG_100_2025 * (5^0.93) - 0.7*PROG_100_2025; 
 % scales prouduction to 500 aircraft with a 90% learning curve.
 % modern techniques make 80% learning curve no longer applicable
 % we only want to be scaling the production run (approx 70% of program costs)
 
-PROG_500_2025 = PROG_500_2025 +  0.3 * PROG_500_2025 * 0.4;
+PROG_500_2025 = PROG_500_2025 +  0.3 * PROG_500_2025 * 0.75;
 % scaling for materials because RAND assumes aluminum airframe. Materials
 % assumed to be 30% of the program cost
 

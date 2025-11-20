@@ -31,7 +31,7 @@ function [T, a, P, rho, mu] = queryAtmosphere(alt, values_to_get)
 
     % Quick bounds check
     if min(alt) < cachedAtmosphere.alt(1) || max(alt) > cachedAtmosphere.alt(end)
-        error( sprintf("Altitude call is out of lookup range: %.2f meters", alt) );
+        fprintf("\nWARNING: Altitude call is out of lookup range: %.2f meters", alt);
     end
     
     % Initialize

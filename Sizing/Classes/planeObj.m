@@ -34,6 +34,7 @@ classdef planeObj
         A_max % m2
         A_0 % m2
         E_WD % no idea what this is
+        x_rootchord % distance of beginning of leading edge of wing from tip of nose 
         g_limit
 
         fixed_input
@@ -57,7 +58,7 @@ classdef planeObj
         max_alpha % max angle of attack in deg
         mach_range % vector [min mach, max mach] for interpolation range
         transonic_range % spline interpolation range
-        alt_range % vecot [min alt, max alt] in meters
+        alt_range % vector [min alt, max alt] in meters
 
         % Parameters that are derived
         c_t % m
@@ -67,6 +68,9 @@ classdef planeObj
         AR
         S_wing % m2
         S_ref % m2
+        MAC_wing % mean aerodynamic chord
+        y_MAC_wing % Y location of MAC; distance of MAC out the right wing from the centerline 
+        x_MAC_wing % X location of MAC; distance of MAC from tip of nose 
         Lambda_qc % deg
         S_wet  % m2
         e_notoswald
@@ -191,7 +195,12 @@ classdef planeObj
             obj.S_wing = obj.span*obj.c_avg;
             obj.S_ref = obj.S_wing; % Typical defenition for reference area
             
-            %% Tail Geometry
+            %% Tail Geometry - HW 7 S&C 
+            xwing = 17.79; % beginning of root chord from nose
+                
+            obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
+            obj.y_MAC_wing = (obj.span/6)*((1 + 2*obj.tr)/(1+obj.tr));
+            obj.x_MAC_wing = obj.x_rootchord + obj.y_MAC_wing*tan(deg2rad(obj.Lambda_LE));
 
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4

@@ -69,8 +69,18 @@ classdef planeObj
         S_wing % m2
         S_ref % m2
         MAC_wing % mean aerodynamic chord
-        y_MAC_wing % Y location of MAC; distance of MAC out the right wing from the centerline 
-        x_MAC_wing % X location of MAC; distance of MAC from tip of nose 
+        y_MAC_wing % Y location of airfoil with same chord as MAC; distance of airfoil section out the right wing from the centerline 
+        x_MAC_wing % X location of LE of airfoil section with same chord as MAC; distance of LE from tip of nose 
+        
+        b_strake % span of strake
+        x_strake % location of LE at the root of strake from tip of nose
+        lam_strake % taper ratio of strake
+        c_root_strake % root chord of strake 
+        Lambda_LE_strake % Leading edge sweep angle of strake
+        MAC_strake % mean aerodynamic chord of strake 
+        y_MAC_strake % Y location of airfoil with same chord as MAC; distance of airfoil section out the right wing from the centerline 
+        x_MAC_strake % X location of LE of airfoil section with same chord as MAC; distance of LE from tip of nose 
+    
         Lambda_qc % deg
         S_wet  % m2
         e_notoswald
@@ -96,8 +106,11 @@ classdef planeObj
                 AR_h % Aspect Ratio
                 lam_h % Taper ratio
                 c_t_h % tip chord
-                c_r_h % root chord
-                MAC_h % mean aerodynamic chord
+                c_r_horstab % root chord
+                MAC_horstab % mean aerodynamic chord
+                y_MAC_horstab % Y location of airfoil with same chord as MAC; distance of airfoil section out the right wing from the centerline 
+                x_MAC_horstab % X location of LE of airfoil section with same chord as MAC; distance of LE from tip of nose 
+
                 b_h % span
                 LAM_h % sweep angle
                 GAM_h % dihedral angle
@@ -196,12 +209,17 @@ classdef planeObj
             obj.S_ref = obj.S_wing; % Typical defenition for reference area
             
             %% Tail Geometry - HW 7 S&C 
-            xwing = 17.79; % beginning of root chord from nose
-                
             obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
             obj.y_MAC_wing = (obj.span/6)*((1 + 2*obj.tr)/(1+obj.tr));
             obj.x_MAC_wing = obj.x_rootchord + obj.y_MAC_wing*tan(deg2rad(obj.Lambda_LE));
 
+            obj.MAC_horstab = (2/3)*obj.c_r_horstab*(1 + obj.lam_h + obj.lam_h.^2)/(1+obj.lam_h);
+            obj.y_MAC_horstab = (obj.b_h/6)*((1 + 2*obj.lam_h)/(1+obj.lam_h));
+            obj.x_MAC_horstab = obj.x_MAC_horstab + obj.y_MAC_horstab*tan(deg2rad(obj.Lam_LE_horstab)); % find the proper value for this 
+            
+            obj.MAC_strake = (2/3)*obj.c_root_strake*(1 + lam + lam.^2)/(1+lam);
+            obj.y_MAC_strake = (obj.b_strake/6)*((1 + 2*lam)/(1+lam));
+            obj.x_MAC_strake = xwing + obj.y_MAC_strake*tan(deg2rad(lam_LE)); % fix inputs 
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4
             

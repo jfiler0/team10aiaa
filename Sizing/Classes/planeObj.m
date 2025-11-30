@@ -209,6 +209,7 @@ classdef planeObj
             obj.S_ref = obj.S_wing; % Typical defenition for reference area
             
             %% Tail Geometry - HW 7 S&C 
+
             % obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
             % obj.y_MAC_wing = (obj.span/6)*((1 + 2*obj.tr)/(1+obj.tr));
             % obj.x_MAC_wing = obj.x_rootchord + obj.y_MAC_wing*tand(obj.Lambda_LE);
@@ -224,6 +225,10 @@ classdef planeObj
             % obj.MAC_strake = (2/3)*obj.c_root_strake*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
             % obj.y_MAC_strake = (obj.b_strake/6)*((1 + 2*obj.tr)/(1+obj.tr));
             % obj.x_MAC_strake = xwing + obj.y_MAC_strake*tand(lam_LE); % fix inputs 
+
+            obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr); 
+            obj.y_MAC_wing = (obj.span/6)*((1 + 2*obj.tr)/(1+obj.tr));
+            obj.x_MAC_wing = obj.x_rootchord + obj.y_MAC_wing*tan(deg2rad(obj.Lambda_LE));
 
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4

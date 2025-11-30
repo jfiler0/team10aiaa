@@ -209,17 +209,22 @@ classdef planeObj
             obj.S_ref = obj.S_wing; % Typical defenition for reference area
             
             %% Tail Geometry - HW 7 S&C 
-            obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
-            obj.y_MAC_wing = (obj.span/6)*((1 + 2*obj.tr)/(1+obj.tr));
-            obj.x_MAC_wing = obj.x_rootchord + obj.y_MAC_wing*tan(deg2rad(obj.Lambda_LE));
+            % obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
+            % obj.y_MAC_wing = (obj.span/6)*((1 + 2*obj.tr)/(1+obj.tr));
+            % obj.x_MAC_wing = obj.x_rootchord + obj.y_MAC_wing*tand(obj.Lambda_LE);
+            % 
+            % % Some fixes so the tail code works -> Liam correct how you want
+            % obj.lam_h = obj.tr; % set taper ratio to be the same as the wing
+            % 
+            % % obj.MAC_horstab = (2/3)*obj.c_r_horstab*(1 + obj.lam_h + obj.lam_h.^2)/(1+obj.lam_h);
+            % obj.y_MAC_horstab = (obj.b_h/6)*((1 + 2*obj.lam_h)/(1+obj.lam_h));
+            % % obj.x_MAC_horstab = obj.x_MAC_horstab + obj.y_MAC_horstab*tand(obj.Lam_LE_horstab); % find the proper value for this 
+            % 
+            % % swapped lam for obj.tr
+            % obj.MAC_strake = (2/3)*obj.c_root_strake*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
+            % obj.y_MAC_strake = (obj.b_strake/6)*((1 + 2*obj.tr)/(1+obj.tr));
+            % obj.x_MAC_strake = xwing + obj.y_MAC_strake*tand(lam_LE); % fix inputs 
 
-            obj.MAC_horstab = (2/3)*obj.c_r_horstab*(1 + obj.lam_h + obj.lam_h.^2)/(1+obj.lam_h);
-            obj.y_MAC_horstab = (obj.b_h/6)*((1 + 2*obj.lam_h)/(1+obj.lam_h));
-            obj.x_MAC_horstab = obj.x_MAC_horstab + obj.y_MAC_horstab*tan(deg2rad(obj.Lam_LE_horstab)); % find the proper value for this 
-            
-            obj.MAC_strake = (2/3)*obj.c_root_strake*(1 + lam + lam.^2)/(1+lam);
-            obj.y_MAC_strake = (obj.b_strake/6)*((1 + 2*lam)/(1+lam));
-            obj.x_MAC_strake = xwing + obj.y_MAC_strake*tan(deg2rad(lam_LE)); % fix inputs 
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4
             
@@ -514,6 +519,25 @@ classdef planeObj
         end
 
         %% Functions for mission calculations (Range/Endurance)
+        function range_m = findTotalMaxRange(obj, W, N_divide)
+            % Assuming the aircraft goes from some starting W to its empty weight + any payload + avionics
+            % What range can it get?
+            % N_divide - How many division to apply to the weight for accuracy in changing max range state
+
+            Wvec = linspace(W, obj.WE + obj.W_F + obj.W_P + obj.W_Tanks, N_divide);
+
+            range_m = 0;
+
+            for i = 2:length(Wvec)
+                Wi = (Wvec(i - 1) + Wvec(i))/2; % Use midpoint weight to find optimum
+                [h, M, V, L2D] = obj.findMaxRangeState(Wi);
+                LD = obj.calcLD(h, M, Wi);
+                [~, TSFC, ~, ~] = obj.calcProp(M, h, 0);
+
+                range_m = range_m + LD * V * log(Wvec(i - 1)/Wvec(i)) / TSFC;
+            end
+
+        end
 
         function [h, M, V, L2D] = findMaxRangeState(obj, W) 
             % Maximize L ^ (1/2) / D

@@ -79,14 +79,12 @@ air2ground = mission( [...
 
 %% Run Aircraft Sizing
 
-f18.findMaxRangeState(f18.MTOW) 
-
 % f18 = sizeAircraft(f18, [ferry], @constraints_rfp, true, 3);
 % W0_diff(f18, [ferry])
 
 %% Solving missions
 
-[WTO_Next, fuel_burned, W_End] = ferry.solveMission(f18, true);
+[WTO_Next, fuel_burned, W_End] = ferry.solveMission(f18, false);
 fprintf("\nFERRY MISSION: fuel_burned = %.2f lb, Ending Weight = %.2f lb, Next = %.2f lb", N2lb(fuel_burned), N2lb(W_End), N2lb(WTO_Next))
 
 [WTO_Next, fuel_burned, W_End] = air2ground.solveMission(f18, false);
@@ -115,4 +113,6 @@ fprintf("\nThe F18 has a maximum mach number of %.3f which it reaches at %.2f kf
 fprintf("\nMax range altitude = %.2f kf at Mach %.2f with a speed of %.2f m/s and L^(1/2)/D ratio of %.2f", m2ft(h_maxR)/1000, M_maxR, V_maxR, L2D_maxR);
 fprintf("\nMax endurance altitude = %.2f kf at Mach %.2f with a speed of %.2f m/s and L/D ratio of %.2f", m2ft(h_maxE)/1000, M_maxE, V_maxE, LD_maxE);
 
-f18.buildPlots(f18.MTOW, 30)
+
+fprintf("\nAssuming starting at MTOW and burning to empty, the F18E has a max range of %.2f nm", m2nm(f18.findTotalMaxRange(f18.MTOW, 20)))
+f18.buildPlots(f18.MTOW, 20)

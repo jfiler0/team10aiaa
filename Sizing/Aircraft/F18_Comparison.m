@@ -24,8 +24,9 @@ fixed_input.KLOC = 15000; % in kilo-lines of code
     
 % Some scalar corrections
 fixed_input.MTOW_Scalar = 66/50; % Since the Raymer fighter jet corrections is 16k lb lower than the F18
-fixed_input.SWET_Scalar = 243/152; % Shifting SWET historical regression to match VSP
+fixed_input.SWET_Scalar = 3; % Shifting SWET historical regression to match VSP (and scaled CD0 to correct LD)
 fixed_input.CDW_Scalar = 7/4; % Wave drag estimate is typically too low
+fixed_input.K1_Scalar = 1.3; % Scales induced drag (and thus reduces eosw)
 
 geom.empty_weight = lb2N(28450); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
 geom.Lambda_LE = 29.3; % deg - Leading Edge Sweep
@@ -45,16 +46,19 @@ strike_loadout = buildLoadout(["AIM-9X", "FPU-12", "AIM-120", "AIM-120", "FPU-12
 f18 = planeObj(fixed_input, "FA18", geom.empty_weight, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,    2,         geom.engine, geom.W_F);
 f18 = f18.applyLoadout(clean_loadout); % Just two sidewinders
 
+% M = 0.9;
+% [~, ~, ~, ~, eosw] = f18.calcCD(f18.calcCL(M), M)
+
 %% Define Missions
 % The flightSegment2 and planeObj classes work together to calculate fuel burned from missions with flightSegment2 requiring the aerodynamic
 % data driven by planeObj. And planeObj getting fuel burn info from flightSegment
 ferry = mission( [...
     flightSegment2("TAKEOFF") 
     flightSegment2("CLIMB", 0.7) 
-    flightSegment2("CRUISE", NaN, NaN, nm2m(1500)) % 800 nm flight
+    flightSegment2("CRUISE", NaN, NaN, nm2m(700)) % 500 nm flight
     % flightSegment2("LOITER", NaN, 10000, 20) % 20 min loiter
     % flightSegment2("COMBAT", 0.8, 1000, [8 0.5]) % 8 minutes of combat, deploy 50% of payload
-    flightSegment2("CRUISE", NaN, NaN, nm2m(1500)) % 800 nm flight
+    flightSegment2("CRUISE", NaN, NaN, nm2m(700)) % 800 nm flight
     flightSegment2("LANDING") ] , ...
     ...
     clean_loadout);
@@ -84,13 +88,15 @@ air2ground = mission( [...
 
 %% Solving missions
 
-[WTO_Next, fuel_burned, W_End] = ferry.solveMission(f18, false);
+[WTO_Next, fuel_burned, W_End] = ferry.solveMission(f18, true);
 fprintf("\nFERRY MISSION: fuel_burned = %.2f lb, Ending Weight = %.2f lb, Next = %.2f lb", N2lb(fuel_burned), N2lb(W_End), N2lb(WTO_Next))
-
-[WTO_Next, fuel_burned, W_End] = air2ground.solveMission(f18, false);
-fprintf("\nSTRIKE MISSION: fuel_burned = %.2f lb, Ending Weight = %.2f lb, Next = %.2f lb", N2lb(fuel_burned), N2lb(W_End), N2lb(WTO_Next))
+% 
+% [WTO_Next, fuel_burned, W_End] = air2ground.solveMission(f18, false);
+% fprintf("\nSTRIKE MISSION: fuel_burned = %.2f lb, Ending Weight = %.2f lb, Next = %.2f lb", N2lb(fuel_burned), N2lb(W_End), N2lb(WTO_Next))
 
 %% Run anaylisis comparisons
+
+f18 = f18.applyLoadout(clean_loadout);
 
 fprintf("\nThe F18 has a unit cost of %.2f million dollars and a stall speed of %.2f kt (lands at %.2f kt) for MTOW", f18.calcUnitCost(), ms2kt( f18.calcStallSpeed(0, f18.MTOW) ), ms2kt( f18.calcLandingSpeed(0, f18.MTOW) ) );
 
@@ -113,6 +119,9 @@ fprintf("\nThe F18 has a maximum mach number of %.3f which it reaches at %.2f kf
 fprintf("\nMax range altitude = %.2f kf at Mach %.2f with a speed of %.2f m/s and L^(1/2)/D ratio of %.2f", m2ft(h_maxR)/1000, M_maxR, V_maxR, L2D_maxR);
 fprintf("\nMax endurance altitude = %.2f kf at Mach %.2f with a speed of %.2f m/s and L/D ratio of %.2f", m2ft(h_maxE)/1000, M_maxE, V_maxE, LD_maxE);
 
+[range_m, fuel_burned_N] = f18.findTotalMaxRange(f18.MTOW, 20);
+fprintf("\nAssuming starting at MTOW and burning to empty, the F18E has a max range of %.2f nm (burning %.2g lb of fuel)", m2nm(range_m), N2lb(fuel_burned_N))
+% f18.buildPlots(f18.MTOW, 50)
 
-fprintf("\nAssuming starting at MTOW and burning to empty, the F18E has a max range of %.2f nm", m2nm(f18.findTotalMaxRange(f18.MTOW, 20)))
-f18.buildPlots(f18.MTOW, 20)
+% Get 3318 nm - expect 1730
+% Bringing LD from 10 to 5 can do that

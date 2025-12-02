@@ -49,7 +49,7 @@ classdef flightSegment2
             % LD = 1 / ( (q*obj.Cd0) / (W_IN/plane.S) + (W_IN/plane.S) / (q * pi * plane.e * plane.AR) );
             
             if isnan(W_IN)
-                disp("BREAK")
+                disp("Bad: W_IN is NaN")
             end
             % info is a struct holding
             % mach, altitude (meters), time (seconds), speed (m/s)

@@ -337,11 +337,15 @@ classdef planeObj
             CL_max_flapped = CL_max_clean + obj.Delta_flap_param *obj.S_flapped/obj.S_ref * cosd(obj.Lambda_HL);
         end
         
-        function [CD, CD0, CDi, CDW] = calcCD(obj, CL, M)
+        function [CD, CD0, CDi, CDW, eosw] = calcCD(obj, CL, M)
             CD0 = obj.CD0;
             CDi = obj.K1_interp(M) * CL^2 + obj.K2_interp(M) * CL;
             CDW = obj.CDW_interp(M);
             CD = CD0 + CDi + CDW;
+
+            eosw = CL.^2 / (pi * CD * obj.AR);
+
+            % CD = CL^2 / pi*e*AR
         end
         
         function [TA, TSFC, alpha, mdotf] = calcProp(obj, M, h, AB_perc)

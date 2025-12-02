@@ -17,9 +17,9 @@
 
     run_sizing = false; % WARNING: This will overwrite xlsx data and can take awhile
 
-    skip_max_ranges = false; % This can take a bit of time so if you are exploring other parameters consider just disabling it
+    skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(120000), 500); % Refresh atmosphere lookup

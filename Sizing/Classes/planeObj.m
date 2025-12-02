@@ -68,6 +68,7 @@ classdef planeObj
         AR
         S_wing % m2
         S_ref % m2
+        x_rootLE_wing % x distance of leading edge of root chord from tip of nose
         MAC_wing % mean aerodynamic chord
         y_MAC_wing % Y location of airfoil with same chord as MAC; distance of airfoil section out the right wing from the centerline 
         x_MAC_wing % X location of LE of airfoil section with same chord as MAC; distance of LE from tip of nose 
@@ -107,6 +108,9 @@ classdef planeObj
                 AR_h % Aspect Ratio
                 lam_h % Taper ratio
                 c_t_h % tip chord
+
+                V_hor % calculated horizontal tail ratio
+
                 c_r_horstab % root chord
                 MAC_horstab % mean aerodynamic chord
                 y_MAC_horstab % Y location of airfoil with same chord as MAC; distance of airfoil section out the right wing from the centerline 
@@ -125,6 +129,9 @@ classdef planeObj
                 AR_v % Aspect Ratio
                 lam_v % Taper ratio
                 c_t_v % tip chord
+
+                V_ver % calculated vertical tail ratio
+
                 c_r_v % root chord
                 MAC_verstab % mean aerodynamic chord
                 b_v % span
@@ -135,15 +142,17 @@ classdef planeObj
                 x_MAC_verstab % X location of LE of airfoil section with same chord as MAC; distance of LE of verstab from tip of nose 
 
 
-               % Aerodynamic Centers
-               x_ac_wings % distance of aerodynamic centers from tip of nose
-               x_ac_horstabs
-               x_ac_strakes
-               x_ac_verstabs
-               x_ac_wings_strakes
-               x_ac_wings_strakes_fuselage
-               x_bar_ac_wings_strakes_fuselage % normalized ac w/o tail w/r/t MAC of wing
+                % Aerodynamic Centers
+                x_ac_wings % distance of aerodynamic centers from tip of nose
+                x_ac_horstabs
+                x_ac_strakes
+                x_ac_verstabs
+                x_ac_wings_strakes
+                x_ac_wings_strakes_fuselage
+                x_bar_ac_wings_strakes_fuselage % normalized ac w/o tail w/r/t MAC of wing
 
+           % STABILITY PARAMETERS: STATIC MARGIN
+           SM % static margin, distance from cg to neutral point 
         % filling out these interpolation function helps considerably with speed
         CLa_interp
         CDW_interp
@@ -227,7 +236,7 @@ classdef planeObj
 
             obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
             obj.y_MAC_wing = (obj.span/6)*((1 + 2*obj.tr)/(1+obj.tr));
-            obj.x_MAC_wing = obj.x_rootchord + obj.y_MAC_wing*tand(obj.Lambda_LE);
+            obj.x_MAC_wing = obj.x_rootLE_wing + obj.y_MAC_wing*tand(obj.Lambda_LE);
 
             % Some fixes so the tail code works -> Liam correct how you want
             obj.lam_h = obj.tr; % set taper ratio to be the same as the wing for stealth reasons
@@ -255,7 +264,16 @@ classdef planeObj
             %obj.x_ac_wings_strakes_fuselage = obj.x_ac_wings_strakes - ((obj.L_fuselage*_wf^2)*(0.005 + 0.111*(obj.x_ac_wings_strakes/obj.L_fuselage)^2)/((2*obj.S_wing)*CL_alpha_wing*57.29)); % waiting on max fuselage length wf
             obj.x_bar_ac_wings_strakes_fuselage = (obj.x_ac_wings_strakes_fuselage - obj.x_MAC_wing)/obj.MAC_wing;
 
+            % tail arm
+            obj.l_ht = obj.x_ac_horstabs - obj.x_ac_wings_strakes_fuselage; % tail arm from aerodynamic centers
+            obj.V_hor = obj.S_h*obj.l_ht/(obj.S_wing*obj.MAC_wing);
+            %obj.x_bar_n = obj.x_bar_ac_wings_strakes_fuselage + obj.V_hor*(Clalph_Clalpht*(1-depsdalph));
 
+            % Final Static Margin Calculations
+            obj.x_np = obj.x_MAC_wing + (x_bar_n*MAC_wing)
+            X_bar_cg = x_cg/x_MAC_wing
+            X_bar_np = x_np/x_MAC_wing
+            SM = X_bar_np - X_bar_cg
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4
             

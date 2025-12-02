@@ -177,7 +177,7 @@ classdef flightSegment2
         end
         function [WF, TSFC] = Loiter_WF(obj, LD, h, M, plane)
             [~, TSFC, ~, ~] = plane.calcProp(M, h, 0); % No AB
-            WF = exp( (-60*obj.input*TSFC/LD) ); % input time is in minutes
+            WF = exp( (-60*obj.input*TSFC*9.805/LD) ); % input time is in minutes
         end
     end
 end

@@ -16,7 +16,7 @@ matlabSetup(); % Clears and sets plot defaults
 
 %% Set Geometry Inputs - All FA-18E Super Hornet
 fixed_input.L_fuselage = 17.54; % m -> FA18 fuselage length
-fixed_input.A_max = 4.5; % m2 -> trying to get the right FA18 wave drag. This was tuned to get M1.6
+fixed_input.A_max = 2.5; % m2 -> From VSP
 fixed_input.g_limit = 7; % G -> FA18 limit
 fixed_input.max_alpha = 12; % deg -> Guess
 fixed_input.type = "Jet fighter"; % Which empty weight coefficents to take from Raymer. In weight_regression_lookup
@@ -25,13 +25,17 @@ fixed_input.KLOC = 15000; % in kilo-lines of code
 % Some scalar corrections
 fixed_input.MTOW_Scalar = 66/50; % Since the Raymer fighter jet corrections is 16k lb lower than the F18
 fixed_input.SWET_Scalar = 3; % Shifting SWET historical regression to match VSP (and scaled CD0 to correct LD)
-fixed_input.CDW_Scalar = 7/4; % Wave drag estimate is typically too low
+fixed_input.CDW_Scalar = 10/4; % Wave drag estimate is typically too low
 fixed_input.K1_Scalar = 1.3; % Scales induced drag (and thus reduces eosw)
+
+% fixed_input.SWET_Scalar = 152/152; % Set this to 1 for totally clean, max speed (bring to 243/152 for real performance)
+% fixed_input.CDW_Scalar = 4/4; % Set this to 1 for totally clean, max speed (bring to 7/4 for real performance)
+% fixed_input.K1_Scalar = 1;
 
 geom.empty_weight = lb2N(28450); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
 geom.Lambda_LE = 29.3; % deg - Leading Edge Sweep
 geom.c_r = 5.07; % m - Root Chord
-geom.c_t = 1.686; % m - Tip Chordf1
+geom.c_t = 1.686; % m - Tip Chordf
 geom.span = 12.05; % m - Wing Span
 geom.W_F = lb2N(2000); % N - Fixed Weight (Avionics)
 geom.engine = "F414"; % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
@@ -56,8 +60,8 @@ ferry = mission( [...
     flightSegment2("TAKEOFF") 
     flightSegment2("CLIMB", 0.7) 
     flightSegment2("CRUISE", NaN, NaN, nm2m(700)) % 500 nm flight
-    % flightSegment2("LOITER", NaN, 10000, 20) % 20 min loiter
-    % flightSegment2("COMBAT", 0.8, 1000, [8 0.5]) % 8 minutes of combat, deploy 50% of payload
+    flightSegment2("LOITER", NaN, 10000, 20) % 20 min loiter
+    flightSegment2("COMBAT", 0.8, 1000, [8 0.5]) % 8 minutes of combat, deploy 50% of payload
     flightSegment2("CRUISE", NaN, NaN, nm2m(700)) % 800 nm flight
     flightSegment2("LANDING") ] , ...
     ...
@@ -88,7 +92,7 @@ air2ground = mission( [...
 
 %% Solving missions
 
-[WTO_Next, fuel_burned, W_End] = ferry.solveMission(f18, true);
+[WTO_Next, fuel_burned, W_End] = ferry.solveMission(f18, false);
 fprintf("\nFERRY MISSION: fuel_burned = %.2f lb, Ending Weight = %.2f lb, Next = %.2f lb", N2lb(fuel_burned), N2lb(W_End), N2lb(WTO_Next))
 % 
 % [WTO_Next, fuel_burned, W_End] = air2ground.solveMission(f18, false);
@@ -111,7 +115,7 @@ fprintf("\nF18 spot factor = %.3f (Projected area of %.3f m2)", f18.calcSpotFact
 [maxAlt, maxAltMach, excessPower] = f18.calcMaxAlt(f18.MTOW, 1);
 fprintf("\nThe F18 has a service ceiling of %.2f kf (does Mach %.2f at its ceiling with a CL of %.3f).", m2ft(maxAlt)/1000, maxAltMach, f18.calcTrimCL(maxAlt, maxAltMach, f18.MTOW))
 
-[maxMach, maxMachAlt] = f18.calcMaxMach(f18.MTOW, 1);
+[maxMach, maxMachAlt] = f18.calcMaxMach(f18.WE, 1);
 fprintf("\nThe F18 has a maximum mach number of %.3f which it reaches at %.2f kf", maxMach, m2ft(maxMachAlt)/1000)
 
 [h_maxR, M_maxR, V_maxR, L2D_maxR] = f18.findMaxRangeState(f18.MTOW);

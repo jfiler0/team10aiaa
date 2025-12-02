@@ -552,6 +552,28 @@ classdef planeObj
 
         end
 
+        function [time_s, fuel_burned_N] = findTotalMaxEndurance(obj, W, N_divide)
+            % Assuming the aircraft goes from some starting W to its empty weight + any payload + avionics
+            % What range can it get?
+            % N_divide - How many division to apply to the weight for accuracy in changing max range state
+
+            Wvec = linspace(W, obj.WE + obj.W_F + obj.W_P + obj.W_Tanks, N_divide);
+
+            time_s = 0;
+
+            for i = 2:length(Wvec)
+                Wi = (Wvec(i - 1) + Wvec(i))/2; % Use midpoint weight to find optimum
+                [h, M, V, LD] = obj.findMaxEnduranceState(Wi);
+                % LD = obj.calcLD(h, M, Wi);
+                [~, TSFC, ~, ~] = obj.calcProp(M, h, 0);
+
+                time_s = time_s + LD * log(Wvec(i - 1)/Wvec(i)) / (TSFC*9.805);
+            end
+
+            fuel_burned_N = Wvec(1) - Wvec(end);
+
+        end
+
         function [h, M, V, L2D] = findMaxRangeState(obj, W) 
             % Maximize L ^ (1/2) / D
 

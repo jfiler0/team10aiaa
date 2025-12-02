@@ -110,13 +110,14 @@ classdef planeObj
                 MAC_horstab % mean aerodynamic chord
                 y_MAC_horstab % Y location of airfoil with same chord as MAC; distance of airfoil section out the right wing from the centerline 
                 x_MAC_horstab % X location of LE of airfoil section with same chord as MAC; distance of LE from tip of nose 
-
+                x_horstab % X location of LE of root airfoil of horstab from tip of nose
                 b_h % span
                 LAM_LE_horstab % sweep angle
                 GAM_h % dihedral angle
                 inc_h % angle of incidence
 
                 % Vertical
+                x_verstab % X location of LE of root airfoil of verstab from tip of nose
                 S_v % Planform Area
                 l_vt % Tail arm
                 v_tc % Airfoil Thickness
@@ -124,11 +125,13 @@ classdef planeObj
                 lam_v % Taper ratio
                 c_t_v % tip chord
                 c_r_v % root chord
-                MAC_v % mean aerodynamic chord
+                MAC_verstab % mean aerodynamic chord
                 b_v % span
                 LAM_v % sweep angle
                 GAM_v % dihedral angle
                 inc_v % angle of incidence
+                z_MAC_verstab % Z location of airfoil with same chord as verstab MAC; distance of airfoil section up the tail from the centerline 
+                x_MAC_verstab % X location of LE of airfoil section with same chord as MAC; distance of LE of verstab from tip of nose 
 
         % filling out these interpolation function helps considerably with speed
         CLa_interp
@@ -219,12 +222,16 @@ classdef planeObj
 
             obj.MAC_horstab = (2/3)*obj.c_r_horstab*(1 + obj.lam_h + obj.lam_h.^2)/(1+obj.lam_h);
             obj.y_MAC_horstab = (obj.b_h/6)*((1 + 2*obj.lam_h)/(1+obj.lam_h));
-            obj.x_MAC_horstab = obj.x_MAC_horstab + obj.y_MAC_horstab*tand(obj.LAM_LE_horstab);
+            obj.x_MAC_horstab = obj.x_horstab + obj.y_MAC_horstab*tand(obj.LAM_LE_horstab);
 
             % swapped lam for obj.tr
-            obj.MAC_strake = (2/3)*obj.c_root_strake*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
-            obj.y_MAC_strake = (obj.b_strake/6)*((1 + 2*obj.tr)/(1+obj.tr));
+            obj.MAC_strake = (2/3)*obj.c_root_strake*(1 + obj.lam_strake + obj.lam_strake.^2)/(1+obj.lam_strake);
+            obj.y_MAC_strake = (obj.b_strake/6)*((1 + 2*obj.lam_strake)/(1+obj.lam_strake));
             obj.x_MAC_strake = obj.x_strake + obj.y_MAC_strake*tand(obj.Lambda_LE_strake);
+
+            obj.MAC_verstab = (2/3)*obj.c_r_v*(1 + obj.lam_v + obj.lam_v.^2)/(1+ obj.lam_v);
+            obj.z_MAC_verstab = (obj.b_v/6)*((1 + 2*obj.lam_v)/(1 + obj.lam_v));
+            obj.x_MAC_verstab = obj.x_verstab + obj.z_MAC_verstab*tan(deg2rad(obj.LAM_v));
 
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4

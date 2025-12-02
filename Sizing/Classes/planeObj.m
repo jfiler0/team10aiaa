@@ -80,7 +80,8 @@ classdef planeObj
         MAC_strake % mean aerodynamic chord of strake 
         y_MAC_strake % Y location of airfoil with same chord as MAC; distance of airfoil section out the right wing from the centerline 
         x_MAC_strake % X location of LE of airfoil section with same chord as MAC; distance of LE from tip of nose 
-    
+        S_strakes % planform area of strakes
+
         Lambda_qc % deg
         S_wet  % m2
         e_notoswald
@@ -113,7 +114,7 @@ classdef planeObj
                 x_horstab % X location of LE of root airfoil of horstab from tip of nose
                 b_h % span
                 LAM_LE_horstab % sweep angle
-                GAM_h % dihedral angle
+                LAM_h % dihedral angle
                 inc_h % angle of incidence
 
                 % Vertical
@@ -132,6 +133,16 @@ classdef planeObj
                 inc_v % angle of incidence
                 z_MAC_verstab % Z location of airfoil with same chord as verstab MAC; distance of airfoil section up the tail from the centerline 
                 x_MAC_verstab % X location of LE of airfoil section with same chord as MAC; distance of LE of verstab from tip of nose 
+
+
+               % Aerodynamic Centers
+               x_ac_wings % distance of aerodynamic centers from tip of nose
+               x_ac_horstabs
+               x_ac_strakes
+               x_ac_verstabs
+               x_ac_wings_strakes
+               x_ac_wings_strakes_fuselage
+               x_bar_ac_wings_strakes_fuselage % normalized ac w/o tail w/r/t MAC of wing
 
         % filling out these interpolation function helps considerably with speed
         CLa_interp
@@ -210,7 +221,8 @@ classdef planeObj
             obj.AR = obj.span / obj.c_avg;
             obj.S_wing = obj.span*obj.c_avg;
             obj.S_ref = obj.S_wing; % Typical defenition for reference area
-            
+            obj.S_strakes = 0.5*obj.b_strake*obj.c_root_strake; % planform area of strakes calculation
+
             %% Static Margin / Neutral Point Calculations
 
             obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
@@ -232,6 +244,17 @@ classdef planeObj
             obj.MAC_verstab = (2/3)*obj.c_r_v*(1 + obj.lam_v + obj.lam_v.^2)/(1+ obj.lam_v);
             obj.z_MAC_verstab = (obj.b_v/6)*((1 + 2*obj.lam_v)/(1 + obj.lam_v));
             obj.x_MAC_verstab = obj.x_verstab + obj.z_MAC_verstab*tan(deg2rad(obj.LAM_v));
+
+            % Calculating Aerodynamic Centers of Each Portion 
+            obj.x_ac_wings = obj.x_MAC_wing + 0.25*obj.MAC_wing;
+            obj.x_ac_horstabs = obj.x_MAC_horstab + 0.25*obj.MAC_horstab;
+            obj.x_ac_strakes = obj.x_MAC_strake + 0.25*obj.MAC_strake;
+            obj.x_ac_verstabs = obj.x_MAC_verstab +0.25*obj.MAC_verstab;
+
+            obj.x_ac_wings_strakes = obj.x_ac_wings + (obj.x_ac_strakes - obj.x_ac_wings)*obj.S_strakes/((2*obj.S_wing)+obj.S_strakes);
+            obj.x_ac_wings_strakes_fuselage = obj.x_ac_wings_strakes - ((obj.L_fuselage*_wf^2)*(0.005 + 0.111*(obj.x_ac_wings_strakes/obj.L_fuselage)^2)/((2*obj.S_wing)*CL_alpha_wing*57.29)); % waiting on max fuselage length wf
+            obj.x_bar_ac_wings_strakes_fuselage = (obj.x_ac_wings_strakes_fuselage - obj.x_MAC_wing)/obj.MAC_wing;
+
 
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4

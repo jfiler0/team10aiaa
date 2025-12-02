@@ -399,22 +399,22 @@ classdef planeObj
             
         end
         
-        function [excessPower, speed, mach] = getMaxTurnOverall(obj, AB_perc, M_guess)
-            % If the guess was not provided use fall back (should be standard)
-            % This is needeed in calcMaxAltHelper for stability
-            if(nargin < 5)
-                M_guess = 0.5;
-            end
-
-            [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
-            fun = @(V) -obj.calcExcessPower(h, V / a, W, AB_perc); % negative for maximization
-            opts = optimset('Display','off','TolX',1e-3,'MaxFunEvals',200);
-        
-            % Solve for max excess power speed
-            [speed, excessPower] = fminsearch(fun, M_guess * a, opts);
-            mach = speed / a;
-            excessPower = -excessPower;
-        end
+        % function [excessPower, speed, mach] = getMaxTurnOverall(obj, AB_perc, M_guess)
+        %     % If the guess was not provided use fall back (should be standard)
+        %     % This is needeed in calcMaxAltHelper for stability
+        %     if(nargin < 5)
+        %         M_guess = 0.5;
+        %     end
+        % 
+        %     [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
+        %     fun = @(V) -obj.calcExcessPower(h, V / a, W, AB_perc); % negative for maximization
+        %     opts = optimset('Display','off','TolX',1e-3,'MaxFunEvals',200);
+        % 
+        %     % Solve for max excess power speed
+        %     [speed, excessPower] = fminsearch(fun, M_guess * a, opts);
+        %     mach = speed / a;
+        %     excessPower = -excessPower;
+        % end
 
         function cost = calcUnitCost(obj)
             % Exports cost in the millions per aircraft

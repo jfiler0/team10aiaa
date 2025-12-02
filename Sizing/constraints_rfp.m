@@ -26,14 +26,29 @@ function [g_vec, g_names] = constraints_rfp(plane, missionList)
 
     %% 3.4.1 -> M 1.6 dash at 30kf
     % *** Corret to be mid mission fuel weight and air2air configuration
-    maxMach = plane.calcMaxMachFixedAlt(ft2m(30000), plane.MTOW, 1, 1.1);
+
+    fixed_input_copy = plane.fixed_input;
+    fixed_input_superclean = fixed_input_copy; % Making another set of corrections for the mach mach condition (when you scrub down the plane and make it super sleek to set a record)
+
+    % Drag corrections to match F18 performance data for max mach
+    fixed_input_superclean.SWET_Scalar = 2;
+    fixed_input_superclean.CDW_Scalar = 7/4;
+    fixed_input_superclean.K1_Scalar = 1;
+    
+    plane.fixed_input = fixed_input_superclean;
+    plane = plane.updateDerivedVariables();
+
+    maxMach = plane.calcMaxMachFixedAlt(ft2m(30000), plane.WE, 1, 1.1);
     g3 = 1 - maxMach / 1.6;
     g_vec = [g_vec g3];
     g_names = [g_names "M1.6 Dash"];
 
+    plane.fixed_input = fixed_input_copy;
+    plane = plane.updateDerivedVariables();
+
     %% 3.4.5 -> M 0.85 sea level dash
     % *** Corret to be mid mission fuel weight and strike configuration
-    maxMach = plane.calcMaxMachFixedAlt(0, plane.MTOW, 1, 0.6);
+    maxMach = plane.calcMaxMachFixedAlt(0, plane.WE, 1, 0.6);
     g4 = 1 - maxMach / 0.85;
     g_vec = [g_vec g4];
     g_names = [g_names "M0.85 Dash"];

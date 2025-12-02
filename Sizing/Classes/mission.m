@@ -26,7 +26,7 @@ classdef mission
             obj.N_divisions = 5; % How many times to run a segment like cruise/range to get more accuracy
 
         end
-        function [WTO_Next, fuel_burned, W_End] = solveMission(obj, plane, do_plot)
+        function [WTO_Next, fuel_burned, W_End, fuel_remaining] = solveMission(obj, plane, do_plot)
             if nargin < 3
                 do_plot = false;
             end
@@ -108,6 +108,8 @@ classdef mission
             % Calculate the requried MTOW, will be NaN if something went wrong
             WTO_Next = plane.WE + fuel_burned / (1 - fuel_reserve) + plane.W_P + plane.W_Tanks + plane.W_F;
             W_End = W;
+
+            fuel_remaining = plane.MTOW - plane.WE - fuel_burned / (1 - fuel_reserve) - plane.W_P - plane.W_Tanks - plane.W_F;
 
             %% Plotting
 

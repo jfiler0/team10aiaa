@@ -112,7 +112,7 @@ classdef planeObj
                 x_MAC_horstab % X location of LE of airfoil section with same chord as MAC; distance of LE from tip of nose 
 
                 b_h % span
-                LAM_h % sweep angle
+                LAM_LE_horstab % sweep angle
                 GAM_h % dihedral angle
                 inc_h % angle of incidence
 
@@ -208,34 +208,30 @@ classdef planeObj
             obj.S_wing = obj.span*obj.c_avg;
             obj.S_ref = obj.S_wing; % Typical defenition for reference area
             
-            %% Tail Geometry - HW 7 S&C 
+            %% Static Margin / Neutral Point Calculations
 
-            % obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
-            % obj.y_MAC_wing = (obj.span/6)*((1 + 2*obj.tr)/(1+obj.tr));
-            % obj.x_MAC_wing = obj.x_rootchord + obj.y_MAC_wing*tand(obj.Lambda_LE);
-            % 
-            % % Some fixes so the tail code works -> Liam correct how you want
-            % obj.lam_h = obj.tr; % set taper ratio to be the same as the wing
-            % 
-            % % obj.MAC_horstab = (2/3)*obj.c_r_horstab*(1 + obj.lam_h + obj.lam_h.^2)/(1+obj.lam_h);
-            % obj.y_MAC_horstab = (obj.b_h/6)*((1 + 2*obj.lam_h)/(1+obj.lam_h));
-            % % obj.x_MAC_horstab = obj.x_MAC_horstab + obj.y_MAC_horstab*tand(obj.Lam_LE_horstab); % find the proper value for this 
-            % 
-            % % swapped lam for obj.tr
-            % obj.MAC_strake = (2/3)*obj.c_root_strake*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
-            % obj.y_MAC_strake = (obj.b_strake/6)*((1 + 2*obj.tr)/(1+obj.tr));
-            % obj.x_MAC_strake = xwing + obj.y_MAC_strake*tand(lam_LE); % fix inputs 
-
-            obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr); 
+            obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
             obj.y_MAC_wing = (obj.span/6)*((1 + 2*obj.tr)/(1+obj.tr));
-            obj.x_MAC_wing = obj.x_rootchord + obj.y_MAC_wing*tan(deg2rad(obj.Lambda_LE));
+            obj.x_MAC_wing = obj.x_rootchord + obj.y_MAC_wing*tand(obj.Lambda_LE);
+
+            % Some fixes so the tail code works -> Liam correct how you want
+            obj.lam_h = obj.tr; % set taper ratio to be the same as the wing for stealth reasons
+
+            obj.MAC_horstab = (2/3)*obj.c_r_horstab*(1 + obj.lam_h + obj.lam_h.^2)/(1+obj.lam_h);
+            obj.y_MAC_horstab = (obj.b_h/6)*((1 + 2*obj.lam_h)/(1+obj.lam_h));
+            obj.x_MAC_horstab = obj.x_MAC_horstab + obj.y_MAC_horstab*tand(obj.LAM_LE_horstab);
+
+            % swapped lam for obj.tr
+            obj.MAC_strake = (2/3)*obj.c_root_strake*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
+            obj.y_MAC_strake = (obj.b_strake/6)*((1 + 2*obj.tr)/(1+obj.tr));
+            obj.x_MAC_strake = obj.x_strake + obj.y_MAC_strake*tand(obj.Lambda_LE_strake);
 
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4
             
             c = -0.1289; d = 0.7506; % Regression from somewhere lol
             obj.S_wet = obj.fixed_input.SWET_Scalar * 0.09290304*(10^c  * N2lb(obj.WE)^d); % Converting S_wet in ft and W0 in lb
-            Cf = 0.0035; % For fighters?
+            Cf = 0.004; % Raymer gives this value for navy fighters
             CD_min = Cf * obj.S_wet/obj.S_ref;
             
             % Induced Drag Polar
@@ -249,12 +245,13 @@ classdef planeObj
             
             % Can reuse these later
             obj.k1_sub = 1 / (pi * obj.e_osw* obj.AR);
-            obj.k2_sub = -2 * obj.k1_sub * CL_min_D;
+            % obj.k2_sub = -2 * obj.k1_sub * CL_min_D;
+            obj.k2_sub = 0; % set to 0 for a sec ***
             
             % CD_0
-            obj.CD0_Body = CD_min + obj.k1_sub*CL_min_D^2 + obj.k2_sub*CL_min_D; % Actually has k2 term
+            % obj.CD0_Body = CD_min + obj.k1_sub*CL_min_D^2 + obj.k2_sub*CL_min_D; % Actually has k2 term
+            obj.CD0_Body = CD_min;
             obj.CD0 = obj.CD0_Body + obj.CD0_Payload;
-
             obj.M_CD0_max = 1/(cosd(obj.Lambda_LE))^0.2; % The only supersonic drag variable that is not dependent on Cl or M
 
             %% Homework 4 - Lift
@@ -262,7 +259,7 @@ classdef planeObj
             obj.D = 2*sqrt(obj.A_max/pi); % Assuming roughly circular cross section to get fuselage diameter/width
             obj.S_exposed = obj.S_wing * 1.3; % *** Trying to account for body lift/strakes/tail anything not in here
             obj.F = 1.07 * (1 + obj.D/obj.span)^2; % Lift Factor
-            obj.F = 1; % *** Needs to be fixed
+            % obj.F = 1; % *** Needs to be fixed
 
             obj.S_flapped = obj.S_wing * 0.6; % *** Obviously has a big impact on landing CL
             obj.Delta_flap_param = 0.9; % Factor depending on the type of flap
@@ -277,7 +274,7 @@ classdef planeObj
 
         end
 
-        function obj = applyLoadout(obj, loadout)
+        function obj = applyLoadout(obj, loadout) % verify strike loadout does give big impact on drag
             % loadout variable must compre from buildLoadout function
             obj.W_P = loadout.weight_weapons;
             obj.W_Tanks = loadout.weight_tanks_empty;
@@ -301,7 +298,7 @@ classdef planeObj
         end
         
         function CDW_interp = buildCDWInterpolant(obj, M_vec)
-            CD_wave = obj.fixed_input.CDW_Scalar * 4.5 * pi / obj.S_ref * ((obj.A_max - obj.A_0)/obj.L_fuselage)^2 * obj.E_WD * (0.74 + 0.37 * cosd(obj.Lambda_LE)) * (1 - 0.3*sqrt(M_vec - obj.M_CD0_max));
+            CD_wave = 4.5 * pi / obj.S_ref * ((obj.A_max - obj.A_0)/obj.L_fuselage)^2 * obj.E_WD * (0.74 + 0.37 * cosd(obj.Lambda_LE)) * (1 - 0.3*sqrt(M_vec - obj.M_CD0_max));
             CDW = obj.generateTransonicSpline(zeros(size(CD_wave)), CD_wave, M_vec);
             CDW_interp = griddedInterpolant(M_vec, CDW, 'linear');
         end
@@ -338,12 +335,13 @@ classdef planeObj
         end
         
         function [CD, CD0, CDi, CDW, eosw] = calcCD(obj, CL, M)
+            % Add any scaler corrections (though SWET is embedded in the update and is essentially a CD0 scaler)
             CD0 = obj.CD0;
-            CDi = obj.K1_interp(M) * CL^2 + obj.K2_interp(M) * CL;
-            CDW = obj.CDW_interp(M);
+            CDi = obj.fixed_input.K1_Scalar * obj.K1_interp(M) * CL^2 + obj.K2_interp(M) * CL;
+            CDW = obj.fixed_input.CDW_Scalar * obj.CDW_interp(M);
             CD = CD0 + CDi + CDW;
 
-            eosw = CL.^2 / (pi * CD * obj.AR);
+            eosw = CL.^2 / (pi * (CDi + CDW) * obj.AR);
 
             % CD = CL^2 / pi*e*AR
         end
@@ -528,7 +526,7 @@ classdef planeObj
         end
 
         %% Functions for mission calculations (Range/Endurance)
-        function range_m = findTotalMaxRange(obj, W, N_divide)
+        function [range_m, fuel_burned_N] = findTotalMaxRange(obj, W, N_divide)
             % Assuming the aircraft goes from some starting W to its empty weight + any payload + avionics
             % What range can it get?
             % N_divide - How many division to apply to the weight for accuracy in changing max range state
@@ -543,8 +541,32 @@ classdef planeObj
                 LD = obj.calcLD(h, M, Wi);
                 [~, TSFC, ~, ~] = obj.calcProp(M, h, 0);
 
-                range_m = range_m + LD * V * log(Wvec(i - 1)/Wvec(i)) / TSFC;
+                range_m = range_m + LD * V * log(Wvec(i - 1)/Wvec(i)) / (TSFC*9.805);
             end
+
+            fuel_burned_N = Wvec(1) - Wvec(end);
+
+        end
+
+        function [time_s, fuel_burned_N] = findTotalMaxEndurance(obj, W, N_divide)
+            % Assuming the aircraft goes from some starting W to its empty weight + any payload + avionics
+            % What range can it get?
+            % N_divide - How many division to apply to the weight for accuracy in changing max range state
+
+            Wvec = linspace(W, obj.WE + obj.W_F + obj.W_P + obj.W_Tanks, N_divide);
+
+            time_s = 0;
+
+            for i = 2:length(Wvec)
+                Wi = (Wvec(i - 1) + Wvec(i))/2; % Use midpoint weight to find optimum
+                [h, M, V, LD] = obj.findMaxEnduranceState(Wi);
+                % LD = obj.calcLD(h, M, Wi);
+                [~, TSFC, ~, ~] = obj.calcProp(M, h, 0);
+
+                time_s = time_s + LD * log(Wvec(i - 1)/Wvec(i)) / (TSFC*9.805);
+            end
+
+            fuel_burned_N = Wvec(1) - Wvec(end);
 
         end
 

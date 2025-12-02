@@ -139,7 +139,7 @@ classdef mission
                 plotSegment(ax1, time_vec/60, N2lb(weight_vec), type_vec, '-');
                 plotSegment(ax1, time_vec/60, N2lb(fuel_burned_vec), type_vec, '--');
                 xlabel(ax1,'Time [min]'); ylabel(ax1,'Weight / Fuel [lb]');
-                title(ax1,'Current Weight & Fuel Burned'); grid(ax1,'on');
+                title(ax1,'Current Weight and Fuel Burned'); grid(ax1,'on');
             
                 % Top-middle: Altitude
                 ax2 = subplot(3,2,2);

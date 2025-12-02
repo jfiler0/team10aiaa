@@ -173,11 +173,11 @@ classdef flightSegment2
             V = M * a;
             
             [~, TSFC, ~, ~] = plane.calcProp(M, h, 0); % No AB
-            WF = exp( -(obj.input*TSFC) / (V*L2D) ); % input distance is in meters
+            WF = exp( -(obj.input*TSFC*9.805) / (V*L2D) ); % input distance is in meters
         end
         function [WF, TSFC] = Loiter_WF(obj, LD, h, M, plane)
             [~, TSFC, ~, ~] = plane.calcProp(M, h, 0); % No AB
-            WF = exp( (-60*obj.input*TSFC/LD) ); % input time is in minutes
+            WF = exp( (-60*obj.input*TSFC*9.805/LD) ); % input time is in minutes
         end
     end
 end

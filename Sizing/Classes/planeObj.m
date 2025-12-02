@@ -112,7 +112,7 @@ classdef planeObj
                 x_MAC_horstab % X location of LE of airfoil section with same chord as MAC; distance of LE from tip of nose 
 
                 b_h % span
-                LAM_h % sweep angle
+                LAM_LE_horstab % sweep angle
                 GAM_h % dihedral angle
                 inc_h % angle of incidence
 
@@ -208,27 +208,23 @@ classdef planeObj
             obj.S_wing = obj.span*obj.c_avg;
             obj.S_ref = obj.S_wing; % Typical defenition for reference area
             
-            %% Tail Geometry - HW 7 S&C 
+            %% Static Margin / Neutral Point Calculations
 
-            % obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
-            % obj.y_MAC_wing = (obj.span/6)*((1 + 2*obj.tr)/(1+obj.tr));
-            % obj.x_MAC_wing = obj.x_rootchord + obj.y_MAC_wing*tand(obj.Lambda_LE);
-            % 
-            % % Some fixes so the tail code works -> Liam correct how you want
-            % obj.lam_h = obj.tr; % set taper ratio to be the same as the wing
-            % 
-            % % obj.MAC_horstab = (2/3)*obj.c_r_horstab*(1 + obj.lam_h + obj.lam_h.^2)/(1+obj.lam_h);
-            % obj.y_MAC_horstab = (obj.b_h/6)*((1 + 2*obj.lam_h)/(1+obj.lam_h));
-            % % obj.x_MAC_horstab = obj.x_MAC_horstab + obj.y_MAC_horstab*tand(obj.Lam_LE_horstab); % find the proper value for this 
-            % 
-            % % swapped lam for obj.tr
-            % obj.MAC_strake = (2/3)*obj.c_root_strake*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
-            % obj.y_MAC_strake = (obj.b_strake/6)*((1 + 2*obj.tr)/(1+obj.tr));
-            % obj.x_MAC_strake = xwing + obj.y_MAC_strake*tand(lam_LE); % fix inputs 
-
-            obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr); 
+            obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
             obj.y_MAC_wing = (obj.span/6)*((1 + 2*obj.tr)/(1+obj.tr));
-            obj.x_MAC_wing = obj.x_rootchord + obj.y_MAC_wing*tan(deg2rad(obj.Lambda_LE));
+            obj.x_MAC_wing = obj.x_rootchord + obj.y_MAC_wing*tand(obj.Lambda_LE);
+
+            % Some fixes so the tail code works -> Liam correct how you want
+            obj.lam_h = obj.tr; % set taper ratio to be the same as the wing for stealth reasons
+
+            obj.MAC_horstab = (2/3)*obj.c_r_horstab*(1 + obj.lam_h + obj.lam_h.^2)/(1+obj.lam_h);
+            obj.y_MAC_horstab = (obj.b_h/6)*((1 + 2*obj.lam_h)/(1+obj.lam_h));
+            obj.x_MAC_horstab = obj.x_MAC_horstab + obj.y_MAC_horstab*tand(obj.LAM_LE_horstab);
+
+            % swapped lam for obj.tr
+            obj.MAC_strake = (2/3)*obj.c_root_strake*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
+            obj.y_MAC_strake = (obj.b_strake/6)*((1 + 2*obj.tr)/(1+obj.tr));
+            obj.x_MAC_strake = obj.x_strake + obj.y_MAC_strake*tand(obj.Lambda_LE_strake);
 
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4

@@ -30,7 +30,6 @@ fixed_input.KLOC = 15000; % in kilo-lines of code
 fixed_input.MTOW_Scalar = 66/50; % Since the Raymer fighter jet corrections is 16k lb lower than the F18
 fixed_input.SWET_Scalar = 243/152; % Shifting SWET historical regression to match VSP
 fixed_input.CDW_Scalar = 7.5/4.5; % Wave drag estimate is typically too low
-fixed_input.K1_Scalar = 1.3; % Scales induced drag (and thus reduces eosw)
 
 geom.empty_weight = lb2N(28450); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
 geom.Lambda_LE = 25; % deg - Leading Edge Sweep

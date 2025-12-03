@@ -48,6 +48,12 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
     WE_opt    = x_opt(1);
     scale_opt = x_opt(2);
 
+    plane.span = plane_in.span * scale_opt;
+    plane.c_r = plane_in.c_r * scale_opt;
+    plane.c_t = plane_in.c_t * scale_opt;
+
+    plane.WE = WE_opt;
+
     objective(WE_opt, scale_opt); % This updates the plane object
     
     fprintf("Aicraft: %s | Sized has WE = %.3f lb + Wings scaled by %.5f", plane.name, N2lb(plane.WE), scale_opt)
@@ -57,7 +63,7 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
         % -------------------------------
         % Generate coarse grid
         % -------------------------------
-        N = 30;
+        N = 20;
         WE_range    = linspace(WE_opt/graphSize, graphSize*WE_opt, N);
         scale_range = linspace(scale_opt/graphSize, graphSize*scale_opt, N);
         [WE_grid, scale_grid] = meshgrid(WE_range, scale_range);
@@ -128,11 +134,30 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
     
             % Shade infeasible region (opaque, matching line color)
             mask = gk_fine > 0;
-            zShade = max(cost_grid_fine(:)) * double(mask);
-            zShade(~mask) = NaN;
+            lift = max(cost_grid_fine(:)) - k * 1e-2;   % small lift above the surface
+            zShade = lift * mask;                    % mask=1 gets height k; mask=0 gets zero (ignored later)
+            zShade(mask == 0) = NaN;              % only draw masked areas
+
             hPatch = surf(WE_grid_fine, scale_grid_fine, zShade, ...
                           'FaceColor', colors(k,:), 'FaceAlpha', 0.2, 'EdgeColor', 'none');
-            uistack(hPatch,'bottom');
+
+            % set(hPatch,'FaceAlpha',0.2,'EdgeColor','none','VertexAlphaData',[0.2], ...
+            %            'AlphaDataMapping','none','FaceLighting','none','HandleVisibility','off');
+
+            % hPatch.Renderer = 'painters';   % forces 2D draw order
+            set(gcf, 'Renderer', 'painters');
+
+            % mask = gk_fine > 0;
+            % x = WE_grid_fine(mask);
+            % y = scale_grid_fine(mask);
+            % z = ones(sum(mask,'all'),1)*lift;
+            % 
+            % hPatch = patch(x, y, z, colors(k,:), ...
+            %     'FaceAlpha',0.2, 'EdgeColor','none');
+            % 
+            % uistack(hPatch,'top');     % now works
+
+            % uistack(hPatch,'bottom');
     
             % Constraint contour line
             [~, hLine] = contour(WE_grid_fine, scale_grid_fine, gk_fine, [0 0], ...

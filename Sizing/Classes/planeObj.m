@@ -450,7 +450,10 @@ classdef planeObj
         function stallSpeed = calcStallSpeed(obj, h, W)
             [~, a, ~, rho, ~] = queryAtmosphere(h, [0 1 0 1 0]);
             % For some reason an imaginary comp shows up so real helps
-            f = @(V) real( W - get_output_at_index(@() obj.calcCL(V / a), 2) * obj.S_ref * rho * V^2 ); % I don't know why @() is required but it does work
+
+            q = @(V) 0.5 * rho * V^2;
+
+            f = @(V) real( W - get_output_at_index(@() obj.calcCL(V / a), 2) * obj.S_ref * q(V) ); % I don't know why @() is required but it does work
             x0 = 0.5 * a;
             stallSpeed = fzero(f , x0);
         end
@@ -901,9 +904,13 @@ classdef planeObj
                 climbAngle_NoAB = emptyhvec;
                 climbSpeed_NoAB = emptyhvec;
             
+            progressbar('Performance Plots')
+            num_ops = numel(M) + numel(Mvec) + numel(hvec);
 
             % Query functions for each point
             for i = 1:numel(M)
+                progressbar(i/num_ops)
+
                 [q, ~, ~, ~] = metricFreestream(h(i), M(i));
                 qinf(i) = q;
 
@@ -931,11 +938,14 @@ classdef planeObj
             end
 
             for i = 1:numel(Mvec)
+                progressbar((i + numel(M))/num_ops)
                 [CL_max_clean(i), CL_max_flapped(i), CLa(i)] = obj.calcCL(Mvec(i));
                 CDW(i) = obj.CDW_interp(Mvec(i));
             end
 
             for i = 1:numel(hvec)
+                progressbar((i + numel(M) + numel(Mvec))/num_ops)
+
                 [CL_max_clean(i), CL_max_flapped(i), CLa(i)] = obj.calcCL(Mvec(i));
 
                 stallSpeed(i) = obj.calcStallSpeed(hvec(i), W);
@@ -970,9 +980,11 @@ classdef planeObj
 
             end
 
+            progressbar(1)
+
             %% AERODYNAMICS PLOT
 
-            figure;
+            figure('Name',"Aerodynamics");
             subplot(3, 3, 1);
             surf(M, m2ft(h)/1000, trimCL, 'EdgeColor', 'none')
             xlabel('$M$')
@@ -1039,7 +1051,7 @@ classdef planeObj
 
             %% ATMOSPHERE PLOT
 
-            figure;
+            figure('Name',"Atmosphere");
             subplot(2, 2, 1)
             plot(m2ft(hvec)/1000, Tvec);
             ylabel("$T$ [K]")
@@ -1071,7 +1083,7 @@ classdef planeObj
             sgtitle("ATMOSPHERE")
 
             %% PROPULSION
-            figure;
+            figure('Name',"Propulsion");
             
             subplot(2, 2, 1);
             surf(M, m2ft(h)/1000, TA_NoAB/1000, 'EdgeColor', 'none', 'FaceAlpha', 1.0);
@@ -1132,7 +1144,7 @@ classdef planeObj
             sgtitle("PROPULSION")
 
             %% PERFORMANCE
-            figure;
+            figure('Name',"Performance");
             subplot(2, 3, 1);
             surf(M, m2ft(hvec)/1000, turn_rate, 'EdgeColor', 'none')
             xlabel('$M$')
@@ -1198,6 +1210,8 @@ classdef planeObj
             title("Max Sustained Climb Rate")
             legend(Location="best")
             hold off;
+
+            sgtitle("PERFORMANCE")
 
 
         end

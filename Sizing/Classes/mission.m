@@ -3,10 +3,11 @@ classdef mission
         segment_list
         loadout
         N_divisions
+        name
     end
 
     methods
-        function obj = mission(segment_list, loadout) 
+        function obj = mission(segment_list, loadout, name) 
             
             % segment_list should be an array of flightSegment2 objects. loadout should be a constructor from buildLoadout
 
@@ -24,6 +25,7 @@ classdef mission
             obj.segment_list = segment_list;
             obj.loadout = loadout;
             obj.N_divisions = 5; % How many times to run a segment like cruise/range to get more accuracy
+            obj.name = name;
 
         end
         function [WTO_Next, fuel_burned, W_End, fuel_remaining] = solveMission(obj, plane, do_plot)
@@ -103,6 +105,7 @@ classdef mission
                 % fprintf("\nW_IN = %.2f lb, W_OUT = %.2f lb, fuel_burned = %.2f lb, WF = %.3f", N2lb(W), N2lb(W_OUT), N2lb(fuel_burned_i), WF)
 
             end
+
             % Fuel tank weight = fuel_burned / (1 - fuel_reserve)
 
             % Calculate the requried MTOW, will be NaN if something went wrong
@@ -134,7 +137,7 @@ classdef mission
                 end
 
             if do_plot && ~isempty(time_vec)
-                figure;
+                figure('Name',obj.name);
             
                 % Top-left: Weight & Fuel Burned
                 ax1 = subplot(3,2,1); hold(ax1,'on');
@@ -181,6 +184,8 @@ classdef mission
                 used_types(strcmp(used_types,'')) = [];  % Remove empty string
                 
                 segment_handles = gobjects(length(used_types),1);
+
+                sgtitle(sprintf("%s on %s", plane.name, obj.name))
                 
                 for k = 1:length(used_types)
                     t = used_types{k};

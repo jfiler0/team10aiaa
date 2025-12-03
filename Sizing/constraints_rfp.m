@@ -39,8 +39,11 @@ function [g_vec, g_names] = constraints_rfp(plane, missionList)
     plane = plane.updateDerivedVariables();
 
     maxMach = plane.calcMaxMachFixedAlt(ft2m(30000), plane.mid_mission_weight, 1, 1.1);
-    g3 = 1 - maxMach / 1.6;
-    % g3 = 0; % THIS DISABLES DASH
+    % g3 = 1 - maxMach / 1.6;
+    % % g3 = 0; % THIS DISABLES DASH
+    % g_vec = [g_vec g3];
+    % g_names = [g_names "M1.6 Dash"];
+    g3 = 1 - maxMach / 1.45;
     g_vec = [g_vec g3];
     g_names = [g_names "M1.6 Dash"];
 

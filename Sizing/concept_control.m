@@ -2,7 +2,7 @@
 % Controls
 
     % Chose Your Concept
-    CN = 1; % COLUMN NUMBER
+    CN = 2; % COLUMN NUMBER
         % 1 -> F18E
         % 2 -> F18E_Sized (for testing)
         % 3 -> F16
@@ -14,15 +14,15 @@
         % 9 -> Concept 5
         % 10 -> Temp (can paste in values here to save them temporarily)
 
-    performance_plots = true; % Aerodynamics, Propulsion, Atmospere, Performance grids
-    mission_plots = false; % Fuel burn, LD, TSFC over time
+    performance_plots = false; % Aerodynamics, Propulsion, Atmospere, Performance grids
+    mission_plots = true; % Fuel burn, LD, TSFC over time
     geometry_plot = false; % Outline of the wing geometry (not implemented yet)
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
-    sizing_plot = false; % Shows constraint boundaries (this does take a min)
-    sensitivities_plot = false;
+        sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
+    sensitivities_plot = false; % Can change parameter selection in "Sensitivities Plot"
 
-    skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
+    skip_max_ranges = false; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
     write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
 
@@ -64,7 +64,7 @@
         flightSegment2("CRUISE", NaN, NaN, nm2m(700))
         flightSegment2("LANDING") ] , ...
         ...
-        ferry_loadout);
+        ferry_loadout, "700nm Ferry");
 
     air2air_700 = mission( [...
         flightSegment2("TAKEOFF") 
@@ -75,7 +75,7 @@
         flightSegment2("CRUISE", NaN, NaN, nm2m(700))
         flightSegment2("LANDING") ] , ...
         ...
-        air2air_loadout);
+        air2air_loadout, "700nm Air 2 Air");
     
     % 5 cruise segments * 10 divisions * 93 function calls * 50 max internal function calls
     
@@ -93,7 +93,7 @@
         flightSegment2("LOITER", NaN, ft2m(10000), 20) % 20 min loiter
         flightSegment2("LANDING") ] , ...
         ...
-        strike_loadout);
+        strike_loadout, "700nm Strike");
 
     missionList = [air2ground_700 air2air_700]; % Missions to constraint
 
@@ -152,11 +152,17 @@
 
     if(sensitivities_plot)
         disp("Working on sensitvities plot...")
-        values_to_change = {"WE", "Empty Weight [N]" ; ...
-                           "c_r", "Root Chord [m]" ; ...
-                           "c_t", "Tip Chord [m]" ; ...
+        values_to_change = { ...
+                           "WE", "Empty Weight [N]" ; ...
+                           % "c_r", "Root Chord [m]" ; ...
+                           % "c_t", "Tip Chord [m]" ; ...
                            "span", "Span [m]" ; ...
                            "Lambda_LE", "LE Sweep [deg]" ; ...
+                           "L_fuselage", "Fuselage Length [m]" ; ...
+                           "A_max", "Max Fuse Area [m2]" ; ...
+                           % "span", "Span [m]" ; ...
+                           % "span", "Span [m]" ; ...
+                           % "span", "Span [m]" ; ...
                            };
 
         sensitivitesPlot(plane, values_to_change, 1.5, missionList, @constraints_rfp, 15);
@@ -263,9 +269,13 @@ if ~skip_max_ranges
 
     startRange = 10; %nm
     
+    progressbar('Max Mission Ranges')
     max_air2air_range = fzero(@(R) W0_diff( plane, returnAir2AirMission( R, air2air_loadout ) ) , startRange ); % *** need to correct air2air loadout
+    progressbar(1/3);
     max_air2ground_range = fzero(@(R) W0_diff( plane, returnAir2GroundMission( R, strike_loadout ) ) , startRange );
+    progressbar(2/3);
     max_ferry_range = fzero(@(R) W0_diff( plane, returnFerryMission( R, ferry_loadout ) ) , startRange );
+    progressbar(1);
     
     T = assignVar(max_air2air_range, 'Combat Mission Max Range [nm]', CN, T);
     T = assignVar(max_air2ground_range, 'Strike Mission Max Range [nm]', CN, T);
@@ -282,7 +292,7 @@ function ferry_mission = returnFerryMission(range, loadout)
         flightSegment2("CRUISE", NaN, NaN, nm2m(range))
         flightSegment2("LANDING") ] , ...
         ...
-        loadout);
+        loadout, "Ferry");
 end
 function air2air_mission = returnAir2AirMission(range, loadout)
     air2air_mission = mission( [...
@@ -294,7 +304,7 @@ function air2air_mission = returnAir2AirMission(range, loadout)
         flightSegment2("CRUISE", NaN, NaN, nm2m(range))
         flightSegment2("LANDING") ] , ...
         ...
-        loadout);
+        loadout, "Air2Air");
 end
 function air2ground_mission = returnAir2GroundMission(range, loadout)
     air2ground_mission = mission( [...
@@ -311,9 +321,8 @@ function air2ground_mission = returnAir2GroundMission(range, loadout)
         flightSegment2("LOITER", NaN, ft2m(10000), 20) % 20 min loiter
         flightSegment2("LANDING") ] , ...
         ...
-        loadout);
+        loadout, "Air2Ground");
 end
-
 
 %% Evaluate Constraints
 

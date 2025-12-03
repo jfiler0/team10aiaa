@@ -1,192 +1,174 @@
-%% =====================================================================
-%  Performance & Mission Analysis – Generic Jet Fighter (F-16A default)
-%  NOTE: Edit the parameter blocks below to reuse this script for
-%        different aircraft and missions. Comments/Javadocs courtesy
-%        of daddy chatgpt.
-% ======================================================================
-
 %{
 ======================================================================
- TODO / NOT-YET-IMPLEMENTED FEATURES FOR FULL PERFORMANCE TOOLBOX
+ TODO / NOT-YET-IMPLEMENTED FEATURES FOR THIS SCRIPT
 ======================================================================
-This script implements a large portion of the required performance
-analysis (cruise, climb, thrust vs drag, TOP, landing estimate, 
-service ceiling estimate, Ps at a point, etc.). 
+This script already covers a lot of single-point / "sanity check"
+performance for a naval strike fighter: thrust/drag vs Mach, ROC and
+service ceiling estimates, TOP-based takeoff sizing, a landing estimate,
+max Mach estimate, Ps at a point, simple mission-level L/D checks, and a
+few global metrics (stall speeds, climb, etc.).
 
-The following items are still missing or only partially implemented.
-They will require additional models, inputs, or mission data to do 
-properly. Use this as a roadmap for future extensions.
+In the *full* workflow, this script is meant to sit alongside:
+  • planeObj  – holds geometry, aero, and propulsion models.
+  • flightSegment2 – does segment-by-segment fuel fractions.
+  • mission / sizeAircraft – runs full missions and sizing loops
+    (F-18E example).
 
-----------------------------------------------------------------------
-1) Mission-level "required" L/D and AR / S_wet / S_ref bounds
-----------------------------------------------------------------------
- • Minimum L/D that completes the *full mission*:
-   - CURRENT: script computes available L/D (L/D vs Mach, max L/D).
-   - MISSING: required (L/D)_mission that guarantees the mission 
-     fuel fraction is feasible.
-   - NEEDED:
-       - Full mission profile (all segments: TO, climb, cruise,
-         combat, loiter, return, reserves, etc.).
-       - Assumed or computed segment fuel fractions (Raymer-style).
-       - A way to back out the minimum effective L/D that still 
-         closes the fuel fraction budget.
-
- • Range of AR / S_wet ratios that still complete the mission:
-   - CURRENT: AR is fixed, S_wet not explicitly modeled.
-   - MISSING: parametric sweep of AR and S_wet, with performance
-     re-evaluation (drag polar changes, weight changes, etc.).
-   - NEEDED:
-       - Geometric / empirical model for wetted area S_wet as a
-         function of wing planform, fuselage, tail, etc.
-       - Method to update CD0 (and possibly k1, k2) when AR or 
-         S_wet / S_ref changes.
-       - Mission closure logic (fuel fraction check) for each 
-         (AR, S_wet/S_ref) combination.
-
- • S_wet / S_ref ratio bounds that still complete the mission:
-   - CURRENT: S_wet / S_ref not explicitly tracked.
-   - MISSING: mapping from geometry/weights to S_wet/S_ref and 
-     checking mission completion as above.
-   - NEEDED: same items as AR/S_wet, plus a geometry/weights model 
-     to relate S_wet/S_ref to empty weight and CD0.
+Below is what this script does *not* do by itself, and how the other
+tools already help or could be hooked in.
 
 ----------------------------------------------------------------------
-2) Full TOFL and LFL curves (beyond single-point estimates)
+1) Full mission fuel bookkeeping (segment-by-segment)
 ----------------------------------------------------------------------
- • Takeoff Field Length (TOFL) vs W/S, altitude, or T/W:
-   - CURRENT: single-point estimates from Raymer Fig. 5.4 for 
-     specific TOP values and airfields.
-   - MISSING: continuous TOFL curves (e.g., TOFL vs W/S or TOFL vs 
-     TOP) for plotting and trade studies.
-   - NEEDED:
-       - Either:
-         (a) an analytical TOFL model (Raymer Ch. 5), or
-         (b) a digitized / tabulated version of Fig. 5.4 for several
-             TOP values.
-       - Clear assumptions about runway condition (dry, paved) and
-         rotation / lift-off criteria.
+Status:
+  • planeObj + flightSegment2 + mission already implement the full
+    segment loop:
+      – TAKEOFF, CLIMB, CRUISE, LOITER, COMBAT, LANDING
+      – W_in → W_out, WF, fuel_burned, plus segment info
+  • The F-18E sizing script shows how to chain segments and solve
+    ferry / strike missions, then feed results into sizeAircraft.
 
- • Landing Field Length (LFL) curves:
-   - CURRENT: single Raymer 5.11 estimate at one altitude / W/S.
-   - MISSING: LFL vs W/S, vs altitude, and possibly vs CLmax_land.
-   - NEEDED:
-       - Same Raymer 5.11 relation applied across a grid of W/S and/or
-         altitude values.
-       - Optional: correction factors for runway surface conditions.
+Missing *in this script*:
+  • A direct mission driver loop; here we only do Breguet-style single
+    segments and "representative" mission L/D checks.
+
+What would be needed (if you want it fully self-contained here):
+  • A small mission definition (array of segment structs) and a wrapper
+    that either:
+      – Calls flightSegment2/planeObj/mission, or
+      – Replicates the same logic with the local Breguet formulas.
 
 ----------------------------------------------------------------------
-3) Detailed turn performance & Ps-based constraints
+2) AR / S_wet / S_ref sweeps tied to mission closure
 ----------------------------------------------------------------------
- • Instantaneous & Sustained turn performance:
-   - CURRENT: Ps at one (M, h) is computed, but not integrated into 
-     a full turn-rate model.
-   - MISSING:
-       - Instantaneous turn rate and radius as functions of speed, 
-         n_max, CLmax.
-       - Sustained turn rate/radius vs speed and altitude using Ps>=0 
-         (or Ps_req).
-       - Time to complete 1 turn (360 deg) for both instantaneous and 
-         sustained.
-   - NEEDED:
-       - Chosen max load factor n_max (structural / pilot).
-       - CLmax for turn configuration (clean or maneuvering).
-       - Ps requirement(s) for sustained turn (e.g., Ps>=0 or Ps>=Ps_req).
-       - Functions to compute omega_turn = V/R and R_turn from n and V.
+Status:
+  • planeObj already:
+      – Builds S_wet, CD0, k1, k2 from geometry and Raymer-style
+        regressions.
+      – Handles loadouts (external stores) and their CD0/weight impact.
+  • mission + flightSegment2 already provide a "mission closure" check
+    via WTO_next, fuel_burned, and W_end.
 
- • Ps-based constraint analysis:
-   - CURRENT: Ps is computed at one point for a simple check.
-   - MISSING:
-       - Ps(M, h) maps over a grid for constraint plotting.
-       - Ps-based lines on the T/W vs W/S constraint diagram 
-         (e.g., lines where Ps = 0 or Ps = Ps_req).
-   - NEEDED:
-       - Ps(M, h, W/S, T/W) function generalized with n as a parameter.
-       - Loop over W/S and T/W to find contours where Ps equals a 
-         specified requirement.
+Missing:
+  • A sweep in this script over AR, S_wet (or scalar corrections), and
+    S_ref that:
+      – Rebuilds the polar (CD0, k1, k2) via planeObj-like logic.
+      – Calls a mission solver (e.g., mission/flightSegment2) to see
+        which combinations actually close the naval strike mission.
+
+Needed:
+  • A geometry/performance wrapper that:
+      – For each (AR, SWET_scalar, Sref) set, builds a planeObj-style
+        polar (or directly instantiates a planeObj).
+      – Runs a mission object (like the F-18E ferry/strike examples).
+      – Records pass/fail and key metrics for plotting design spaces.
 
 ----------------------------------------------------------------------
-4) Multi-surface takeoff/landing performance
+3) Full TOFL / LFL curves and constraint plots
 ----------------------------------------------------------------------
- • TOFL and LFL on different surfaces:
-   - CURRENT: only a nominal dry, paved condition implied.
-   - MISSING: adjustments for wet, icy, grass, sand, or improvised 
-     surfaces.
-   - NEEDED:
-       - Friction coefficients or correction factors for each surface
-         type (from Raymer or another reference).
-       - Functions that scale TOFL and LFL from the dry/paved baseline
-         to each surface condition.
+Status:
+  • This script uses:
+      – Raymer TOP definition for single-point TOFL at Elmendorf /
+        Edwards.
+      – Raymer 5.11 for a single landing field length estimate.
+  • planeObj has takeoff/landing speed calculation, but not full
+    TOFL/LFL vs W/S curves by itself.
+
+Missing:
+  • TOFL vs W/S, altitude, and T/W surfaces/curves for naval carriers
+    and shore-based runways.
+  • LFL vs W/S and field elevation curves feeding into constraint plots
+    and sizing (to match what sizeAircraft does for the F-18E).
+
+Needed:
+  • Simple wrappers that:
+      – Loop over W/S and sigma and map TOP → S_TO.
+      – Loop over W/S and h and apply Raymer 5.11 for landing.
+      – Overlay these with T/W constraint curves already computed
+        here.
 
 ----------------------------------------------------------------------
-5) Payload performance trades
+4) Sustained turn performance and Ps-based envelopes
 ----------------------------------------------------------------------
- • Range, loiter, climb, turn performance vs payload:
-   - CURRENT: payload is not explicitly varied; W_TO is fixed.
-   - MISSING:
-       - Payload-range diagrams (range vs payload).
-       - Loiter time vs payload.
-       - Turn/climb capability vs payload.
-   - NEEDED:
-       - Weight breakdown: W_empty, W_fuel, W_payload.
-       - Rules for how added payload replaces fuel, or increases 
-         gross weight.
-       - Recalculation of W/S and T/W for each payload case.
-       - Re-run Breguet range/loiter, Ps, turn, climb performance 
-         for each case.
+Status:
+  • planeObj already has:
+      – calcExcessPower, calcMaxExcessPower, calcMaxClimbRate,
+        getMaxTurn, calcMaxAlt, calcMaxMach, etc.
+      – These give Ps, sustained climb, and turn metrics vs (M, h, W,
+        AB%).
+  • This script currently only checks Ps at a single (M, h) point and
+    prints pass/fail against a Ps_req.
 
- • Impact on empty weight estimate:
-   - CURRENT: no built-in empty-weight estimation.
-   - NEEDED:
-       - Empirical weight equations (Raymer Part II) to relate 
-         geometry, AR, S_wet, engine choice, and payload to empty
-         weight.
-       - Coupling between empty-weight changes and performance
-         (through W/S and T/W).
+Missing:
+  • A sustained-turn envelope (Ps ≥ 0) in the (V, h) or (n, V) plane.
+  • A clean "instantaneous vs sustained" turn-rate comparison plot.
+
+Needed:
+  • A loop over M (or V) and h that calls planeObj.calcExcessPower
+    (AB and MIL) and:
+      – Filters Ps ≈ 0 for sustained turn.
+      – Computes n, turn rate, and radius for instantaneous vs
+        sustained and plots envelopes.
 
 ----------------------------------------------------------------------
-6) Mission-level constraint & "completion" checks
+5) More detailed payload trades and external stores effects
 ----------------------------------------------------------------------
- • Mission closure / "does this concept complete the mission?":
-   - CURRENT: individual segments (cruise, loiter) are analyzed, but
-     a full mission fuel-balance check is not implemented.
-   - MISSING:
-       - A mission analysis driver that steps through all segments,
-         applies fuel fractions (or integrates fuel burn via TSFC and
-         thrust), and checks that final weight is acceptable given
-         reserves.
-       - A formal "pass/fail" flag for whether a given (W/S, T/W,
-         AR, S_wet/S_ref, payload) design completes the mission.
-   - NEEDED:
-       - Mission segment definitions (altitude, Mach, duration or
-         distance, load factors, etc.).
-       - Fuel fraction or fuel-burn models per segment.
-       - Reserve and diversion policies.
+Status:
+  • planeObj.applyLoadout already propagates:
+      – CD0_Payload, W_P, W_Tanks and updates CD0.
+  • mission + flightSegment2 already let you:
+      – Run ferry vs strike missions with different loadouts and see
+        WTO_next, fuel_burned, and W_end (F-18E example).
+
+Missing:
+  • A compact payload–range / payload–loiter "frontier" plot inside
+    this script for the naval strike fighter.
+
+Needed:
+  • A loop over payload cases (different loadouts / W_P / W_Tanks):
+      – Build a planeObj with that loadout.
+      – Run one or more mission objects or findTotalMaxRange /
+        findTotalMaxEndurance.
+      – Plot range vs payload and loiter vs payload for quick trades.
 
 ----------------------------------------------------------------------
-7) Glide performance & drag polar extensions
+6) Glide and engine-out performance
 ----------------------------------------------------------------------
- • Glide performance beyond best L/D:
-   - CURRENT: L/D and glide angle can be computed from existing 
-     CL, CD; best L/D speed is implicit.
-   - MISSING:
-       - Glide polar (descent rate vs airspeed).
-       - Glide range from a given altitude for power-off conditions.
-   - NEEDED:
-       - Explicit "power-off" mode (T=0) and chosen weight W.
-       - Calculation of vertical speed = V * sin(gamma_g) and range 
-         = h / tan(|gamma_g|).
+Status:
+  • The CL–CD polar and L/D logic exist (both here and in planeObj).
+
+Missing:
+  • Explicit "engine-out" / power-off glide mode:
+      – Best-glide speed and L/D vs weight.
+      – Glide range from a given altitude (useful for divert /
+        recovery studies).
+
+Needed:
+  • A simple wrapper that sets thrust = 0 and:
+      – Uses the polar to find CL for best L/D.
+      – Computes corresponding V, descent angle, and glide range
+        from a chosen altitude.
 
 ----------------------------------------------------------------------
-8) Documentation & data source references (Raymer)
+7) Documentation / references for report integration
 ----------------------------------------------------------------------
- • Many of the missing items are tied to:
-   - Raymer "Aircraft Design: A Conceptual Approach"
-     - Ch. 3–5 for performance, TO/landing, constraint plots.
-     - Ch. 16–18 for weights and mission fuel fractions.
-   - You should decide:
-     - Which exact Raymer equations/figures you want to use for TOFL,
-       LFL, Ps requirements, payload-range, etc.
-     - How detailed your mission model needs to be for this class.
+Status:
+  • The computations in this script mostly follow Raymer, but only a
+    few are explicitly tagged with sources.
+
+Missing:
+  • Systematic inline references from each major equation back to
+    Raymer (or other sources) to support a design report and future
+    traceability.
+
+Needed:
+  • Comment tags such as:
+      – % Raymer Eq. 3.21 – drag polar
+      – % Raymer Fig. 5.4 – TOP vs T/W
+      – % Raymer Eq. 17.23 – Breguet range
+    placed next to each key calculation, plus a brief summary
+    section in the write-up describing how this script, planeObj,
+    flightSegment2, and mission/sizeAircraft all tie together.
 
 ======================================================================
 %}
@@ -206,7 +188,7 @@ rho_SL = 0.002377; % standard sea-level density [slug/ft^3]
 % =====================================================================
 %  USER INPUT – AIRCRAFT GEOMETRY & AERODYNAMICS  %% EDIT PER AIRCRAFT
 % ======================================================================
-aircraftName = "F-16A Block 10";  % just for printed output
+aircraftName = "Naval Strike Fighter Concept";  % for printed output
 
 S_ref  = 300;        % wing reference area [ft^2]
 W_S    = 104.59;     % baseline design wing loading W/S [lb/ft^2]
@@ -247,11 +229,9 @@ M_cruise = 0.87;       % [-]
 e_cruise = 0.914;      % Oswald factor used in cruise-range optimum
 CD0_cruise = CDo;      % CD0 for cruise; replace with regression if you like
 
-% Range (Breguet) segment
+% Range (Breguet) segment reference conditions
 h_R2   = 40000;        % [ft]
 M_R2   = 0.87;         % [-]
-Wi_R2  = 0.90 * W_TO;  % [lbf] initial weight in range segment (EDIT)
-Wf_R2  = 0.80 * W_TO;  % [lbf] final   weight in range segment (EDIT)
 
 % Takeoff / landing CL and T/W (from aero + prop subteams)
 CL_TO_ref   = 1.8;     % [-] CL in takeoff configuration (for TOP sweep)
@@ -260,7 +240,7 @@ T_W_TO      = 0.71;    % [-] thrust-to-weight at takeoff
 CLmax_land  = 2.4;     % [-] CLmax for landing configuration
 
 % Runway allowance and required distances (Raymer 5.4/5.11)
-Sa          = 450;     % [ft] added runway allowance for landing
+Sa            = 450;   % [ft] added runway allowance for landing
 S_takeoff_req = 4000;  % [ft] desired TO distance at sea level (req case)
 
 % Field elevations for bases (ft)
@@ -279,7 +259,38 @@ h_TA = 35000;                     % [ft]
 M_TA = linspace(0.5, 2.0, 50);    % Mach sweep
 
 % TOP that corresponds to 4000-ft takeoff (1-engine jet, Raymer Fig. 5.4)
-TOP_req_4000ft = 100;            % dimensionless (approx; EDIT if re-read chart)
+TOP_req_4000ft = 100;            % dimensionless (approx; EDIT if needed)
+
+% =====================================================================
+%  USER INPUT – NAVAL STRIKE MISSION + WEIGHT BREAKDOWN  %% NEW
+% ======================================================================
+% High-level notional carrier-based strike mission (EDIT as needed)
+R_outbound_nm = 400;    % [nmi] ship -> target
+R_inbound_nm  = 400;    % [nmi] target -> ship (RTB)
+R_mission_nm  = R_outbound_nm + R_inbound_nm;
+
+t_combat_min  = 10;     % [min] on-station high-power maneuvering
+t_loiter_min  = 20;     % [min] optional loiter time near carrier/target
+reserve_fuel_frac = 0.05;  % 5% fuel reserve at landing (carrier recovery)
+
+% Very rough naval-fighter weight fractions (EDIT with better data)
+W_empty_frac   = 0.56;      % W_empty / W_TO (similar to F/A-18E class)
+W_fuel_frac    = 0.29;      % internal + external fuel / W_TO
+W_payload_frac = 1 - W_empty_frac - W_fuel_frac;
+
+W_empty   = W_empty_frac   * W_TO;   % [lbf]
+W_fuel    = W_fuel_frac    * W_TO;   % [lbf] fuel available for mission
+W_payload = W_payload_frac * W_TO;   % [lbf] nominal strike payload
+
+fprintf('\n==== Naval Strike Fighter Setup ====\n');
+fprintf('Empty weight fraction   ~ %.2f (W_empty = %.0f lb)\n', ...
+        W_empty_frac, W_empty);
+fprintf('Fuel fraction           ~ %.2f (W_fuel  = %.0f lb)\n', ...
+        W_fuel_frac,  W_fuel);
+fprintf('Payload fraction        ~ %.2f (W_pay   = %.0f lb)\n', ...
+        W_payload_frac, W_payload);
+fprintf('Nominal strike mission  : %.0f + %.0f = %.0f nmi\n', ...
+        R_outbound_nm, R_inbound_nm, R_mission_nm);
 
 %% =====================================================================
 %  BASELINE PERFORMANCE @ h_perf (thrust, drag, ROC, etc.)
@@ -326,7 +337,7 @@ fprintf('[%s] Loiter W/S optimum:  W_S_loiter = %.3f lb/ft^2\n', ...
 
 sigma_land = rho_land / rho_SL;
 
-W_S_land = W_S;   % you can override if HW1 landing segment W/S differs
+W_S_land = W_S;   % you can override if HW landing segment W/S differs
 
 S_landing = 80 * W_S_land * (1/(sigma_land*CLmax_land)) + Sa;
 
@@ -389,6 +400,10 @@ T_dry_alt = T_mil_R2;           % available dry thrust at altitude
 % TSFC_total [lbm/s] / T_SL_mil [lbf] -> [lbm/s/lbf] -> [lbm/hr/lbf]
 SFC = (TSFC_total / T_SL_mil) * 3600;
 
+% For a mission-level check, use full fuel as "cruise-like" burn
+Wi_R2  = W_TO;               % [lbf] start of mission
+Wf_R2  = W_TO - W_fuel;      % [lbf] final "dry" weight (no fuel)
+
 CL_R2 = beta_segment * W_S ./ q_R2;
 CD_R2 = CDo + k1.*CL_R2.^2 + k2.*CL_R2;
 L_R2  = CL_R2 .* q_R2 * S_ref;
@@ -402,7 +417,29 @@ R_max_est = (V_kt_R2 / SFC) * LD_R2 * log(Wi_R2/Wf_R2);  % [nmi]
 fprintf('\n==== Range Part 2 (Breguet Jet) ====\n');
 fprintf('Dry thrust at %.0f ft: T_dry_alt = %.1f lbf\n', h_R2, T_dry_alt);
 fprintf('L/D in segment        : %.2f\n', LD_R2);
-fprintf('Range estimate        : R_max_est = %.1f nmi\n', R_max_est);
+fprintf('Max range (all fuel)  : R_max_est ≈ %.1f nmi\n', R_max_est);
+
+%% =====================================================================
+%  MISSION-LEVEL REQUIRED L/D FOR NAVAL STRIKE (approx.)  %% NEW
+% ======================================================================
+% Treat whole mission as "Breguet-like" with effective L/D_mission.
+% Required L/D such that: R_mission = (V/SFC)*(L/D)_req*ln(Wi/Wf)
+
+LD_req_mission = (R_mission_nm * SFC) / (V_kt_R2 * log(Wi_R2 / Wf_R2));
+
+fprintf('\n==== Mission-Level L/D Requirement (Naval Strike) ====\n');
+fprintf('Required (L/D)_mission for %.0f nmi RT strike: %.2f\n', ...
+        R_mission_nm, LD_req_mission);
+fprintf('Available L/D at (h=%.0f ft, M=%.2f)        : %.2f\n', ...
+        h_R2, M_R2, LD_R2);
+
+if LD_R2 >= LD_req_mission
+    fprintf('=> Current aero model CAN close the mission (L/D margin ≈ %.2f).\n', ...
+            LD_R2 - LD_req_mission);
+else
+    fprintf('=> Current aero model CANNOT close the mission (L/D short by ≈ %.2f).\n', ...
+            LD_req_mission - LD_R2);
+end
 
 %% =====================================================================
 %  TAKEOFF – Part 1: TOP vs Altitude, Elmendorf & Edwards
@@ -524,7 +561,7 @@ fprintf('\n================ GLOBAL PERFORMANCE METRICS ================\n');
 % ---------- 1) Stall and takeoff speeds ----------
 % Assume CLmax values for configs (EDIT with your aero numbers)
 CLmax_clean = 1.4;      % [-] example
-CLmax_TO    = CL_TO_ref;   % can reuse takeoff CL
+CLmax_TO    = CL_TO_ref;
 CLmax_Land  = CLmax_land;
 
 % Densities at relevant altitudes
@@ -532,20 +569,20 @@ CLmax_Land  = CLmax_land;
     atmos_and_flow(0, 0, gamma, R, T_std);         % sea level
 [~, rho_clean, ~, ~, ~, ~, ~, ~, ~] = ...
     atmos_and_flow(h_perf, 0, gamma, R, T_std);    % clean cruise altitude
-[~, rho_Land, ~, ~, ~, ~, ~, ~, ~] = ...
+[~, rho_Land2, ~, ~, ~, ~, ~, ~, ~] = ...
     atmos_and_flow(h_Elmendorf, 0, gamma, R, T_std);
 
 Vs_clean = stall_speed(W_S, CLmax_clean, rho_clean);   % [ft/s]
 Vs_TO    = stall_speed(W_S, CLmax_TO,    rho_TO);
-Vs_Land  = stall_speed(W_S, CLmax_Land,  rho_Land);
+Vs_Land2 = stall_speed(W_S, CLmax_Land,  rho_Land2);
 
 V_TO     = 1.2 * Vs_TO;                                % [ft/s] ~Raymer
-V_Land   = 1.3 * Vs_Land;                              % [ft/s] approach
+V_Land   = 1.3 * Vs_Land2;                             % [ft/s] approach
 
 fprintf('Stall speed (clean, h=%.0f ft): %.1f kt\n', ...
         h_perf, Vs_clean/1.68781);
 fprintf('Stall speed (TO config, SL)   : %.1f kt\n', Vs_TO/1.68781);
-fprintf('Stall speed (Landing, Elm)    : %.1f kt\n', Vs_Land/1.68781);
+fprintf('Stall speed (Landing, Elm)    : %.1f kt\n', Vs_Land2/1.68781);
 fprintf('Takeoff speed estimate (SL)   : %.1f kt\n', V_TO/1.68781);
 fprintf('Landing approach speed (Elm)  : %.1f kt\n', V_Land/1.68781);
 
@@ -559,7 +596,6 @@ fprintf('Landing approach speed (Elm)  : %.1f kt\n', V_Land/1.68781);
 fprintf('\nEstimated max Mach at h = %.0f ft (AB thrust): M_max ≈ %.2f\n', ...
         h_perf, Mach_max_est);
 
-% (Optional) plot D and T_AB vs Mach for that search
 figure; hold on; grid on; box on;
 plot(M_grid, D_grid/1000, 'b-', 'LineWidth', 2, 'DisplayName','Drag');
 plot(M_grid, T_grid/1000, 'r-', 'LineWidth', 2, 'DisplayName','T_{AB}');
@@ -582,7 +618,7 @@ fprintf('\nService ceiling estimate (RC >= 100 ft/min): h_service ≈ %.0f ft\n'
         h_service);
 
 % ---------- 4) Specific excess power check ----------
-Ps_req = 300;   % [ft/s] example Ps requirement (EDIT with spec)
+Ps_req = 300;   % [ft/s] example Ps requirement
 M_ps   = 0.9;   % Mach for Ps requirement
 h_ps   = 20000; % altitude for Ps requirement
 
@@ -600,18 +636,17 @@ else
 end
 
 % ---------- 5) Loiter endurance estimate (Breguet endurance) ----------
-% Simple single-segment loiter at (h_loiter, M_loiter)
-[T_loit, rho_loit, ~, P0_loit, a_loit, V_loit, q_loit, ~, theta0_loit] = ...
+[T_loit, rho_loit2, ~, P0_loit, a_loit2, V_loit2, q_loit2, ~, theta0_loit] = ...
     atmos_and_flow(h_loiter, M_loiter, gamma, R, T_std);
 
-CL_loit = beta_segment * W_S ./ q_loit;
+CL_loit = beta_segment * W_S ./ q_loit2;
 CD_loit = CDo + k1.*CL_loit.^2 + k2.*CL_loit;
 LD_loit = CL_loit ./ CD_loit;
 
 % Assume same SFC as cruise (EDIT if different loiter TSFC)
 SFC_loit = SFC;  % [lbm/hr/lbf]
 
-% toy fuel fraction for loiter segment (EDIT with mission data)
+% Toy fuel fraction for loiter segment (EDIT with mission data)
 Wi_loit = 0.85 * W_TO;
 Wf_loit = 0.80 * W_TO;
 
@@ -621,6 +656,94 @@ fprintf('\nApproximate loiter time at h=%.0f ft, M=%.2f: t_loiter ≈ %.2f hr\n'
 
 fprintf('============================================================\n\n');
 
+%% =====================================================================
+%  TURN PERFORMANCE – Instantaneous (Naval Fighter)  %% NEW
+% ======================================================================
+% Simple instantaneous turn rate / radius at a maneuver altitude.
+% Uses structural n_max and CLmax_maneuver.
+
+h_turn = 15000;       % [ft] representative mid-altitude fight
+n_max_struct = 7.5;   % [-] structural / pilot limit
+CLmax_maneuver = 1.8; % [-] high-lift maneuvering CLmax
+
+V_turn = linspace(200, 700, 40);  % [kt] maneuver speed range
+V_turn_ft = V_turn * 1.68781;     % [ft/s]
+
+[~, rho_turn, ~, ~, ~, ~, ~, ~, ~] = ...
+    atmos_and_flow(h_turn, 0, gamma, R, T_std);
+
+W_turn = beta_segment * W_S * S_ref;   % [lbf]
+q_turn = 0.5 * rho_turn .* V_turn_ft.^2;
+
+n_CLmax = CLmax_maneuver .* q_turn * S_ref ./ W_turn;
+n_inst  = min(n_CLmax, n_max_struct * ones(size(n_CLmax)));
+n_inst(n_inst < 1) = NaN;  % ignore below level-flight
+
+g_ft = 32.174;  % [ft/s^2]
+
+R_turn = V_turn_ft.^2 ./ (g_ft .* sqrt(max(n_inst.^2 - 1, 0)));  % [ft]
+omega_turn = g_ft .* sqrt(max(n_inst.^2 - 1, 0)) ./ V_turn_ft;   % [rad/s]
+omega_turn_deg = omega_turn * 180/pi;                            % [deg/s]
+
+figure; hold on; grid on; box on;
+plot(V_turn, omega_turn_deg, 'LineWidth',2);
+xlabel('V [kt]');
+ylabel('Instantaneous turn rate [deg/s]');
+title(sprintf('Instantaneous Turn Performance (h = %.0f ft)', h_turn));
+
+figure; hold on; grid on; box on;
+plot(V_turn, R_turn/6076.12, 'LineWidth',2);
+xlabel('V [kt]');
+ylabel('Turn radius [nmi]');
+title(sprintf('Instantaneous Turn Radius (h = %.0f ft)', h_turn));
+
+%% =====================================================================
+%  PAYLOAD PERFORMANCE TRADES – Range & Loiter vs Payload  %% NEW
+% ======================================================================
+
+% Sweep payload from 0 up to a "max naval load" (edit as needed)
+W_payload_max = 0.18 * W_TO;  % 18% of MTOW as max strike payload (example)
+payload_vec   = linspace(0, W_payload_max, 10);  % [lbf]
+
+range_payload_nm       = nan(size(payload_vec));
+t_loiter_payload_hr    = nan(size(payload_vec));
+
+for i = 1:numel(payload_vec)
+    W_pay_i = payload_vec(i);
+
+    % Keep MTOW fixed (carrier catapult limit).
+    % Increasing payload eats into fuel, empty weight held fixed.
+    W_fuel_i = W_TO - W_empty - W_pay_i;
+
+    if W_fuel_i <= 0
+        % Infeasible (no fuel left)
+        range_payload_nm(i)    = NaN;
+        t_loiter_payload_hr(i) = NaN;
+        continue;
+    end
+
+    Wi_i = W_TO;                % start of mission
+    Wf_i = W_TO - W_fuel_i;     % "dry" weight (no mission fuel left)
+
+    % Range with current L/D at (h_R2, M_R2)
+    range_payload_nm(i) = (V_kt_R2 / SFC) * LD_R2 * log(Wi_i / Wf_i);
+
+    % Loiter: assume same SFC and L/D_loit, all fuel available for loiter
+    t_loiter_payload_hr(i) = (1 / SFC_loit) * LD_loit * log(Wi_i / Wf_i);
+end
+
+figure; hold on; grid on; box on;
+plot(payload_vec, range_payload_nm, '-o','LineWidth',2);
+xlabel('Payload [lbf]');
+ylabel('Range [nmi]');
+title('Payload–Range Trade (Naval Carrier MTOW Fixed)');
+
+figure; hold on; grid on; box on;
+plot(payload_vec, t_loiter_payload_hr, '-o','LineWidth',2);
+xlabel('Payload [lbf]');
+ylabel('Loiter time [hr]');
+title(sprintf('Payload–Loiter Trade (h = %.0f ft, M = %.2f)', ...
+      h_loiter, M_loiter));
 
 %% =====================================================================
 %  CONSTRAINT & ENVELOPE HELPERS (T/W vs W/S)
@@ -663,34 +786,54 @@ legend('Location','best');
 fprintf('NOTE: Landing constraint gives W/S_max ≈ %.1f lb/ft^2 (upper bound).\n', ...
         WS_land_max);
 
+%% =====================================================================
+%  OPTIONAL: Integration with planeObj / flightSegment2 (TEMPLATE ONLY)
+% ======================================================================
+% This section is commented out and just shows how you *could* call
+% your class-based tools if you already have a planeObj and mission
+% segments defined in SI units.
+%
+% Example (pseudo-code):
+%
+% % ---- create or fetch your planeObj (SI units) ----
+% % fixed_input = ...; engine = ...;
+% % WE_N = lb2N(W_empty);    % etc.
+% % fighter = planeObj(fixed_input, "Hellstinger", WE_N, Lambda_LE_deg, ...
+% %                    c_r_m, c_t_m, span_m, num_engine, engine, W_Fixed_N);
+%
+% % ---- build a mission from flightSegment2 objects ----
+% % segs = [
+% %   flightSegment2("TAKEOFF", NaN, NaN, NaN)
+% %   flightSegment2("CLIMB",   0.8, ft2m(30000), NaN)
+% %   flightSegment2("CRUISE",  NaN, NaN, R_outbound_nm*1852)
+% %   flightSegment2("COMBAT",  0.8, ft2m(15000), [t_combat_min, 0.5])
+% %   flightSegment2("CRUISE",  NaN, NaN, R_inbound_nm*1852)
+% %   flightSegment2("LOITER",  NaN, NaN, t_loiter_min)
+% %   flightSegment2("LANDING", NaN, NaN, NaN)
+% % ];
+% %
+% % W_in = fighter.MTOW;
+% % for k = 1:numel(segs)
+% %     [W_out, WF_seg, fuel_seg, info_seg(k)] = segs(k).queryWF(W_in, fighter);
+% %     W_in = W_out;
+% % end
+% % W_final = W_in;
+% % fprintf('Class-based mission closure: W_final / W_TO = %.3f\n', W_final / fighter.MTOW);
+%
+% % ---- full performance envelope plots from planeObj ----
+% % fighter.buildPlots(fighter.MTOW, 40);
+%
+% Keeping this here makes it easy to migrate the Raymer-style script
+% into your class-based framework when you're ready.
 
 %% =====================================================================
-%  LOCAL FUNCTIONS
+%  LOCAL FUNCTIONS (same as before)
 % =====================================================================
 
-%{
-/**
- * atmos_and_flow
- * Computes a simple standard-atmosphere model and basic flow properties
- * for a given altitude and Mach number (or Mach vector).
- *
- * @param h_ft   Geopotential altitude [ft]
- * @param M_vec  Mach number(s) (scalar or vector)
- * @param gamma  Ratio of specific heats [-]
- * @param R      Gas constant [ft·lbf/(slug·R)]
- * @param T_std  Standard sea-level temperature [R]
- *
- * @return T      Static temperature [R]
- * @return rho    Density [slug/ft^3]
- * @return P      Static pressure ratio p/p_SL [-]
- * @return P0     Stagnation pressure ratio p0/p0_SL [-]
- * @return a      Speed of sound [ft/s]
- * @return V      True airspeed [ft/s]
- * @return q      Dynamic pressure [lb/ft^2]
- * @return theta  Temperature ratio T/T_std [-]
- * @return theta0 Stagnation temperature ratio T0/T_std [-]
- */
-%}
+% atmos_and_flow, engine_thrust, aero_performance, stall_speed,
+% max_mach_estimate, service_ceiling_estimate, specific_excess_power,
+% takeoff_constraint, landing_WS_limit, cruise_constraint, ceiling_constraint
+
 function [T, rho, P, P0, a, V, q, theta, theta0] = ...
     atmos_and_flow(h_ft, M_vec, gamma, R, T_std)
 
@@ -716,24 +859,6 @@ P0 = P .* (1 + (gamma-1)/2 .* M_vec.^2) ...
        .^(gamma/(gamma-1));                      % p0 / p0_SL
 end
 
-%{
-/**
- * engine_thrust
- * Computes dry (MIL) and wet (AB) thrust available as a function of
- * Mach number and altitude using Raymer-style piecewise curve fits.
- *
- * @param T_SL_mil Sea-level dry/MIL thrust per engine [lbf]
- * @param T_SL_AB  Sea-level wet/AB thrust per engine [lbf]
- * @param n_eng    Number of engines [-]
- * @param M_vec    Mach number(s) (scalar or vector)
- * @param theta0   Stagnation temperature ratio T0/T_std [-]
- * @param P0       Stagnation pressure ratio p0/p0_SL [-]
- * @param TR       Break parameter for the curve [-]
- *
- * @return T_mil   MIL thrust available [lbf]
- * @return T_AB    AB thrust available  [lbf]
- */
-%}
 function [T_mil, T_AB] = engine_thrust(T_SL_mil, T_SL_AB, n_eng, ...
                                        M_vec, theta0, P0, TR)
 
@@ -757,29 +882,6 @@ T_mil = (T_SL_mil * n_eng) .* R_mil;
 T_AB  = (T_SL_AB  * n_eng) .* R_AB;
 end
 
-%{
-/**
- * aero_performance
- * Computes CL, CD, lift, drag, and glide-related quantities for a
- * given wing loading, weight fraction, and set of dynamic pressures.
- *
- * @param W_S   Wing loading W/S [lb/ft^2]
- * @param beta  Weight fraction W_segment / W_TO [-]
- * @param q     Dynamic pressure [lb/ft^2] (scalar or vector)
- * @param CDo   Parasite drag coefficient [-]
- * @param k1    Induced drag coefficient 1 [-]
- * @param k2    Induced drag coefficient 2 [-]
- * @param S_ref Wing reference area [ft^2]
- *
- * @return CL      Lift coefficient [-]
- * @return CD      Drag coefficient [-]
- * @return L       Lift [lbf]
- * @return D       Drag [lbf]
- * @return LD      Lift-to-drag ratio L/D [-]
- * @return DL      Drag-to-lift ratio D/L [-]
- * @return gamma_g Glide angle [rad]
- */
-%}
 function [CL, CD, L, D, LD, DL, gamma_g] = ...
     aero_performance(W_S, beta, q, CDo, k1, k2, S_ref)
 
@@ -794,30 +896,11 @@ DL      = 1 ./ LD;
 gamma_g = atan(DL);
 end
 
-%{
-/**
- * stall_speed
- * Computes stall speed for a given wing loading, CLmax, and density.
- *
- * @param W_S    Wing loading W/S [lb/ft^2]
- * @param CLmax  Maximum lift coefficient in the configuration [-]
- * @param rho    Air density [slug/ft^3]
- * @return Vs    Stall speed [ft/s]
- */
-%}
 function Vs = stall_speed(W_S, CLmax, rho)
-g = 32.174;  % [ft/s^2]
 % W/S = q * CL => Vs = sqrt(2*(W/S)/(rho*CL))
 Vs = sqrt(2 * W_S ./ (rho * CLmax));  % [ft/s]
 end
 
-%{
-/**
- * max_mach_estimate
- * Estimates maximum Mach at a given altitude where AB thrust equals drag.
- * Scans a Mach grid and finds last Mach where T_AB >= D.
- */
-%}
 function [Mach_max, M_scan, D_scan, T_scan] = max_mach_estimate( ...
     h_ft, gamma, R, T_std, ...
     W_S, beta, S_ref, ...
@@ -846,16 +929,6 @@ D_scan = D;
 T_scan = T_AB;
 end
 
-%{
-/**
- * service_ceiling_estimate
- * Estimates service ceiling by scanning altitudes and finding the
- * highest altitude where maximum rate of climb >= RC_req.
- *
- * @param h_grid   Vector of candidate altitudes [ft]
- * @param RC_req   Required ROC [ft/s] (e.g. 100 ft/min = 100/60)
- */
-%}
 function [h_service, RC_max_alt] = service_ceiling_estimate( ...
     h_grid, gamma, R, T_std, ...
     W_S, beta, S_ref, ...
@@ -870,9 +943,8 @@ for i = 1:numel(h_grid)
     [~, rho, ~, P0, ~, V, q, ~, theta0] = ...
         atmos_and_flow(h_grid(i), M_vec, gamma, R, T_std);
 
-    [T_mil, T_AB] = engine_thrust(T_SL_mil, T_SL_AB, n_eng, ...
-                                  M_vec, theta0, P0, TR);
-    % use AB for ceiling
+    [~, T_AB] = engine_thrust(T_SL_mil, T_SL_AB, n_eng, ...
+                              M_vec, theta0, P0, TR);
     T_av = T_AB;
 
     CL = beta * W_S ./ q;
@@ -894,12 +966,6 @@ else
 end
 end
 
-%{
-/**
- * specific_excess_power
- * Computes specific excess power Ps = V * (T/W - D/W) at given M, h.
- */
-%}
 function Ps = specific_excess_power(M, h_ft, gamma, R, T_std, ...
                                     W_S, beta, S_ref, ...
                                     CDo, k1, k2, ...
@@ -920,26 +986,10 @@ W  = beta * W_S * S_ref;
 Ps = V .* (T_AB./W - D./W);   % [ft/s]
 end
 
-%{
-/**
- * takeoff_constraint
- * Takeoff constraint line from TOP definition:
- *     TOP = (W/S) / (sigma * CL_TO * (T/W))
- *  =>  T/W = (W/S) / (sigma * CL_TO * TOP)
- */
-%}
 function TW = takeoff_constraint(W_S_vec, TOP, sigma, CL_TO)
 TW = W_S_vec ./ (sigma * CL_TO * TOP);
 end
 
-%{
-/**
- * landing_WS_limit
- * Landing field length constraint from Raymer eq. 5.11:
- *   S_L = 80 * (W/S) / (sigma * CLmax) + Sa
- *  => W/S_max = (S_L - Sa) * sigma * CLmax / 80
- */
-%}
 function WS_max = landing_WS_limit(S_L, Sa, rho_alt, CLmax)
 rho_SL = 0.002377;               % must match main script
 sigma  = rho_alt / rho_SL;
@@ -947,13 +997,6 @@ sigma  = rho_alt / rho_SL;
 WS_max = (S_L - Sa) * sigma * CLmax / 80;
 end
 
-%{
-/**
- * cruise_constraint
- * Simple cruise thrust constraint: T/W >= D/W at given (h, M).
- * Returns T/W as a function of W/S.
- */
-%}
 function TW = cruise_constraint(W_S_vec, h_ft, M, ...
                                 gamma, R, T_std, ...
                                 CDo, k1, k2, ...
@@ -965,23 +1008,16 @@ for i = 1:numel(W_S_vec)
         atmos_and_flow(h_ft, M, gamma, R, T_std);
 
     [T_mil, ~] = engine_thrust(T_SL_mil, T_SL_AB, n_eng, ...
-                               M, theta0, P0, TR);   % use MIL for cruise
+                               M, theta0, P0, TR);   % MIL for cruise
 
     W_S = W_S_vec(i);
-    CL  = W_S ./ q;                % here beta≈1 for sizing
+    CL  = W_S ./ q;                % beta≈1 for sizing
     CD  = CDo + k1.*CL.^2 + k2.*CL;
     D   = CD .* q;                 % per unit area [lb/ft^2]
     TW(i) = D / W_S;               % (D/S) / (W/S) = D/W
 end
 end
 
-%{
-/**
- * ceiling_constraint
- * Approximates a ceiling constraint as T/W >= D/W at given ceiling
- * altitude; more refined versions could enforce Ps ≈ 0 or RC_min.
- */
-%}
 function TW = ceiling_constraint(W_S_vec, h_ft, ...
                                  gamma, R, T_std, ...
                                  CDo, k1, k2, ...

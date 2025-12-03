@@ -1,7 +1,7 @@
 % This file is the main one to use when writing to concept_tabulations. It embeds all the rfp asks and assumptions we make. 
 
 % INSTRUCTIONS
-% --- Go to concept_tabulatons.xlsx. Se the geometry inputs in the "Geometry Inputs" section
+% --- Go to concept_tabulatons.xlsx. See the geometry inputs in the "Geometry Inputs" section
 % --- Select your concept below using the column number
 % --- Enable/Disable operations below. For testing, you can set write_to_xlsx = false so no permeant operations occur
 % --- Run the file (make sure you have added all files in team10aiaa to the working directory
@@ -22,7 +22,7 @@
 
 % Controls
     % Chose Your Concept
-    CN = 10; % COLUMN NUMBER
+    CN = 8; % COLUMN NUMBER
         % 1 -> F18E
         % 2 -> F18E_Sized (for testing)
         % 3 -> F16
@@ -44,7 +44,7 @@
 
     skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(120000), 500); % Refresh atmosphere lookup
@@ -122,6 +122,16 @@
     [currentFolder, ~, ~] = fileparts(mfilename('fullpath'));
     excelPath = fullfile(currentFolder, "concepts_tabulations.xlsx");
     T = readcell(excelPath);
+
+%% Trying a different way to read file cause broken? idk
+
+disp("Reading Input Geometry...")
+
+thisFile = matlab.desktop.editor.getActiveFilename; % Pulls local file path
+[currentFolder, ~, ~] = fileparts(thisFile);
+
+excelPath = fullfile(currentFolder, "concepts_tabulations.xlsx");
+T = readcell(excelPath);
 
 %% Gather Inputs
     name = readVar('Deliverable', CN, T);

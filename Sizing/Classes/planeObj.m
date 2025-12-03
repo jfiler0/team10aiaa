@@ -177,23 +177,23 @@ classdef planeObj
         %% Primary class defenition functions (used on creation and updates)
         function obj = planeObj(fixed_input, name, WE, Lambda_LE, c_r, c_t, span, num_engine, engine, W_F, geom_array) 
             % Pull Variable values from array
-            obj.A_max = geom_array(1,22);
-            obj.x_rootLE_wing = geom_array(1,5);
-            obj.b_strake = geom_array(1,14);
-            obj.x_strake = geom_array(1,15);
-            obj.lam_strake = geom_array(1,13);
-            obj.c_root_strake = geom_array(1,12);  
-            obj.Lambda_LE_strake = geom_array(1,16);
-            obj.lam_h = geom_array(1,8);
-            obj.c_r_horstab = geom_array(1,7);
-            obj.x_horstab = geom_array(1,10);
-            obj.b_h = geom_array(1,9); 
-            obj.x_verstab = geom_array(1,20);
-            obj.LAM_LE_horstab = geom_array(1,11); 
-            obj.c_r_v = geom_array(1,17); 
-            obj.b_v = geom_array(1,19); 
-            obj.LAM_v = geom_array(1,21); 
-            obj.lam_v = geom_array(1,18);
+            obj.A_max = geom_array(1,21);
+            obj.x_rootLE_wing = geom_array(1,4);
+            obj.b_strake = geom_array(1,13);
+            obj.x_strake = geom_array(1,14);
+            obj.lam_strake = geom_array(1,12);
+            obj.c_root_strake = geom_array(1,11);  
+            obj.Lambda_LE_strake = geom_array(1,15);
+            obj.lam_h = geom_array(1,7);
+            obj.c_r_horstab = geom_array(1,6);
+            obj.x_horstab = geom_array(1,9);
+            obj.b_h = geom_array(1,8); 
+            obj.x_verstab = geom_array(1,19);
+            obj.LAM_LE_horstab = geom_array(1,10); 
+            obj.c_r_v = geom_array(1,16); 
+            obj.b_v = geom_array(1,18); 
+            obj.LAM_v = geom_array(1,20); 
+            obj.lam_v = geom_array(1,17);
 
             % Note it returns the obj variable to be used. Use as plane = planeObj(...)
             obj.name = name;
@@ -201,9 +201,9 @@ classdef planeObj
             %% Assign inputs
             obj.WE = WE; % Newtons
             obj.Lambda_LE = Lambda_LE; % deg
-            obj.c_r = geom_array(1,2);
-            obj.c_t = geom_array(1,23);
-            obj.span = geom_array(1,4);
+            obj.c_r = geom_array(1,1);
+            obj.c_t = geom_array(1,22);
+            obj.span = geom_array(1,3);
             obj.num_engine = num_engine;
             
             %% Bunch of fixed parameters (***)

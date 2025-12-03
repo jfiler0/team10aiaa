@@ -28,13 +28,14 @@
     % These should remain constant between concepts
     fixed_input = struct();
     
-    fixed_input.max_alpha = 12; % deg -> Guess (This defins max LANDING Cl)
+    fixed_input.max_alpha = 15; % deg -> Guess (This defins max LANDING Cl) -> Too high for landing now!
     fixed_input.type = "Jet fighter"; % Which empty weight coefficents to take from Raymer. In weight_regression_lookup
     
     % Tuned to match F18 range requirements:
-    fixed_input.MTOW_Scalar = 66/50; % Since the Raymer fighter jet corrections is 16k lb lower than the F18
+    % fixed_input.MTOW_Scalar = 66/50; % Since the Raymer fighter jet corrections is 16k lb lower than the F18
+    fixed_input.MTOW_Scalar = 60/50;
     fixed_input.SWET_Scalar = 3; % Shifting SWET historical regression to match VSP (and scaled CD0 to correct LD)
-    fixed_input.CDW_Scalar = 10/4; % Wave drag estimate is typically too low
+    fixed_input.CDW_Scalar = 9/4; % Wave drag estimate is typically too low
     fixed_input.K1_Scalar = 1.3; % Scales induced drag (and thus reduces eosw)
 
     fixed_input_superclean = fixed_input; % Making another set of corrections for the mach mach condition (when you scrub down the plane and make it super sleek to set a record)
@@ -45,8 +46,10 @@
 
 %% Define Loadouts
     % When applied to a plane they set extra payload weight, can add to potential fuel volume (if a tank), and add to CD0
-    clean_loadout = buildLoadout(["AIM-9X", "AIM-9X"]);
-    strike_loadout = buildLoadout(["AIM-9X", "FPU-12", "AIM-120", "AIM-120", "FPU-12", "AIM-9X"]);
+    clean_loadout = buildLoadout(["AIM-9X", "AIM-9X"]); % Just the sidewinders
+    ferry_loadout = buildLoadout(["AIM-9X", "FPU-12", "FPU-12", "FPU-12", "AIM-9X"]); % Three tanks
+    strike_loadout = buildLoadout(["AIM-9X", "FPU-12", "MK-83", "MK-83", "MK-83", "MK-83", "FPU-12", "AIM-9X"]); % 4 Mk83 bombs
+    air2air_loadout = buildLoadout(["AIM-9X", "AIM-120", "AIM-120", "AIM-120", "FPU-12", "AIM-120", "AIM-120", "AIM-120", "AIM-9X"]); % 6 amraams
 %% Define missions
     ferry_700 = mission( [...
         flightSegment2("TAKEOFF") 
@@ -56,7 +59,7 @@
         flightSegment2("CRUISE", NaN, NaN, nm2m(700))
         flightSegment2("LANDING") ] , ...
         ...
-        clean_loadout);
+        ferry_loadout);
 
     air2air_700 = mission( [...
         flightSegment2("TAKEOFF") 
@@ -67,7 +70,7 @@
         flightSegment2("CRUISE", NaN, NaN, nm2m(700))
         flightSegment2("LANDING") ] , ...
         ...
-        clean_loadout);
+        air2air_loadout);
     
     % 5 cruise segments * 10 divisions * 93 function calls * 50 max internal function calls
     
@@ -144,7 +147,7 @@
     T = assignVar(N2lb(plane.MTOW), 'MTOW [lb]', CN, T);
     
     plane = plane.applyLoadout(strike_loadout); % Should have the highest payload weight. Technically can reduce by moving to wing tanks
-    internal_fuel = plane.MTOW - plane.WE - plane.W_P - plane.W_Tanks - plane.W_F;
+    internal_fuel = plane.max_fuel_weight;
     plane = plane.applyLoadout(clean_loadout);
     T = assignVar(N2lb(internal_fuel), 'Internal Fuel Weight [lb]', CN, T);
     
@@ -169,20 +172,32 @@
     max_mach = plane.calcMaxMach(plane.WE, 1);
     T = assignVar(max_mach, 'Max Mach Number', CN, T);
 
-    T = assignVar(ms2kt(plane.calcLandingSpeed(0, plane.MTOW)), 'Landing Speed [kt]', CN, T);
+    landing_speed = plane.calcLandingSpeed(0, plane.MTOW); % m/s
+    T = assignVar(ms2kt(landing_speed), 'Landing Speed [kt]', CN, T);
 
     plane.fixed_input = fixed_input; % Back to normal
     plane = plane.updateDerivedVariables();
 
-    [maxAlt, ~, ~] = plane.calcMaxAlt(plane.MTOW, 1); % at MTOW?
+    [maxAlt, ~, ~] = plane.calcMaxAlt(plane.mid_mission_weight, 1);
     T = assignVar(m2ft(maxAlt)/1000, 'Service Ceiling [kft]', CN, T);
 
-    [climbRate, ~, ~] = plane.calcMaxClimbRate(0, plane.MTOW, 1);
+    [climbRate, ~, ~] = plane.calcMaxClimbRate(0, plane.mid_mission_weight, 1);
     T = assignVar(climbRate, 'Max Climb Rate [m/s]', CN, T);
 
+    num_engine = plane.num_engine;
+    plane.num_engine = 1;
+    [~, a0, ~, ~, ~] = queryAtmosphere(0, [0 1 0 0 0]); % sea level speed of sound
+    excess_landing = plane.calcExcessPower(0, landing_speed/a0, plane.MTOW, 1); % MTOW landing weight, full AB, coming in to land
+    plane.num_engine = num_engine;
+
+    T = assignVar(m2ft(excess_landing)*60, 'Landing SEROC [ft/min]', CN, T);
+
     % Should be an actual maximum search
-    [turn_rate, ~] = plane.getMaxTurn(0, 0.5, plane.MTOW); % M = 0.5, h = 0
+    [turn_rate, ~] = plane.getMaxTurnAtAlt(0, plane.mid_mission_weight); % h = 0
     T = assignVar(turn_rate, 'Max Turn Rate [deg/s]', CN, T);
+
+    [turn_rate, ~] = plane.getMaxSustainedTurnAtAlt(0, plane.mid_mission_weight, 1); % h = 0, full AB
+    T = assignVar(turn_rate, 'Max Sustained Turn Rate [deg/s]', CN, T);
 
     [range_m, ~] = plane.findTotalMaxRange(plane.MTOW, 20);
     T = assignVar(m2nm(range_m), 'Maximum Range [nm]', CN, T);
@@ -206,15 +221,15 @@ T = assignVar(N2lb(fuel_remaining), '700nm Combat Mission Fuel Remaining [lb]', 
 [~, ~, ~, fuel_remaining] = air2ground_700.solveMission(plane, mission_plots);
 T = assignVar(N2lb(fuel_remaining), '700nm Strike Mission Fuel Remaining [lb]', CN, T);
 
-disp("Computing maximum mission ranges...")
-
 if ~skip_max_ranges
+
+    disp("Computing maximum mission ranges...")
 
     startRange = 10; %nm
     
-    max_air2air_range = fzero(@(R) W0_diff( plane, returnAir2AirMission( R, clean_loadout ) ) , startRange ); % *** need to correct air2air loadout
+    max_air2air_range = fzero(@(R) W0_diff( plane, returnAir2AirMission( R, air2air_loadout ) ) , startRange ); % *** need to correct air2air loadout
     max_air2ground_range = fzero(@(R) W0_diff( plane, returnAir2GroundMission( R, strike_loadout ) ) , startRange );
-    max_ferry_range = fzero(@(R) W0_diff( plane, returnFerryMission( R, clean_loadout ) ) , startRange );
+    max_ferry_range = fzero(@(R) W0_diff( plane, returnFerryMission( R, ferry_loadout ) ) , startRange );
     
     T = assignVar(max_air2air_range, 'Combat Mission Max Range [nm]', CN, T);
     T = assignVar(max_air2ground_range, 'Strike Mission Max Range [nm]', CN, T);
@@ -249,14 +264,14 @@ function air2ground_mission = returnAir2GroundMission(range, loadout)
     air2ground_mission = mission( [...
         flightSegment2("TAKEOFF") 
         flightSegment2("CLIMB", 0.85) % Check this mach
-        flightSegment2("CRUISE", 0.85, ft2m(30000), nm2m(range)) % 700 nm flight
+        flightSegment2("CRUISE", 0.85, NaN, nm2m(range)) % 700 nm flight
         flightSegment2("LANDING") % Saying this is decent
         flightSegment2("LOITER", NaN, ft2m(10000), 10) % 10 min loiter
         flightSegment2("CLIMB", 0.85) % Check this mach
         flightSegment2("CRUISE", 0.85, NaN, nm2m(50)) % Penetrate
         flightSegment2("COMBAT", 0.85, 1000, [30/60 0]) % quick combat ***
         flightSegment2("CLIMB", 0.85) % Check this mach
-        flightSegment2("CRUISE", 0.85, ft2m(30000), nm2m(range)) % 700 nm flight
+        flightSegment2("CRUISE", NaN, NaN, nm2m(range)) % 700 nm flight
         flightSegment2("LOITER", NaN, ft2m(10000), 20) % 20 min loiter
         flightSegment2("LANDING") ] , ...
         ...

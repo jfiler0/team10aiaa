@@ -44,6 +44,8 @@ classdef planeObj
         loadout
         W_P % payload weight (weapon type stores)
         W_Tanks % external fuel tank EMPTY weight
+        max_fuel_weight % cause I keep recaluclating this
+        mid_mission_weight % useful for mission calculations instead of using WE or MTOW
 
         % Parameters that remain fixed (need to edit the input function if you want them moved into the deisgn space)
         type % Name of the regrssion to use in Raymer for We/W0
@@ -221,6 +223,7 @@ classdef planeObj
             % obj.WE = obj.MTOW * 2.34 * N2lb(obj.MTOW)^(-0.13)
             % obj.MTOW = lb2N( ( N2lb(obj.WE) / 2.34)^(1/0.87) );
             obj.MTOW = obj.fixed_input.MTOW_Scalar * lb2N( ( N2lb(obj.WE) / obj.raymer.A )^(1 / (1 + obj.raymer.C) ) );
+            obj = obj.updateWeights();
 
             %% Standard Wing Geometry Stuff
             obj.c_avg = 0.5*(obj.c_t + obj.c_r); % Average chord
@@ -307,15 +310,14 @@ classdef planeObj
             obj.D = 2*sqrt(obj.A_max/pi); % Assuming roughly circular cross section to get fuselage diameter/width
             obj.S_exposed = obj.S_wing * 1.3; % *** Trying to account for body lift/strakes/tail anything not in here
             obj.F = 1.07 * (1 + obj.D/obj.span)^2; % Lift Factor
-            % obj.F = 1; % *** Needs to be fixed
 
-            obj.S_flapped = obj.S_wing * 0.6; % *** Obviously has a big impact on landing CL
-            obj.Delta_flap_param = 0.9; % Factor depending on the type of flap
+            obj.S_flapped = obj.S_wing * 0.7; % *** Obviously has a big impact on landing CL
+            obj.Delta_flap_param = 1; % Factor depending on the type of flap (ARTIFICAL INCREASE FROM 0.9 to 1)
             obj.Lambda_HL = obj.Lambda_TE; % *** What is the actual way to calculate the hinge line
 
             %% Interpolants
             M_vec = linspace(obj.mach_range(1), obj.mach_range(2), 100); % Can change last number to increase/decrease resolution
-            obj.CLa_interp = obj.buildCLaInterpolant(M_vec);
+            obj.CLa_interp = obj.buildCLaInterpolant(M_vec); 
             obj.CDW_interp = obj.buildCDWInterpolant(M_vec);
             obj.K1_interp = obj.buildK1Interpolant(M_vec);
             obj.K2_interp = obj.buildK2Interpolant(M_vec);
@@ -329,6 +331,13 @@ classdef planeObj
             obj.CD0_Payload = loadout.CD0;
             obj.CD0 = obj.CD0_Body + obj.CD0_Payload;
             obj.loadout = loadout;
+
+            obj = obj.updateWeights();
+        end
+
+        function obj = updateWeights(obj)
+            obj.max_fuel_weight = obj.MTOW - obj.WE - obj.W_P - obj.W_Tanks - obj.W_F;
+            obj.mid_mission_weight = obj.MTOW - obj.max_fuel_weight / 2; % Assume half of fuel is burned
         end
         
         %% Iterpolation creators for updateDerviedVariables
@@ -338,8 +347,10 @@ classdef planeObj
             % eta = rad2deg(obj.cl_alpha) ./ (2*pi./beta); % Airfoil Efficiency - MACH
 
             % CL_alpha_sub = (2*pi*obj.AR) ./ (2+ sqrt(4 + (obj.AR.^2 * beta.^2)/eta.^2 .* (1 + ( tand(obj.Lambda_max_t).^2 )./beta.^2) ) ) * (obj.S_exposed/obj.S_ref)* obj.F; % Ssurface = Sref
-            CL_alpha_sub = deg2rad( 2*pi./sqrt(1-M_vec.^2) ); % The difference between these is pretty big ***
-            CL_alpha_supersonic = deg2rad( 4./sqrt(M_vec.^2-1) );
+            
+            % NOTE FUSELAGE LIFT FACTOR IS APPLIED HERE
+            CL_alpha_sub = obj.F * deg2rad( 2*pi./sqrt(1-M_vec.^2) ); % The difference between these is pretty big ***
+            CL_alpha_supersonic = obj.F * deg2rad( 4./sqrt(M_vec.^2-1) );
 
             CLa = obj.generateTransonicSpline(CL_alpha_sub, CL_alpha_supersonic, M_vec);
             CLa_interp = griddedInterpolant(M_vec, CLa, 'linear');
@@ -416,7 +427,8 @@ classdef planeObj
         function stallSpeed = calcStallSpeed(obj, h, W)
             [~, a, ~, rho, ~] = queryAtmosphere(h, [0 1 0 1 0]);
             % For some reason an imaginary comp shows up so real helps
-            f = @(V) real( W - get_output_at_index(@() obj.calcCL(V / a), 2) * obj.S_ref * rho * V^2 ); % I don't know why @() is required but it does work
+            q = @(V) 0.5 * rho * V^2;
+            f = @(V) real( W - get_output_at_index(@() obj.calcCL(V / a), 2) * obj.S_ref * q(V) ); % I don't know why @() is required but it does work
             x0 = 0.5 * a;
             stallSpeed = fzero(f , x0);
         end
@@ -432,6 +444,7 @@ classdef planeObj
         end
         
         % Note the absolute max turn rate seems to always be at sea level
+        % If you pull as hard as you can without stalling or as hard as the airframe can go - how many deg/s
         function [turn_rate, n] = getMaxTurn(obj, h, M, W)
             % Input: h (alt) = m, M (mach number), W (weight) = N, g_limit
             % Output: turn_rate = deg/s, n (load factor)
@@ -446,23 +459,80 @@ classdef planeObj
             turn_rate = rad2deg( n * 9.8051 / V);
             
         end
+
+        function [turn_rate, mach] = getMaxTurnAtAlt(obj, h, W, M_guess)
+            % If the guess was not provided use fall back (should be standard)
+
+            [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
+
+            if(nargin < 5)
+                M_guess = 0.5;
+            end
+
+            fun = @(M) -obj.getMaxTurn(h, M, W); % negative for maximization
+            opts = optimset('Display','off','TolX',1e-3,'MaxFunEvals',200);
         
-        % function [excessPower, speed, mach] = getMaxTurnOverall(obj, AB_perc, M_guess)
-        %     % If the guess was not provided use fall back (should be standard)
-        %     % This is needeed in calcMaxAltHelper for stability
-        %     if(nargin < 5)
-        %         M_guess = 0.5;
-        %     end
-        % 
-        %     [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
-        %     fun = @(V) -obj.calcExcessPower(h, V / a, W, AB_perc); % negative for maximization
-        %     opts = optimset('Display','off','TolX',1e-3,'MaxFunEvals',200);
-        % 
-        %     % Solve for max excess power speed
-        %     [speed, excessPower] = fminsearch(fun, M_guess * a, opts);
-        %     mach = speed / a;
-        %     excessPower = -excessPower;
-        % end
+            % Solve for max excess power speed
+            [mach, turn_rate] = fminsearch(fun, M_guess, opts);
+            turn_rate = - turn_rate; % since it was minimization
+
+        end
+        
+        % Maintain a turn rate without slowing down or exceeding structural limits
+        function [turn_rate, n] = getSustainedTurn(obj, h, M, W, AB_perc)
+            [TA, ~, ~, ~] = obj.calcProp(M, h, AB_perc);
+            [q, V, ~, ~] = metricFreestream(h, M);
+
+            fun = @(CL) TA - q * obj.S_ref * obj.calcCD(CL, M); % max prevents a negative CL
+
+            if(fun(0) <= 0) % wave drag is so large you can't have any lift
+                turn_rate = NaN;
+                n = NaN;
+            else
+                
+                CL_sustain = fzero(fun, [0 10]); % Max sustainable Cl
+    
+                if(CL_sustain < 0)
+                    warning("wtf why does this become negative")
+                end
+                if( isnan(CL_sustain) )
+    
+                    clvec = linspace(-5, 5, 30);
+                    funvec = arrayfun(@(CL) fun(CL), clvec);
+                    plot(clvec, funvec)
+    
+                    warning("wtf why does this become negative")
+                end
+    
+                [CL_max_clean, ~, ~] = calcCL(obj, M);
+    
+                Cl = min([CL_sustain CL_max_clean]);
+    
+                L_max = q * Cl * obj.S_ref;
+                n = min( L_max / W, obj.g_limit);
+                turn_rate = rad2deg( n * 9.8051 / V);
+
+            end
+        end
+        
+        % Note that absolute max seems to always be at 0 altitude
+        function [turn_rate, mach] = getMaxSustainedTurnAtAlt(obj, h, W, AB_perc, M_guess)
+            % If the guess was not provided use fall back (should be standard)
+
+            [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
+
+            if(nargin < 5)
+                M_guess = 0.5;
+            end
+
+            fun = @(M) -obj.getSustainedTurn(h, M, W, AB_perc); % negative for maximization
+            opts = optimset('Display','off','TolX',1e-3,'MaxFunEvals',200);
+        
+            % Solve for max excess power speed
+            [mach, turn_rate] = fminsearch(fun, M_guess, opts);
+            turn_rate = - turn_rate; % since it was minimization
+
+        end
 
         function cost = calcUnitCost(obj)
             % Exports cost in the millions per aircraft
@@ -749,6 +819,9 @@ classdef planeObj
                 n_max = emptyM;
                 excessPower_NoAB = emptyM;
                 excessPower_AB = emptyM;
+
+                turn_rate_sustained = emptyM;
+                n_max_sustained = emptyM;
                 
             % % Preallocate - just M
                 CL_max_clean = zeros(size(Mvec));
@@ -799,6 +872,9 @@ classdef planeObj
                 
 
                 [turn_rate(i), n_max(i)] = obj.getMaxTurn( h(i), M(i), W);
+                
+                [turn_rate_sustained(i), n_max_sustained(i)] = obj.getSustainedTurn( h(i), M(i), W, 1);
+
                 excessPower_AB(i) = obj.calcExcessPower(h(i), M(i), W, 1);
                 excessPower_NoAB(i) = obj.calcExcessPower(h(i), M(i), W, 0);
 
@@ -1022,11 +1098,11 @@ classdef planeObj
             title('Maximum Turn Rate')
 
             subplot(2, 3, 2);
-            surf(M, m2ft(hvec)/1000, n_max, 'EdgeColor', 'none')
+            surf(M, m2ft(hvec)/1000, turn_rate_sustained, 'EdgeColor', 'none')
             xlabel('$M$')
             ylabel('$h$ [kft]')
-            zlabel('Load Factor')
-            title('Maximum Load Factor')
+            zlabel('Turn Rate [deg/s]')
+            title('Max Sustained Rate')
 
             subplot(2, 3, 3);
             surf(M, m2ft(hvec)/1000, excessPower_NoAB, 'EdgeColor', 'none', 'FaceAlpha', 1.0);
@@ -1053,7 +1129,7 @@ classdef planeObj
             ylabel("Mach to Fly")
             xlabel('$h$ [kft]')
             title("Max Excess Power at Altitude")
-            legend(Location="best")
+            legend(Location="best", FontSize=11)
             hold off;
 
             subplot(2, 3, 5);
@@ -1077,9 +1153,8 @@ classdef planeObj
             ylabel("Climb Angle [deg]")
             xlabel('$h$ [kft]')
             title("Max Sustained Climb Rate")
-            legend(Location="best")
+            legend(Location="best", FontSize=11)
             hold off;
-
 
         end
     end

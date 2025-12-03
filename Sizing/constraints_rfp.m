@@ -18,11 +18,11 @@ function [g_vec, g_names] = constraints_rfp(plane, missionList)
     %% 3.2.3 -> Approach airspeed shall be greater than 10% above stall speed, but less than 145 knots.
     % What weight should this be?
 
-    g2 = plane.calcLandingSpeed(0, plane.MTOW) / kt2ms(145) - 1;
+    landing_speed = plane.calcLandingSpeed(0, plane.MTOW); % m/s, MTOW
+    g2 = landing_speed / kt2ms(145) - 1;
     g_vec = [g_vec g2];
     g_names = [g_names "145kt Landing"];
 
-    %% 3.4.1 -> 8 deg/s sustained turn rate at 20kf
 
     %% 3.4.1 -> M 1.6 dash at 30kf
     % *** Corret to be mid mission fuel weight and air2air configuration
@@ -38,7 +38,7 @@ function [g_vec, g_names] = constraints_rfp(plane, missionList)
     plane.fixed_input = fixed_input_superclean;
     plane = plane.updateDerivedVariables();
 
-    maxMach = plane.calcMaxMachFixedAlt(ft2m(30000), plane.WE, 1, 1.1);
+    maxMach = plane.calcMaxMachFixedAlt(ft2m(30000), plane.mid_mission_weight, 1, 1.1);
     g3 = 1 - maxMach / 1.6;
     g_vec = [g_vec g3];
     g_names = [g_names "M1.6 Dash"];
@@ -48,12 +48,10 @@ function [g_vec, g_names] = constraints_rfp(plane, missionList)
 
     %% 3.4.5 -> M 0.85 sea level dash
     % *** Corret to be mid mission fuel weight and strike configuration
-    maxMach = plane.calcMaxMachFixedAlt(0, plane.WE, 1, 0.6);
+    maxMach = plane.calcMaxMachFixedAlt(0, plane.mid_mission_weight, 1, 0.6);
     g4 = 1 - maxMach / 0.85;
     g_vec = [g_vec g4];
     g_names = [g_names "M0.85 Dash"];
-
-    %% 3.5.7 -> If multi-engine, approach SEROC not less than 500 ft/min
 
     %% 3.5.8 -> Unfolded wingspan shall not exceed 60 feet
     g5 = plane.span / ft2m(60) - 1;
@@ -68,6 +66,23 @@ function [g_vec, g_names] = constraints_rfp(plane, missionList)
     g6 = plane.MTOW / lb2N(90000) - 1;
     g_vec = [g_vec g6];
     g_names = [g_names "45 ton MTOW"];
+
+     %% 3.4.1 -> 8 deg/s sustained turn rate at 20kf
+
+    g7 = 1 - plane.getMaxSustainedTurnAtAlt(ft2m(20000), plane.mid_mission_weight, 1) / 8; % Weight has a big impact here
+    g_vec = [g_vec g7];
+    g_names = [g_names "8 Deg/s Sustained Turn"];
+
+    %% 3.5.7 -> If multi-engine, approach SEROC not less than 500 ft/min
+    num_engine = plane.num_engine;
+    plane.num_engine = 1;
+    [~, a0, ~, ~, ~] = queryAtmosphere(0, [0 1 0 0 0]); % sea level speed of sound
+    excess_landing = plane.calcExcessPower(0, landing_speed/a0, plane.MTOW, 1); % MTOW landing weight, full AB, coming in to land
+    plane.num_engine = num_engine;
+
+    g8 = 1 - excess_landing / (ft2m(500) / 60); % 500 ft/min -> m/s
+    g_vec = [g_vec g8];
+    g_names = [g_names "Landing SEROC"];
 
     %% Liftoff speed reqs
 

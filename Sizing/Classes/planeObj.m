@@ -217,6 +217,7 @@ classdef planeObj
             obj.WE = MTOW * obj.raymer.A * N2lb(obj.MTOW)^(obj.raymer.C);
         end
         
+        % IMPORTANT -> WHEN USING THIS YOU HAVE TO DO plane = plane.updateDerivedVariables
         function obj = updateDerivedVariables(obj)
            
             % empty_weight_fraction = obj.WE / obj.MTOW = 2.34*N2lb(obj.MTOW)^(-0.13) ; % Use historical data

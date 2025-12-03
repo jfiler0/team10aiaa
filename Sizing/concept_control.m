@@ -2,7 +2,7 @@
 % Controls
 
     % Chose Your Concept
-    CN = 2; % COLUMN NUMBER
+    CN = 10; % COLUMN NUMBER
         % 1 -> F18E
         % 2 -> F18E_Sized (for testing)
         % 3 -> F16
@@ -14,7 +14,7 @@
         % 9 -> Concept 5
         % 10 -> Temp (can paste in values here to save them temporarily)
 
-    performance_plots = false; % Aerodynamics, Propulsion, Atmospere, Performance grids
+    performance_plots = true; % Aerodynamics, Propulsion, Atmospere, Performance grids
     mission_plots = false; % Fuel burn, LD, TSFC over time
     geometry_plot = false; % Outline of the wing geometry (not implemented yet)
     
@@ -24,7 +24,7 @@
 
     skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(120000), 500); % Refresh atmosphere lookup
@@ -178,7 +178,7 @@
 %% Create Performance Plots
     if performance_plots
         disp("Working On Performance Plots...")
-        plane.buildPlots(plane.MTOW, 30); % Can increase 50 for more resoultion at a time penalty
+        buildPerformancePlots(plane, plane.MTOW, 30); % Can increase 50 for more resoultion at a time penalty
     end
     
 %% Assign Derived Aircraft Geometry

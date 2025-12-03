@@ -22,7 +22,7 @@ function loadout = buildLoadout(storesList)
         store=stores_lookup(ismember(stores_lookup.store_code,storesList(i)),:);
 
         loadout.weight = loadout.weight + lb2N(store.weight_lbf);
-        loadout.CD0 = loadout.CD0 + store.drag_index / 1000; % *** Likely not totally correct but close enough
+        loadout.CD0 = loadout.CD0 + store.drag_index / 8000; % *** Just tuned to be reasonable increase of ~0.015 for strike
         loadout.external_fuel_N = loadout.external_fuel_N + lb2N( store.fuel_volume_gal * 6.7); % Found 6.7 lb/gal online
         loadout.storesNames(i) = store.full_name;
 

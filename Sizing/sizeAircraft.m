@@ -48,16 +48,24 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
     WE_opt    = x_opt(1);
     scale_opt = x_opt(2);
 
+    plane.span = plane_in.span * scale_opt;
+    plane.c_r = plane_in.c_r * scale_opt;
+    plane.c_t = plane_in.c_t * scale_opt;
+
+    plane.WE = WE_opt;
+
     objective(WE_opt, scale_opt); % This updates the plane object
     
-    fprintf("Aicraft: %s | Sized has WE = %.3f lb + Wings scaled by %.5f", plane.name, N2lb(plane.WE), scale_opt)
+    fprintf("Aicraft: %s | Sized has WE = %.3f lb + Wings scaled by %.5f\n", plane.name, N2lb(plane.WE), scale_opt)
 
     if(do_plot)
+
+        progressbar('Sizing Plot')
 
         % -------------------------------
         % Generate coarse grid
         % -------------------------------
-        N = 30;
+        N = 15;
         WE_range    = linspace(WE_opt/graphSize, graphSize*WE_opt, N);
         scale_range = linspace(scale_opt/graphSize, graphSize*scale_opt, N);
         [WE_grid, scale_grid] = meshgrid(WE_range, scale_range);
@@ -72,6 +80,9 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
     
         for i = 1:N
             for j = 1:N
+
+                progressbar( (N*(i-1) + j)/(N*N) )
+
                 WE_ij = WE_grid(i,j);
                 sc_ij = scale_grid(i,j);
 
@@ -91,7 +102,7 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
         % -------------------------------
         % Interpolate to fine grid
         % -------------------------------
-        N_fine = N*4;
+        N_fine = N*10;
         WE_range_fine    = linspace(min(WE_range), max(WE_range), N_fine);
         scale_range_fine = linspace(min(scale_range), max(scale_range), N_fine);
         [WE_grid_fine, scale_grid_fine] = meshgrid(WE_range_fine, scale_range_fine);
@@ -99,6 +110,7 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
         cost_grid_fine = interp2(WE_grid, scale_grid, cost_grid, WE_grid_fine, scale_grid_fine, 'spline');
         obj_grid_fine = interp2(WE_grid, scale_grid, obj_grid, WE_grid_fine, scale_grid_fine, 'spline');
         g_grid_fine = zeros(N_fine, N_fine, nCons);
+
         for k = 1:nCons
             g_grid_fine(:,:,k) = interp2(WE_grid, scale_grid, g_grid(:,:,k), WE_grid_fine, scale_grid_fine, 'spline');
         end
@@ -106,7 +118,7 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
         % -------------------------------
         % 2D Contour Plot with Constraints
         % -------------------------------
-        figure; hold on;
+        figure('Name', "Countour Plot"); hold on;
     
         % Cost contours (rounded)
         cost_rounded = round(cost_grid_fine,1);
@@ -128,11 +140,15 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
     
             % Shade infeasible region (opaque, matching line color)
             mask = gk_fine > 0;
-            zShade = max(cost_grid_fine(:)) * double(mask);
-            zShade(~mask) = NaN;
+            lift = max(cost_grid_fine(:)) - k * 1e-2;   % small lift above the surface
+            zShade = lift * mask;                    % mask=1 gets height k; mask=0 gets zero (ignored later)
+            zShade(mask == 0) = NaN;              % only draw masked areas
+
             hPatch = surf(WE_grid_fine, scale_grid_fine, zShade, ...
-                          'FaceColor', colors(k,:), 'FaceAlpha', 0.2, 'EdgeColor', 'none');
-            uistack(hPatch,'bottom');
+                          'FaceColor', colors(k,:), 'FaceAlpha', 0.2, 'EdgeColor', 'none', 'HandleVisibility','off');
+
+            % hPatch.Renderer = 'painters';   % forces 2D draw order
+            set(gcf, 'Renderer', 'painters');
     
             % Constraint contour line
             [~, hLine] = contour(WE_grid_fine, scale_grid_fine, gk_fine, [0 0], ...
@@ -155,7 +171,7 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
         % 3D Surface of Penalized Objective
         % -------------------------------
     
-        figure; hold on;
+        figure('Name',"3D Objective"); hold on;
         surf(WE_grid_fine, scale_grid_fine, obj_grid_fine, 'EdgeColor','none');
         shading interp; colormap(parula); colorbar;
         xlabel('Empty Weight WE'); ylabel('Scale Factor'); zlabel('Penalized Objective');
@@ -171,6 +187,8 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
         legend({'Objective Surface','Optimal'}, 'Location','best');
     
         hold off;
+
+        progressbar(1)
     
     end
 

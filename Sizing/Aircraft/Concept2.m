@@ -9,10 +9,16 @@
 matlabSetup(); % Clears and sets plot defaults
 
 
-%% Set Geometry Inputs - Concept 2\
+%% Set Geometry Inputs - Concept 2
 
 VSP_L_fus = 14.8; % nondimensional length of fuselage in VSP
 Corr_factor = 50/VSP_L_fus; % Mapping nondimensional length to feet of known value, arbitrarily set to max fuselage length
+
+% Some scalar corrections
+fixed_input.MTOW_Scalar = 66/50; % Since the Raymer fighter jet corrections is 16k lb lower than the F18
+fixed_input.SWET_Scalar = 3; % Shifting SWET historical regression to match VSP (and scaled CD0 to correct LD)
+fixed_input.CDW_Scalar = 10/4; % Wave drag estimate is typically too low
+fixed_input.K1_Scalar = 1.3; % Scales induced drag (and thus reduces eosw)
 
 fixed_input.L_fuselage = ft2m((14.8)*Corr_factor); % m -> fuselage length - put VSP value into inner parentheses
 fixed_input.A_max = 4.5; % m2 -> trying to get the right FA18 wave drag. This was tuned to get M1.6

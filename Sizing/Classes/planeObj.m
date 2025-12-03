@@ -55,7 +55,7 @@ classdef planeObj
         W_F % fixed weight
         a0 % deg
         cl_alpha = 0.1; % foil lift slope
-        cl_alpha_horstab = 2*pi*pi/180; % tail foil lift slope
+        cl_alpha_horstab % tail foil lift slope
         tc = 0.04; % airfoil thickness
         max_alpha % max angle of attack in deg
         mach_range % vector [min mach, max mach] for interpolation range

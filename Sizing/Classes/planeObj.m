@@ -489,28 +489,33 @@ classdef planeObj
                 turn_rate = NaN;
                 n = NaN;
             else
+                try
+                    CL_sustain = fzero(fun, [0 10]); % Max sustainable Cl
                 
-                CL_sustain = fzero(fun, [0 10]); % Max sustainable Cl
-    
-                if(CL_sustain < 0)
-                    warning("wtf why does this become negative")
+                    if(CL_sustain < 0)
+                        warning("wtf why does this become negative")
+                    end
+                    if( isnan(CL_sustain) )
+        
+                        clvec = linspace(-5, 5, 30);
+                        funvec = arrayfun(@(CL) fun(CL), clvec);
+                        plot(clvec, funvec)
+        
+                        warning("wtf why does this become negative")
+                    end
+        
+                    [CL_max_clean, ~, ~] = calcCL(obj, M);
+        
+                    Cl = min([CL_sustain CL_max_clean]);
+        
+                    L_max = q * Cl * obj.S_ref;
+                    n = min( L_max / W, obj.g_limit);
+                    turn_rate = rad2deg( n * 9.8051 / V);
+
+                catch
+                    turn_rate = NaN;
+                    n = NaN;
                 end
-                if( isnan(CL_sustain) )
-    
-                    clvec = linspace(-5, 5, 30);
-                    funvec = arrayfun(@(CL) fun(CL), clvec);
-                    plot(clvec, funvec)
-    
-                    warning("wtf why does this become negative")
-                end
-    
-                [CL_max_clean, ~, ~] = calcCL(obj, M);
-    
-                Cl = min([CL_sustain CL_max_clean]);
-    
-                L_max = q * Cl * obj.S_ref;
-                n = min( L_max / W, obj.g_limit);
-                turn_rate = rad2deg( n * 9.8051 / V);
 
             end
         end

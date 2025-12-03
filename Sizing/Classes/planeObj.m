@@ -75,7 +75,7 @@ classdef planeObj
         y_MAC_wing % Y location of airfoil with same chord as MAC; distance of airfoil section out the right wing from the centerline 
         x_MAC_wing % X location of LE of airfoil section with same chord as MAC; distance of LE from tip of nose 
         
-        b_strake % span of strake
+        b_strake % span of strake 
         x_strake % location of LE at the root of strake from tip of nose
         lam_strake % taper ratio of strake
         c_root_strake % root chord of strake 
@@ -125,6 +125,7 @@ classdef planeObj
                 LAM_h % dihedral angle
                 inc_h % angle of incidence
                 AR_horstab % aspect ratio of horizontal stabilizer
+                
                 % Vertical
                 x_verstab % X location of LE of root airfoil of verstab from tip of nose
                 S_v % Planform Area
@@ -172,16 +173,35 @@ classdef planeObj
     methods
         
         %% Primary class defenition functions (used on creation and updates)
-        function obj = planeObj(fixed_input, name, WE, Lambda_LE, c_r, c_t, span, num_engine, engine, W_F) 
+        function obj = planeObj(fixed_input, name, WE, Lambda_LE, c_r, c_t, span, num_engine, engine, W_F, geom_array) 
+            % Pull Variable values from array
+            obj.A_max = geom_array(1,22);
+            obj.x_rootLE_wing = geom_array(1,5);
+            obj.b_strake = geom_array(1,14);
+            obj.x_strake = geom_array(1,15);
+            obj.lam_strake = geom_array(1,13);
+            obj.c_root_strake = geom_array(1,12);  
+            obj.Lambda_LE_strake = geom_array(1,16);
+            obj.lam_h = geom_array(1,8);
+            obj.c_r_horstab = geom_array(1,7);
+            obj.x_horstab = geom_array(1,10);
+            obj.b_h = geom_array(1,9); 
+            obj.x_verstab = geom_array(1,20);
+            obj.LAM_LE_horstab = geom_array(1,11); 
+            obj.c_r_v = geom_array(1,17); 
+            obj.b_v = geom_array(1,19); 
+            obj.LAM_v = geom_array(1,21); 
+            obj.lam_v = geom_array(1,18);
+
             % Note it returns the obj variable to be used. Use as plane = planeObj(...)
             obj.name = name;
 
             %% Assign inputs
             obj.WE = WE; % Newtons
             obj.Lambda_LE = Lambda_LE; % deg
-            obj.c_r = c_r;
-            obj.c_t = c_t;
-            obj.span = span;
+            obj.c_r = geom_array(1,2);
+            obj.c_t = geom_array(1,23);
+            obj.span = geom_array(1,4);
             obj.num_engine = num_engine;
             
             %% Bunch of fixed parameters (***)
@@ -241,9 +261,7 @@ classdef planeObj
             obj.S_wing = obj.span*obj.c_avg;
             obj.S_ref = obj.S_wing; % Typical defenition for reference area
             obj.S_strakes = 0.5*obj.b_strake*obj.c_root_strake; % planform area of strakes calculation
-            
-            %% Tail Geometry
-            
+           
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4
             
@@ -315,7 +333,7 @@ classdef planeObj
             obj.x_ac_verstabs = obj.x_MAC_verstab +0.25*obj.MAC_verstab;
 
             obj.x_ac_wings_strakes = obj.x_ac_wings + (obj.x_ac_strakes - obj.x_ac_wings)*obj.S_strakes/((2*obj.S_wing)+obj.S_strakes);
-            obj.x_ac_wings_strakes_fuselage = obj.x_ac_wings_strakes - ((obj.L_fuselage*obj.A_max^2)*(0.005 + 0.111*(obj.x_ac_wings_strakes/obj.L_fuselage)^2)/((2*obj.S_wing)*CL_alpha_wing*57.29)); 
+            obj.x_ac_wings_strakes_fuselage = obj.x_ac_wings_strakes - ((obj.L_fuselage*(obj.A_max/pi)^2)*(0.005 + 0.111*(obj.x_ac_wings_strakes/obj.L_fuselage)^2)/((2*obj.S_wing)*CL_alpha_wing*57.29)); 
             obj.x_bar_ac_wings_strakes_fuselage = (obj.x_ac_wings_strakes_fuselage - obj.x_MAC_wing)/obj.MAC_wing;
 
             % tail arm

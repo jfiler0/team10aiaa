@@ -56,7 +56,7 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
 
     objective(WE_opt, scale_opt); % This updates the plane object
     
-    fprintf("Aicraft: %s | Sized has WE = %.3f lb + Wings scaled by %.5f", plane.name, N2lb(plane.WE), scale_opt)
+    fprintf("Aicraft: %s | Sized has WE = %.3f lb + Wings scaled by %.5f\n", plane.name, N2lb(plane.WE), scale_opt)
 
     if(do_plot)
 

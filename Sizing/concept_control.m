@@ -2,7 +2,7 @@
 % Controls
 
     % Chose Your Concept
-    CN = 2; % COLUMN NUMBER
+    CN = 1; % COLUMN NUMBER
         % 1 -> F18E
         % 2 -> F18E_Sized (for testing)
         % 3 -> F16
@@ -14,16 +14,17 @@
         % 9 -> Concept 5
         % 10 -> Temp (can paste in values here to save them temporarily)
 
-    performance_plots = false; % Aerodynamics, Propulsion, Atmospere, Performance grids
+    performance_plots = true; % Aerodynamics, Propulsion, Atmospere, Performance grids
     mission_plots = false; % Fuel burn, LD, TSFC over time
     geometry_plot = false; % Outline of the wing geometry (not implemented yet)
     
-    run_sizing = true; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
+    run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
     sizing_plot = false; % Shows constraint boundaries (this does take a min)
+    sensitivities_plot = false;
 
-    skip_max_ranges = false; % This can take a bit of time so if you are exploring other parameters consider just disabling it
+    skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(120000), 500); % Refresh atmosphere lookup
@@ -94,6 +95,8 @@
         ...
         strike_loadout);
 
+    missionList = [air2ground_700 air2air_700]; % Missions to constraint
+
 %% Read in Excel File
     disp("Reading Input Geoemtry...")
     [currentFolder, ~, ~] = fileparts(mfilename('fullpath'));
@@ -129,9 +132,6 @@
 %% Size The Plane (Optional)
     if run_sizing
         disp("Running Sizing...")
-        % error("Sizing function not implemented yet");
-
-        missionList = [air2ground_700 air2air_700];
 
         plane = sizeAircraft(plane, missionList, @constraints_rfp, sizing_plot, 1.5);
         plane = plane.updateDerivedVariables();
@@ -147,6 +147,19 @@
             warning("Sized aircraft does not satisfy all RFP constraints and is instead the least feasible (weighted) option.")
         end
 
+    end
+%% Sensitivities Plot
+
+    if(sensitivities_plot)
+        disp("Working on sensitvities plot...")
+        values_to_change = {"WE", "Empty Weight [N]" ; ...
+                           "c_r", "Root Chord [m]" ; ...
+                           "c_t", "Tip Chord [m]" ; ...
+                           "span", "Span [m]" ; ...
+                           "Lambda_LE", "LE Sweep [deg]" ; ...
+                           };
+
+        sensitivitesPlot(plane, values_to_change, 1.5, missionList, @constraints_rfp, 15);
     end
 
 %% Display Plane Geometry
@@ -187,17 +200,19 @@
     T = assignVar(plane.calcProp(0, 0, 0)/1000, 'Max Military Thrust [kN]', CN, T);
     T = assignVar(plane.calcProp(0, 0, 1)/1000, 'Max AB Thrust [kN]', CN, T);
 
-    plane.fixed_input = fixed_input_superclean; % For mach mach calculation
+    plane.fixed_input = fixed_input_superclean; % For max mach calculation
     plane = plane.updateDerivedVariables();
 
     max_mach = plane.calcMaxMach(plane.WE, 1);
     T = assignVar(max_mach, 'Max Mach Number', CN, T);
 
-    landing_speed = plane.calcLandingSpeed(0, plane.MTOW); % m/s
-    T = assignVar(ms2kt(landing_speed), 'Landing Speed [kt]', CN, T);
+    % plane.calcMaxMachFixedAlt(ft2m(30000), plane.mid_mission_weight, 1, 1.1)
 
     plane.fixed_input = fixed_input; % Back to normal
     plane = plane.updateDerivedVariables();
+
+    landing_speed = plane.calcLandingSpeed(0, plane.MTOW); % m/s
+    T = assignVar(ms2kt(landing_speed), 'Landing Speed [kt]', CN, T);
 
     [maxAlt, ~, ~] = plane.calcMaxAlt(plane.mid_mission_weight, 1);
     T = assignVar(m2ft(maxAlt)/1000, 'Service Ceiling [kft]', CN, T);

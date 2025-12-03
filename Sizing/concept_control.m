@@ -1,6 +1,26 @@
 % This file is the main one to use when writing to concept_tabulations. It embeds all the rfp asks and assumptions we make. 
-% Controls
 
+% INSTRUCTIONS
+% --- Go to concept_tabulatons.xlsx. Se the geometry inputs in the "Geometry Inputs" section
+% --- Select your concept below using the column number
+% --- Enable/Disable operations below. For testing, you can set write_to_xlsx = false so no permeant operations occur
+% --- Run the file (make sure you have added all files in team10aiaa to the working directory
+% --- If excel writing is enabled, you can view performance outputs there. Or look at plots if you generated them
+% *** You now have two options: Manual Sizing & Automatic Sizing
+
+% Manual Sizing
+% --- Edit the geometry inputs and run the file over and over till you are happy
+% --- Can load sensitivities_plot to get an understanding of trends for each geometric variable
+
+% Automatic Sizing
+% --- Set run_sizing to true. It will try to find a feasible design. If excel writing is enabled, it will overwrite the geometry inputs with
+% the new set. You can then start with manual sizing from there for any finetuning or adjustments
+
+% Other Notes
+% --- performance_plots has a lot of interesting info (~15s). sizing_plot gives a fully 2D view of the optimization problem but takes a bit
+% --- skip_max_ranges will disable the max range search which is more resource intense than any of the other outputs
+
+% Controls
     % Chose Your Concept
     CN = 10; % COLUMN NUMBER
         % 1 -> F18E
@@ -24,7 +44,7 @@
 
     skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(120000), 500); % Refresh atmosphere lookup
@@ -105,6 +125,8 @@
 
 %% Gather Inputs
     name = readVar('Deliverable', CN, T);
+
+    disp("Loaded geometry for: " + name)
     
     fixed_input.L_fuselage = readVar('Fuselage Length [m]', CN, T); % m
     fixed_input.A_max = readVar('Max Fuselage Area [m2]', CN, T); % m2 -> From VSP

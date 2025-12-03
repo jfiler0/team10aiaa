@@ -2,24 +2,28 @@
 % Controls
 
     % Chose Your Concept
-    CN = 1; % COLUMN NUMBER
+    CN = 2; % COLUMN NUMBER
         % 1 -> F18E
-        % 2 -> F35  
-        % 3 -> Concept 1
-        % 4 -> Concept 2
-        % 4 -> Concept 3
-        % 4 -> Concept 4
-        % 4 -> Concept 5
+        % 2 -> F18E_Sized (for testing)
+        % 3 -> F16
+        % 4 -> F35  
+        % 5 -> Concept 1
+        % 6 -> Concept 2
+        % 7 -> Concept 3
+        % 8 -> Concept 4
+        % 9 -> Concept 5
+        % 10 -> Temp (can paste in values here to save them temporarily)
 
     performance_plots = false; % Aerodynamics, Propulsion, Atmospere, Performance grids
     mission_plots = false; % Fuel burn, LD, TSFC over time
-    geometry_plot = false; % Outline of the wing geometry
+    geometry_plot = false; % Outline of the wing geometry (not implemented yet)
+    
+    run_sizing = true; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
+    sizing_plot = false; % Shows constraint boundaries (this does take a min)
 
-    run_sizing = false; % WARNING: This will overwrite xlsx data and can take awhile
+    skip_max_ranges = false; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
-
-    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(120000), 500); % Refresh atmosphere lookup
@@ -125,7 +129,24 @@
 %% Size The Plane (Optional)
     if run_sizing
         disp("Running Sizing...")
-        error("Sizing function not implemented yet");
+        % error("Sizing function not implemented yet");
+
+        missionList = [air2ground_700 air2air_700];
+
+        plane = sizeAircraft(plane, missionList, @constraints_rfp, sizing_plot, 1.5);
+        plane = plane.updateDerivedVariables();
+
+        T = assignVar(N2lb(plane.WE), 'Empty Weight [lb]', CN, T);
+        T = assignVar(plane.span, 'Wing Span [m]', CN, T);
+        T = assignVar(plane.c_r, 'Root Chord [m]', CN, T);
+        T = assignVar(plane.c_t, 'Tip Chord [m]', CN, T);
+
+        [g_vec, ~] = constraints_rfp(plane, missionList);
+        if(max(g_vec) > 0)
+            disp("\n")
+            warning("Sized aircraft does not satisfy all RFP constraints and is instead the least feasible (weighted) option.")
+        end
+
     end
 
 %% Display Plane Geometry

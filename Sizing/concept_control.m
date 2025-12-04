@@ -139,9 +139,8 @@
     geom.c_t = readVar('Tip Chord [m]', CN, T); % m - Tip Chordf
     geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
     geom.num_engine = readVar('Number of Engines', CN, T);
-
-    tail_input = struct();
-    % tail_input.mac = readVar('MAC', CN, T);
+    tail_input.VH = readVar('Hor Stab Tail Ratio', CN, T);
+    tail_input.VV = readVar('Ver Stab Tail Ratio', CN, T);
 
 %% Set Remaining Fixed Inputs
     % These should remain constant between concepts
@@ -164,8 +163,9 @@
 
 %% Make the plane object
     disp("Building plane object...")
-    %                                     empty_weight,       Lambda_LE,     c_r,       c_t,    span,        num_engine,      engine,      W_F
+    %                                                mtow,      Lambda_LE,     c_r,       c_t,    span,        num_engine,      engine,      W_F
     plane = planeObj(fixed_input, tail_input, name, geom.mtow, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,  geom.num_engine, geom.engine, geom.W_F);
+
     plane = plane.applyLoadout(clean_loadout); % Just two sidewinders
 
 %% Size The Plane (Optional)
@@ -252,8 +252,8 @@
     T = assignVar(plane.S_wing, 'Wing Area [m2]', CN, T);
     T = assignVar( m2ft(plane.fold_span ), 'Folded Span [ft]', CN, T);
     T = assignVar( m2ft(plane.fold_height ), 'Folded Height [ft]', CN, T);
-    % T = assignVar(plane.x_MAC_verstab, 'X VTAIL MAC [m]', CN, T);
-
+    T = assignVar(plane.l_opt, 'Optimum Tail Arm [m]', CN, T);
+    T = assignVar(plane.S_h, 'Hor Stab Planform Area [m2]', CN, T);
 
 %% Compute Performance Data
     disp("Computing Performance Data...")

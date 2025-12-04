@@ -235,8 +235,6 @@ total_weight = sum(struct2array(output));
 disp('Raymer component weights(approximate, N):');
 disp(output);
 
-plane.num_engine * plane.engine_dry_weight
-
 fprintf('Total estimated weight: %.0f N (%.0f lb)\n', total_weight, N2lb(total_weight));
 fprintf('Weight Fraction = %.4f\n', total_weight/plane.MTOW)
     

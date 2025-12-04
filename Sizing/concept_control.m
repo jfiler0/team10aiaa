@@ -22,7 +22,7 @@
 
 % Controls
     % Chose Your Concept
-    CN = 8; % COLUMN NUMBER
+    CN = 1; % COLUMN NUMBER
         % 1 -> F18E
         % 2 -> F18E_Sized (for testing)
         % 3 -> F16
@@ -34,7 +34,7 @@
         % 9 -> Concept 5
         % 10 -> Temp (can paste in values here to save them temporarily)
 
-    performance_plots = true; % Aerodynamics, Propulsion, Atmospere, Performance grids
+    performance_plots = false; % Aerodynamics, Propulsion, Atmospere, Performance grids
     mission_plots = false; % Fuel burn, LD, TSFC over time
     geometry_plot = false; % Outline of the wing geometry (not implemented yet)
     
@@ -49,25 +49,6 @@
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(120000), 500); % Refresh atmosphere lookup
     matlabSetup(); % Clears and sets plot defaults
-%% Set Fixed Inputs
-    % These should remain constant between concepts
-    fixed_input = struct();
-    
-    fixed_input.max_alpha = 15; % deg -> Guess (This defins max LANDING Cl) -> Too high for landing now!
-    fixed_input.type = "Jet fighter"; % Which empty weight coefficents to take from Raymer. In weight_regression_lookup
-    
-    % Tuned to match F18 range requirements:
-    % fixed_input.MTOW_Scalar = 66/50; % Since the Raymer fighter jet corrections is 16k lb lower than the F18
-    fixed_input.MTOW_Scalar = 60/50;
-    fixed_input.SWET_Scalar = 3; % Shifting SWET historical regression to match VSP (and scaled CD0 to correct LD)
-    fixed_input.CDW_Scalar = 9/4; % Wave drag estimate is typically too low
-    fixed_input.K1_Scalar = 1.3; % Scales induced drag (and thus reduces eosw)
-
-    fixed_input_superclean = fixed_input; % Making another set of corrections for the mach mach condition (when you scrub down the plane and make it super sleek to set a record)
-
-    fixed_input_superclean.SWET_Scalar = 2; % Set this to 1 for totally clean, max speed (bring to 243/152 for real performance)
-    fixed_input_superclean.CDW_Scalar = 7/4; % Set this to 1 for totally clean, max speed (bring to 7/4 for real performance)
-    fixed_input_superclean.K1_Scalar = 1;
 
 %% Define Loadouts
     % When applied to a plane they set extra payload weight, can add to potential fuel volume (if a tank), and add to CD0
@@ -138,10 +119,12 @@ T = readcell(excelPath);
 
     disp("Loaded geometry for: " + name)
     
+    fixed_input = struct();
     fixed_input.L_fuselage = readVar('Fuselage Length [m]', CN, T); % m
     fixed_input.A_max = readVar('Max Fuselage Area [m2]', CN, T); % m2 -> From VSP
     fixed_input.g_limit = readVar('G Limit', CN, T); % G -> FA18 limit
     fixed_input.KLOC = readVar('KLOC', CN, T); % in kilo-lines of code
+    fixed_input.fold_ratio = readVar('Fold Ratio', CN, T);
     
     geom.empty_weight = lb2N(readVar('Empty Weight [lb]', CN, T)); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
     geom.W_F = lb2N(readVar('Fixed Weight [lb]', CN, T)); % N - Fixed Weight (Avionics)
@@ -152,14 +135,31 @@ T = readcell(excelPath);
     geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
     geom.num_engine = readVar('Number of Engines', CN, T);
 
-    fold_ratio = readVar('Fold Ratio', CN, T);
+%% Set Remaining Fixed Inputs
+    % These should remain constant between concepts
+    
+    fixed_input.max_alpha = 10; % deg -> Guess (This defins max LANDING Cl) -> Too high for landing now!
+    fixed_input.type = "Jet fighter"; % Which empty weight coefficents to take from Raymer. In weight_regression_lookup
+    
+    % Tuned to match F18 range requirements:
+    % fixed_input.MTOW_Scalar = 66/50; % Since the Raymer fighter jet corrections is 16k lb lower than the F18
+    fixed_input.MTOW_Scalar = 60/50;
+    fixed_input.SWET_Scalar = 3; % Shifting SWET historical regression to match VSP (and scaled CD0 to correct LD)
+    fixed_input.CDW_Scalar = 9/4; % Wave drag estimate is typically too low
+    fixed_input.K1_Scalar = 1.3; % Scales induced drag (and thus reduces eosw)
+    fixed_input.F_Scaler = 1.3; % Increases max possible lift (by scaling fuselage lift factor)
+
+    fixed_input_superclean = fixed_input; % Making another set of corrections for the mach mach condition (when you scrub down the plane and make it super sleek to set a record)
+
+    fixed_input_superclean.SWET_Scalar = 2; % Set this to 1 for totally clean, max speed (bring to 243/152 for real performance)
+    fixed_input_superclean.CDW_Scalar = 7/4; % Set this to 1 for totally clean, max speed (bring to 7/4 for real performance)
+    fixed_input_superclean.K1_Scalar = 1;
 
 %% Make the plane object
     disp("Building plane object...")
     %                                     empty_weight,       Lambda_LE,     c_r,       c_t,    span,        num_engine,      engine,      W_F
     plane = planeObj(fixed_input, name, geom.empty_weight, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,  geom.num_engine, geom.engine, geom.W_F);
     plane = plane.applyLoadout(clean_loadout); % Just two sidewinders
-
 
 %% Size The Plane (Optional)
     if run_sizing
@@ -228,12 +228,14 @@ T = readcell(excelPath);
     T = assignVar(plane.c_avg, 'Average Chord [m]', CN, T);
     T = assignVar(plane.Lambda_TE, 'TE Sweep [deg]', CN, T);
     T = assignVar(plane.S_wing, 'Wing Area [m2]', CN, T);
+    T = assignVar( m2ft(plane.span * plane.fixed_input.fold_ratio), 'Folded Span [ft]', CN, T);
+
 
 %% Compute Performance Data
     disp("Computing Performance Data...")
 
     T = assignVar(plane.calcUnitCost(), 'Unit Cost [millions]', CN, T);
-    T = assignVar(plane.calcSpotFactor(fold_ratio), 'Spot Factor', CN, T);
+    T = assignVar(plane.calcSpotFactor(), 'Spot Factor', CN, T);
 
     T = assignVar(plane.calcProp(0, 0, 0)/1000, 'Max Military Thrust [kN]', CN, T);
     T = assignVar(plane.calcProp(0, 0, 1)/1000, 'Max AB Thrust [kN]', CN, T);
@@ -249,7 +251,8 @@ T = readcell(excelPath);
     plane.fixed_input = fixed_input; % Back to normal
     plane = plane.updateDerivedVariables();
 
-    landing_speed = plane.calcLandingSpeed(0, plane.MTOW); % m/s
+    landing_weight = getLandingWeight(plane);
+    landing_speed = plane.calcLandingSpeed(0, landing_weight); % m/s
     T = assignVar(ms2kt(landing_speed), 'Landing Speed [kt]', CN, T);
 
     [maxAlt, ~, ~] = plane.calcMaxAlt(plane.mid_mission_weight, 1);
@@ -309,10 +312,9 @@ if ~skip_max_ranges
     max_ferry_range = fzero(@(R) W0_diff( plane, returnFerryMission( R, ferry_loadout ) ) , startRange );
     progressbar(1);
     
-    T = assignVar(max_air2air_range, 'Combat Mission Max Range [nm]', CN, T);
-    T = assignVar(max_air2ground_range, 'Strike Mission Max Range [nm]', CN, T);
-    T = assignVar(max_ferry_range, 'Ferry Mission Max Range [nm]', CN, T);
-
+    T = assignVar(max_air2air_range, 'Combat Mission Max Radius [nm]', CN, T);
+    T = assignVar(max_air2ground_range, 'Strike Mission Max Radius [nm]', CN, T);
+    T = assignVar(max_ferry_range, 'Ferry Mission Max Radius [nm]', CN, T);
 end
 
 function ferry_mission = returnFerryMission(range, loadout)

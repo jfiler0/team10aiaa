@@ -18,7 +18,8 @@ function [g_vec, g_names] = constraints_rfp(plane, missionList)
     %% 3.2.3 -> Approach airspeed shall be greater than 10% above stall speed, but less than 145 knots.
     % What weight should this be?
 
-    landing_speed = plane.calcLandingSpeed(0, plane.MTOW); % m/s, MTOW
+    landing_weight = getLandingWeight(plane);
+    landing_speed = plane.calcLandingSpeed(0, landing_weight); % m/s, MTOW
     g2 = landing_speed / kt2ms(145) - 1;
     g_vec = [g_vec g2];
     g_names = [g_names "145kt Landing"];
@@ -62,7 +63,6 @@ function [g_vec, g_names] = constraints_rfp(plane, missionList)
     g_vec = [g_vec g5];
     g_names = [g_names "60ft Max Span"];
 
-    %% 3.5.9 -> Foled wing span shall not exceed 35 ft
     %% 3.5.10 -> Overall aircraft length shall not exceed 50 feet
     %% 3.5.11 -> Overall aircraft height shall not exceed 18.5 feet
     %% 3.5.13 -> Maximum take-off gross weight shall not be greater than 90,000 lb
@@ -87,6 +87,12 @@ function [g_vec, g_names] = constraints_rfp(plane, missionList)
     g8 = 1 - excess_landing / (ft2m(500) / 60); % 500 ft/min -> m/s
     g_vec = [g_vec g8];
     g_names = [g_names "Landing SEROC"];
+
+    %% 3.5.9 -> Foled wing span shall not exceed 35 ft
+    folded_span = plane.span * plane.fixed_input.fold_ratio;
+    g9 = folded_span / ft2m(35) - 1;
+    g_vec = [g_vec g9];
+    g_names = [g_names "35ft Fold Limit"];
 
     %% Liftoff speed reqs
 

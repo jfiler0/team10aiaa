@@ -28,13 +28,16 @@ classdef mission
             obj.name = name;
 
         end
-        function [WTO_Next, fuel_burned, W_End, fuel_remaining] = solveMission(obj, plane, do_plot)
+        function [WTO_Next, fuel_burned, W_End, fuel_remaining] = solveMission(obj, plane, do_plot, W_override)
             if nargin < 3
                 do_plot = false;
             end
-
-            W0 = plane.MTOW;
-            W = W0;
+            if nargin < 4
+                W_IN = plane.MTOW;
+            else
+                W_IN = W_override; % Incase you know what the starting weight should be. Needed for solving for landing weight
+            end
+            W = W_IN;
 
             fuel_reserve = 0.05; % Keep 5 percent fuel reserve
 
@@ -112,7 +115,7 @@ classdef mission
             WTO_Next = plane.WE + fuel_burned / (1 - fuel_reserve) + plane.W_P + plane.W_Tanks + plane.W_F;
             W_End = W;
 
-            fuel_remaining = plane.MTOW - plane.WE - fuel_burned / (1 - fuel_reserve) - plane.W_P - plane.W_Tanks - plane.W_F;
+            fuel_remaining = W_IN - plane.WE - fuel_burned / (1 - fuel_reserve) - plane.W_P - plane.W_Tanks - plane.W_F;
 
             %% Plotting
 

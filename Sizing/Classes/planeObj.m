@@ -281,7 +281,7 @@ classdef planeObj
             obj.Lambda_max_t = ( obj.Lambda_LE - obj.Lambda_TE )/2; % *** Feel like this should be addition instead for some reason
             obj.D = 2*sqrt(obj.A_max/pi); % Assuming roughly circular cross section to get fuselage diameter/width
             obj.S_exposed = obj.S_wing * 1.3; % *** Trying to account for body lift/strakes/tail anything not in here
-            obj.F = 1.07 * (1 + obj.D/obj.span)^2; % Lift Factor
+            obj.F = obj.fixed_input.F_Scaler * 1.07 * (1 + obj.D/obj.span)^2; % Lift Factor
             % obj.F = 1; % *** Needs to be fixed
 
             obj.S_flapped = obj.S_wing * 0.6; % *** Obviously has a big impact on landing CL
@@ -363,6 +363,8 @@ classdef planeObj
         function obj = updateWeights(obj)
             obj.max_fuel_weight = obj.MTOW - obj.WE - obj.W_P - obj.W_Tanks - obj.W_F;
             obj.mid_mission_weight = obj.MTOW - obj.max_fuel_weight / 2; % Assume half of fuel is burned
+
+            % obj.landing_weight = getLandingWeight(obj);
         end
         
         %% Iterpolation creators for updateDerviedVariables
@@ -411,7 +413,7 @@ classdef planeObj
         
         %% Core analyisis functions
         function [CL_max_clean, CL_max_flapped, CLa] = calcCL(obj, M)
-            CLa = obj.CLa_interp(M);
+            CLa = obj.F * obj.CLa_interp(M);
             CL_max_clean = CLa * (obj.max_alpha - obj.a0);
             CL_max_flapped = CL_max_clean + obj.Delta_flap_param *obj.S_flapped/obj.S_ref * cosd(obj.Lambda_HL);
         end
@@ -456,6 +458,7 @@ classdef planeObj
             f = @(V) real( W - get_output_at_index(@() obj.calcCL(V / a), 2) * obj.S_ref * q(V) ); % I don't know why @() is required but it does work
             x0 = 0.5 * a;
             stallSpeed = fzero(f , x0);
+            % [~, CL_max_flapped, ~] = obj.calcCL(stallSpeed/a)
         end
         
         function takeoffSpeed = calcTakeoffSpeed(obj, h, W)
@@ -465,7 +468,7 @@ classdef planeObj
         
         function landingSpeed = calcLandingSpeed(obj, h, W)
             % Can vary h to see change with alt.
-            landingSpeed = 1.3 * obj.calcStallSpeed(h, W);
+            landingSpeed = 1.3 * obj.calcStallSpeed(h, W); % RFP says 10% instead of 1.3 that is traditional
         end
         
         % Note the absolute max turn rate seems to always be at sea level
@@ -586,21 +589,20 @@ classdef planeObj
             cost= ( getcost(N2lb(obj.WE), obj.KLOC) / 500 )  / 1000000; % Divide by 500 since getcost assumes 500 aircraft in the program, and convert to mil
         end
 
-        function area = calcFoldedWingProjection(obj, fold_ratio)
+        function area = calcFoldedWingProjection(obj)
             % fold_ratio = 0.1 -> 10% of the wing is folded
 
             % The FA18E has a wingspan of 40.4 ft and when folded goes to 27.5. Thus for it, fold_ratio = 1 - 27.5 / 40.4 = 0.3193
             % We then get a area of 49.1823 when projected which is now the spot facto = 1 reference
 
-            fold_span = obj.span * ( 1 - fold_ratio);
-            fold_tipChord = obj.c_r + (obj.c_r - obj.c_t) * ( 1 - fold_ratio);
+            fold_span = obj.span * ( 1 - obj.fixed_input.fold_ratio);
+            fold_tipChord = obj.c_r + (obj.c_r - obj.c_t) * ( 1 - obj.fixed_input.fold_ratio);
             area = fold_span * ( fold_tipChord + obj.c_r) / 2;
         end
         
-        function spotFactor = calcSpotFactor(obj, fold_ratio)
-            % fold_ratio = 0.1 -> 10% of the wing is folded
-            % f18.calcSpotFactor(0.3193)
-            area = obj.calcFoldedWingProjection(fold_ratio);
+        function spotFactor = calcSpotFactor(obj)
+            % fold_ratio = 0.1 -> 10% of the wing is folded, 0.3193 for hornet
+            area = obj.calcFoldedWingProjection();
             spotFactor = area / 51.033; % From F18 comparison. Setting it to 1 when area matches
         end
        

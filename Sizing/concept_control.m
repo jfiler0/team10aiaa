@@ -24,7 +24,7 @@
 
 % Controls
     % Chose Your Concept
-    CN = 2; % COLUMN NUMBER
+    CN = 1; % COLUMN NUMBER
         % 1 -> F18E
         % 2 -> F18E_Sized (for testing)
         % 3 -> F16
@@ -40,18 +40,18 @@
     mission_plots = false; % Fuel burn, LD, TSFC over time
     geometry_plot = false; % Outline of the wing geometry (not implemented yet)
     drag_polar = false;
-    print_components = false;
+    print_components = true;
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
-        sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
+        sizing_plot = true; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
     sensitivities_plot = false; % Can change parameter selection in "Sensitivities Plot"
 
     skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
-    build_atmosphere_lookup(-5000, ft2m(120000), 500); % Refresh atmosphere lookup
+    build_atmosphere_lookup(-5000, ft2m(100000), 500); % Refresh atmosphere lookup
     matlabSetup(); % Clears and sets plot defaults
 
 %% Define Loadouts
@@ -130,7 +130,7 @@
     fixed_input.KLOC = readVar('KLOC', CN, T); % in kilo-lines of code
     fixed_input.fold_ratio = readVar('Fold Ratio', CN, T);
     
-    geom.empty_weight = lb2N(readVar('Empty Weight [lb]', CN, T)); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
+    geom.mtow = lb2N(readVar('MTOW [lb]', CN, T)); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
     geom.W_F = lb2N(readVar('Fixed Weight [lb]', CN, T)); % N - Fixed Weight (Avionics)
     geom.span = readVar('Wing Span [m]', CN, T); % m - Wing Span
     geom.Lambda_LE = readVar('LE Sweep [deg]', CN, T); % deg - Leading Edge Sweep
@@ -140,7 +140,6 @@
     geom.num_engine = readVar('Number of Engines', CN, T);
     tail_input.VH = readVar('Hor Stab Tail Ratio', CN, T);
     tail_input.VV = readVar('Ver Stab Tail Ratio', CN, T);
-
   
 %% Set Remaining Fixed Inputs
     % These should remain constant between concepts
@@ -164,8 +163,8 @@
 
 %% Make the plane object
     disp("Building plane object...")
-    %                                     empty_weight,       Lambda_LE,     c_r,       c_t,    span,        num_engine,      engine,      W_F
-    plane = planeObj(fixed_input, tail_input, name, geom.empty_weight, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,  geom.num_engine, geom.engine, geom.W_F);
+    %                                                  mtow,       Lambda_LE,     c_r,       c_t,    span,        num_engine,      engine,      W_F
+    plane = planeObj(fixed_input, tail_input, name, geom.mtow, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,  geom.num_engine, geom.engine, geom.W_F);
     plane = plane.applyLoadout(clean_loadout); % Just two sidewinders
 
 %% Size The Plane (Optional)
@@ -231,14 +230,14 @@
 if print_components
 
     disp('Raymer component weights(approximate, N):');
-    disp(obj.weights);
+    disp(plane.weights);
 
 end
     
 %% Assign Derived Aircraft Geometry
     disp("Writing Derived Geometry...")
 
-    T = assignVar(N2lb(plane.MTOW), 'MTOW [lb]', CN, T);
+    T = assignVar(N2lb(plane.WE), 'Empty Weight [lb]', CN, T);
     
     plane = plane.applyLoadout(strike_loadout); % Should have the highest payload weight. Technically can reduce by moving to wing tanks
     internal_fuel = plane.max_fuel_weight;
@@ -250,12 +249,16 @@ end
     T = assignVar(plane.c_avg, 'Average Chord [m]', CN, T);
     T = assignVar(plane.Lambda_TE, 'TE Sweep [deg]', CN, T);
     T = assignVar(plane.S_wing, 'Wing Area [m2]', CN, T);
-    % T = assignVar( m2ft(plane.span * plane.fixed_input.fold_ratio), 'Folded Span [ft]', CN, T);
+    
     T = assignVar(plane.l_opt, 'Optimum Tail Arm [m]', CN, T);
     T = assignVar(plane.S_h, 'Hor Stab Planform Area [m2]', CN, T);
+    T = assignVar(plane.AR_h, 'Hor Stab Aspect Ratio', CN, T);
+    T = assignVar(plane.lam_h, 'Hor Stab Taper Ratio', CN, T);
+    T = assignVar(plane.LAM_LE_horstab, 'Hor Stab LE Sweep [deg]', CN, T);
+
+    T = assignVar( m2ft(plane.fold_span), 'Folded Span [ft]', CN, T);
+    T = assignVar( m2ft(plane.fold_height), 'Folded Height [ft]', CN, T);
     
-
-
 %% Compute Performance Data
     disp("Computing Performance Data...")
 
@@ -312,6 +315,9 @@ end
 
     [~, ~, ~, LDmax] = plane.findMaxEnduranceState(plane.MTOW);
     T = assignVar(LDmax, 'Max L/D', CN, T);
+
+    maxMach = plane.calcMaxMachFixedAlt(ft2m(30000), plane.mid_mission_weight, 1, 1.1);
+    T = assignVar(maxMach, 'Max Mach at 30k ft', CN, T);
 
 %% Work on Missions
 
@@ -405,7 +411,14 @@ if write_to_xlsx
     
     % Using writetable instead of writecell preserves xlsx formatting
     T = cell2table(T);
-    writetable(T, excelPath,'WriteVariableNames',false);
+
+    try
+        writetable(T, excelPath,'WriteVariableNames',false);
+    catch
+        disp("EXCEL FILE IS OPEN. Close - then press a key to try again")
+        pause
+        writetable(T, excelPath,'WriteVariableNames',false);
+    end
 
 end
 
@@ -432,7 +445,8 @@ function T = assignVar(value, varName, CN, T)
     % Run through the first column to look for variable matching varName and read out number in CN
     varIndex = find(strcmp({T{:, 1}}, varName)); % Find the index of the variable in the first column
     if isempty(varIndex)
-        error('Variable %s not found in the table.', varName); % Error if variable not found
+        warning('Variable %s not found in the table.', varName); % Error if variable not found
+    else
+        T{varIndex, CN + 1} = value; % Retrieve the value from the specified column
     end
-    T{varIndex, CN + 1} = value; % Retrieve the value from the specified column
 end

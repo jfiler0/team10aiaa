@@ -3,10 +3,11 @@ classdef mission
         segment_list
         loadout
         N_divisions
+        name
     end
 
     methods
-        function obj = mission(segment_list, loadout) 
+        function obj = mission(segment_list, loadout, name) 
             
             % segment_list should be an array of flightSegment2 objects. loadout should be a constructor from buildLoadout
 
@@ -24,15 +25,19 @@ classdef mission
             obj.segment_list = segment_list;
             obj.loadout = loadout;
             obj.N_divisions = 5; % How many times to run a segment like cruise/range to get more accuracy
+            obj.name = name;
 
         end
-        function [WTO_Next, fuel_burned, W_End, fuel_remaining] = solveMission(obj, plane, do_plot)
+        function [WTO_Next, fuel_burned, W_End, fuel_remaining] = solveMission(obj, plane, do_plot, W_override)
             if nargin < 3
                 do_plot = false;
             end
-
-            W0 = plane.MTOW;
-            W = W0;
+            if nargin < 4
+                W_IN = plane.MTOW;
+            else
+                W_IN = W_override; % Incase you know what the starting weight should be. Needed for solving for landing weight
+            end
+            W = W_IN;
 
             fuel_reserve = 0.05; % Keep 5 percent fuel reserve
 
@@ -103,13 +108,14 @@ classdef mission
                 % fprintf("\nW_IN = %.2f lb, W_OUT = %.2f lb, fuel_burned = %.2f lb, WF = %.3f", N2lb(W), N2lb(W_OUT), N2lb(fuel_burned_i), WF)
 
             end
+
             % Fuel tank weight = fuel_burned / (1 - fuel_reserve)
 
             % Calculate the requried MTOW, will be NaN if something went wrong
             WTO_Next = plane.WE + fuel_burned / (1 - fuel_reserve) + plane.W_P + plane.W_Tanks + plane.W_F;
             W_End = W;
 
-            fuel_remaining = plane.MTOW - plane.WE - fuel_burned / (1 - fuel_reserve) - plane.W_P - plane.W_Tanks - plane.W_F;
+            fuel_remaining = W_IN - plane.WE - fuel_burned / (1 - fuel_reserve) - plane.W_P - plane.W_Tanks - plane.W_F;
 
             %% Plotting
 
@@ -134,7 +140,7 @@ classdef mission
                 end
 
             if do_plot && ~isempty(time_vec)
-                figure;
+                figure('Name',obj.name);
             
                 % Top-left: Weight & Fuel Burned
                 ax1 = subplot(3,2,1); hold(ax1,'on');
@@ -181,6 +187,8 @@ classdef mission
                 used_types(strcmp(used_types,'')) = [];  % Remove empty string
                 
                 segment_handles = gobjects(length(used_types),1);
+
+                sgtitle(sprintf("%s on %s", plane.name, obj.name))
                 
                 for k = 1:length(used_types)
                     t = used_types{k};

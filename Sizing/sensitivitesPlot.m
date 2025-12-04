@@ -11,11 +11,11 @@ function sensitivitesPlot(plane, values_to_change, graphSize, missionList, const
     num_constraints = length(g_names);
     colors = jet(num_constraints);
 
+    progressbar('Sensitivities')
+
     for i = 1:height(values_to_change)
         const_iden = values_to_change{i, 1}; % Constructor identifier
         const_name = values_to_change{i, 2}; % Consturcot name
-
-        f = figure('Name', const_name);
 
         plane = plane_save;
         x0 = plane_save.(const_iden);
@@ -26,12 +26,17 @@ function sensitivitesPlot(plane, values_to_change, graphSize, missionList, const
         g_mat = zeros([num_constraints N]);
         
         for j = 1:N
+
+            progressbar( (N*(i-1) + j)/(height(values_to_change)*N) )
+
             plane.(const_iden) = x_vec(j);
             plane = plane.updateDerivedVariables();
             cost_vec(j) = plane.calcUnitCost();
             [g_vec, ~] = constraints_rfp(plane, missionList);
             g_mat(:, j) = g_vec;
         end
+
+        figure('Name', const_name);
 
         plot(x_vec, cost_vec, 'k-', DisplayName="Cost")
         hold on
@@ -59,5 +64,7 @@ function sensitivitesPlot(plane, values_to_change, graphSize, missionList, const
         legend(Location="eastoutside")
 
     end
+
+    progressbar(1)
 
 end

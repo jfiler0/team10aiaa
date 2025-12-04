@@ -13,6 +13,13 @@ This script implements a large portion of the required performance
 analysis (cruise, climb, thrust vs drag, TOP, landing estimate, 
 service ceiling estimate, Ps at a point, etc.). 
 
+<<<<<<< HEAD
+In the *full* workflow, this script is meant to sit alongside:
+  • planeObj  – holds geometry, aero, and propulsion models.
+  • flightSegment2 – does segment-by-segment fuel fractions.
+  • mission / sizeAircraft – runs full missions and sizing loops
+    (F-18E example).
+=======
 The following items are still missing or only partially implemented.
 They will require additional models, inputs, or mission data to do 
 properly. Use this as a roadmap for future extensions.
@@ -189,6 +196,7 @@ properly. Use this as a roadmap for future extensions.
      - How detailed your mission model needs to be for this class.
 
 ======================================================================
+>>>>>>> 4de69019aed961f8e5f344c6a69e4c57e0735ba8
 %}
 
 
@@ -386,8 +394,8 @@ fprintf('h = %.0f ft, M = %.2f\n', h_cruise, M_cruise);
 
 T_dry_alt = T_mil_R2;           % available dry thrust at altitude
 
-% TSFC_total [lbm/s] / T_SL_mil [lbf] -> [lbm/s/lbf] -> [lbm/hr/lbf]
-SFC = (TSFC_total / T_SL_mil) * 3600;
+TSFC_total = 0.00019;    % [1/s] Raymer c for turbojet/fan
+SFC = TSFC_total * 3600; % [1/hr], DO NOT divide by thrust
 
 CL_R2 = beta_segment * W_S ./ q_R2;
 CD_R2 = CDo + k1.*CL_R2.^2 + k2.*CL_R2;
@@ -621,6 +629,211 @@ fprintf('\nApproximate loiter time at h=%.0f ft, M=%.2f: t_loiter ≈ %.2f hr\n'
 
 fprintf('============================================================\n\n');
 
+<<<<<<< HEAD
+%% =====================================================================
+%  TURN PERFORMANCE – Instantaneous (Naval Fighter)  %% NEW
+% ======================================================================
+% Simple instantaneous turn rate / radius at a maneuver altitude.
+% Uses structural n_max and CLmax_maneuver.
+
+h_turn = 15000;       % [ft] representative mid-altitude fight
+n_max_struct = 7.5;   % [-] structural / pilot limit
+CLmax_maneuver = 1.8; % [-] high-lift maneuvering CLmax
+
+V_turn = linspace(200, 700, 40);  % [kt] maneuver speed range
+V_turn_ft = V_turn * 1.68781;     % [ft/s]
+
+[~, rho_turn, ~, ~, ~, ~, ~, ~, ~] = ...
+    atmos_and_flow(h_turn, 0, gamma, R, T_std);
+
+W_turn = beta_segment * W_S * S_ref;   % [lbf]
+q_turn = 0.5 * rho_turn .* V_turn_ft.^2;
+
+n_CLmax = CLmax_maneuver .* q_turn * S_ref ./ W_turn;
+n_inst  = min(n_CLmax, n_max_struct * ones(size(n_CLmax)));
+n_inst(n_inst < 1) = NaN;  % ignore below level-flight
+
+g_ft = 32.174;  % [ft/s^2]
+
+R_turn = V_turn_ft.^2 ./ (g_ft .* sqrt(max(n_inst.^2 - 1, 0)));  % [ft]
+omega_turn = g_ft .* sqrt(max(n_inst.^2 - 1, 0)) ./ V_turn_ft;   % [rad/s]
+omega_turn_deg = omega_turn * 180/pi;                            % [deg/s]
+
+figure; hold on; grid on; box on;
+plot(V_turn, omega_turn_deg, 'LineWidth',2);
+xlabel('V [kt]');
+ylabel('Instantaneous turn rate [deg/s]');
+title(sprintf('Instantaneous Turn Performance (h = %.0f ft)', h_turn));
+
+figure; hold on; grid on; box on;
+plot(V_turn, R_turn/6076.12, 'LineWidth',2);
+xlabel('V [kt]');
+ylabel('Turn radius [nmi]');
+title(sprintf('Instantaneous Turn Radius (h = %.0f ft)', h_turn));
+
+%% =====================================================================
+%  TURN PERFORMANCE – Instantaneous vs Sustained (planeObj, OPTIONAL)
+% ======================================================================
+
+if exist('plane','var') == 1
+    fprintf('\n==== Turn performance using planeObj (sustained vs instantaneous) ====\n');
+
+    ft2m_loc = @(ft) ft * 0.3048;
+    kt2mps   = @(kt) kt * 0.514444;
+
+    h_turn_m  = ft2m_loc(h_turn);
+    W_turn_N  = plane.mid_mission_weight;   % or plane.MTOW for worst-case
+
+    V_grid_kt   = linspace(200, 700, 30);
+    omega_sus   = nan(size(V_grid_kt));
+
+    for i = 1:numel(V_grid_kt)
+        V_ms = kt2mps(V_grid_kt(i));
+
+        % Convert to Mach using atmosphere model already in your toolbox
+        [~, a, ~, ~, ~] = queryAtmosphere(h_turn_m, [0 1 0 0 0]);
+        M_i = V_ms / a;
+
+        [turn_rate_deg, ~] = plane.getSustainedTurn(h_turn_m, M_i, W_turn_N, 1); % AB=1
+        omega_sus(i) = turn_rate_deg;
+    end
+
+    figure; hold on; grid on; box on;
+    plot(V_turn,    omega_turn_deg, 'LineWidth',2, 'DisplayName','Instantaneous (Raymer approx)');
+    plot(V_grid_kt, omega_sus,      '--','LineWidth',2, 'DisplayName','Sustained (planeObj)');
+    xlabel('V [kt]');
+    ylabel('Turn rate [deg/s]');
+    title(sprintf('Instantaneous vs Sustained Turn (h = %.0f ft)', h_turn));
+    legend('Location','best');
+end
+
+%% =====================================================================
+%  PAYLOAD PERFORMANCE TRADES – Range & Loiter vs Payload
+%     (Raymer Breguet + OPTIONAL mission-based planeObj version)
+% ======================================================================
+
+% Sweep payload from 0 up to a "max naval load" (edit as needed)
+W_payload_max = 0.18 * W_TO;                      % 18% of MTOW [lbf]
+payload_vec   = linspace(0, W_payload_max, 10);   % [lbf]
+
+% ---------- 1) Original Breguet-style approximation ----------
+range_payload_nm_simple    = nan(size(payload_vec));
+t_loiter_payload_hr_simple = nan(size(payload_vec));
+
+for i = 1:numel(payload_vec)
+    W_pay_i = payload_vec(i);
+
+    % Keep MTOW fixed (carrier catapult limit).
+    % Increasing payload eats into fuel, empty weight held fixed.
+    W_fuel_i = W_TO - W_empty - W_pay_i;
+
+    if W_fuel_i <= 0
+        % Infeasible (no fuel left)
+        range_payload_nm_simple(i)    = NaN;
+        t_loiter_payload_hr_simple(i) = NaN;
+        continue;
+    end
+
+    Wi_i = W_TO;                % start of mission [lbf]
+    Wf_i = W_TO - W_fuel_i;     % "dry" weight [lbf]
+
+    % Range with current L/D at (h_R2, M_R2)
+    range_payload_nm_simple(i) = (V_kt_R2 / SFC) * LD_R2 * log(Wi_i / Wf_i);
+
+    % Loiter: assume same SFC and L/D_loit, all fuel available for loiter
+    t_loiter_payload_hr_simple(i) = (1 / SFC_loit) * LD_loit * log(Wi_i / Wf_i);
+end
+
+% Plot Breguet-style payload–range / loiter
+figure; hold on; grid on; box on;
+plot(payload_vec, range_payload_nm_simple, '-o','LineWidth',2);
+xlabel('Payload [lbf]');
+ylabel('Range [nmi]');
+title('Payload–Range Trade (Naval Carrier MTOW Fixed – Breguet)');
+
+figure; hold on; grid on; box on;
+plot(payload_vec, t_loiter_payload_hr_simple, '-o','LineWidth',2);
+xlabel('Payload [lbf]');
+ylabel('Loiter time [hr]');
+title(sprintf('Payload–Loiter Trade (h = %.0f ft, M = %.2f)', ...
+      h_loiter, M_loiter));
+=======
+>>>>>>> 4de69019aed961f8e5f344c6a69e4c57e0735ba8
+
+% ---------- 2) OPTIONAL: mission-based payload–range using planeObj + flightSegment2 ----------
+% This block runs ONLY if a planeObj named "plane" is already in the workspace
+% (e.g., built by your sizing script).
+
+if exist('plane','var') == 1
+    fprintf('\n==== Mission-based payload–range using planeObj + flightSegment2 ====\n');
+
+    % Unit conversions for class-based world
+    lb2N = @(lb) lb * 4.4482216153;
+    nm2m = @(nm) nm * 1852;
+    ft2m_loc = @(ft) ft * 0.3048;  % local so it doesn't clash with other files
+
+    % Build a simple naval strike mission as an array of flightSegment2 objects.
+    % Outbound cruise -> combat -> inbound cruise -> loiter near carrier.
+    R_out_m = nm2m(R_outbound_nm);
+    R_in_m  = nm2m(R_inbound_nm);
+
+    h_cruise_m = ft2m_loc(h_cruise);
+    h_loiter_m = ft2m_loc(h_loiter);
+    h_combat_m = ft2m_loc(15000);   % representative combat altitude [ft -> m]
+
+    segs = [
+        flightSegment2("TAKEOFF")                                                          % sea-level, ~2 min, hard-coded WF
+        flightSegment2("CLIMB", M_cruise)                                                  % climb at M_cruise
+        flightSegment2("CRUISE", M_cruise, h_cruise_m, R_out_m)                            % outbound leg
+        flightSegment2("COMBAT", 0.85, h_combat_m, [t_combat_min, 0.5])                    % combat, drop 50% of stores
+        flightSegment2("CRUISE", M_cruise, h_cruise_m, R_in_m)                             % inbound leg
+        flightSegment2("LOITER", M_loiter, h_loiter_m, t_loiter_min)                       % loiter near carrier
+        flightSegment2("LANDING")                                                          % approach & land
+    ];
+
+    % Start weight for mission (use planeObj MTOW in Newtons)
+    W0_N = plane.MTOW;
+
+    range_payload_nm_mission = nan(size(payload_vec));
+    fuel_remaining_lb        = nan(size(payload_vec));
+
+    for i = 1:numel(payload_vec)
+        W_pay_lb = payload_vec(i);
+        W_pay_N  = lb2N(W_pay_lb);
+
+        % Copy the base aircraft and override payload weight for this case
+        plane_i = plane;
+        plane_i.W_P = W_pay_N;
+        plane_i = plane_i.updateWeights();
+
+        [W_final_N, total_range_m, ~] = run_naval_strike_mission(segs, plane_i, W0_N);
+
+        % Remaining fuel = leftover weight above (empty + fixed + payload + tanks)
+        W_struct_N = plane_i.WE + plane_i.W_F + plane_i.W_P + plane_i.W_Tanks;
+        fuel_remaining_N = max(W_final_N - W_struct_N, 0);
+
+        fuel_remaining_lb(i)        = fuel_remaining_N / 4.4482216153;
+        range_payload_nm_mission(i) = total_range_m / 1852;   % [nmi]
+    end
+
+    % Plot comparison: analytic vs mission-based
+    figure; hold on; grid on; box on;
+    plot(payload_vec, range_payload_nm_simple,  '-o','LineWidth',2, ...
+         'DisplayName','Breguet approx.');
+    plot(payload_vec, range_payload_nm_mission,'-s','LineWidth',2, ...
+         'DisplayName','planeObj mission');
+    xlabel('Payload [lbf]');
+    ylabel('Range [nmi]');
+    title('Payload–Range Trade (Analytic vs Mission-Based)');
+    legend('Location','best');
+
+    % (Optional) fuel remaining vs payload for this mission
+    figure; hold on; grid on; box on;
+    plot(payload_vec, fuel_remaining_lb, '-o','LineWidth',2);
+    xlabel('Payload [lbf]');
+    ylabel('Fuel remaining at recovery [lb]');
+    title('Fuel Reserve vs Payload (Naval Strike Mission)');
+end
 
 %% =====================================================================
 %  CONSTRAINT & ENVELOPE HELPERS (T/W vs W/S)
@@ -1002,3 +1215,38 @@ for i = 1:numel(W_S_vec)
     TW(i) = D / W_S;        % D/W as before
 end
 end
+
+function [W_final_N, total_range_m, info_seg] = run_naval_strike_mission(segs, plane, W0_N)
+%RUN_NAVAL_STRIKE_MISSION
+%   Simple driver to march through a list of flightSegment2 objects using
+%   planeObj-based aerodynamics & propulsion.
+%
+%   Inputs:
+%       segs   - array of flightSegment2 objects
+%       plane  - planeObj for the aircraft
+%       W0_N   - initial weight at mission start [N]
+%
+%   Outputs:
+%       W_final_N     - final weight after all segments [N]
+%       total_range_m - sum of all CRUISE segment "input" distances [m]
+%       info_seg      - struct array with segment-level info from queryWF
+
+    W_in = W0_N;
+    total_range_m = 0;
+    info_seg = struct([]);
+
+    for k = 1:numel(segs)
+        [W_out, WF_k, fuel_k, info_k] = segs(k).queryWF(W_in, plane);
+        info_seg(k) = info_k;
+
+        % Accumulate only CRUISE segment distances.
+        if segs(k).type == "CRUISE"
+            total_range_m = total_range_m + segs(k).input; % input is range [m]
+        end
+
+        W_in = W_out;
+    end
+
+    W_final_N = W_in;
+end
+

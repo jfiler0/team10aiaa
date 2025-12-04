@@ -8,6 +8,7 @@
 %% Initial Setup
 matlabSetup(); % Clears and sets plot defaults
 
+geom_array = table2array(readtable('Concept Geometries for S&C Calcs.xlsx','Range','B3:Z8'));
 
 %% Set Geometry Inputs - Concept 2
 
@@ -46,7 +47,7 @@ strike_loadout = buildLoadout(["AIM-9X", "FPU-12", "AIM-120", "AIM-120", "FPU-12
 
 %% Make the f18 object
 %                                     empty_weight,       Lambda_LE,     c_r,       c_t,    span,    num_engine,      engine,      W_F
-conc2 = planeObj(fixed_input, "Concept2", geom.empty_weight, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,    2,         geom.engine, geom.W_F);
+conc2 = planeObj(fixed_input, "Concept2", geom.empty_weight, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,    2,         geom.engine, geom.W_F, geom_array(4,:));
 conc2 = conc2.applyLoadout(clean_loadout); % Just two sidewinders
 
 %% Define Missions

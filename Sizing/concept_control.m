@@ -108,13 +108,13 @@
 
 %% Trying a different way to read file cause broken? idk
 
-disp("Reading Input Geometry...")
-
-thisFile = matlab.desktop.editor.getActiveFilename; % Pulls local file path
-[currentFolder, ~, ~] = fileparts(thisFile);
-
-excelPath = fullfile(currentFolder, "concepts_tabulations.xlsx");
-T = readcell(excelPath);
+% disp("Reading Input Geometry...")
+% 
+% thisFile = matlab.desktop.editor.getActiveFilename; % Pulls local file path
+% [currentFolder, ~, ~] = fileparts(thisFile);
+% 
+% excelPath = fullfile(currentFolder, "concepts_tabulations.xlsx");
+% T = readcell(excelPath);
 
 %% Gather Inputs
     name = readVar('Deliverable', CN, T);
@@ -137,7 +137,7 @@ T = readcell(excelPath);
     geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
     geom.num_engine = readVar('Number of Engines', CN, T);
 
-    % tail_input = struct();
+    tail_input = struct();
     % tail_input.mac = readVar('MAC', CN, T);
 
 %% Set Remaining Fixed Inputs

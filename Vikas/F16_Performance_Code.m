@@ -13,164 +13,6 @@ In the *full* workflow, this script is meant to sit alongside:
   • flightSegment2 – does segment-by-segment fuel fractions.
   • mission / sizeAircraft – runs full missions and sizing loops
     (F-18E example).
-
-Below is what this script does *not* do by itself, and how the other
-tools already help or could be hooked in.
-
-----------------------------------------------------------------------
-1) Full mission fuel bookkeeping (segment-by-segment)
-----------------------------------------------------------------------
-Status:
-  • planeObj + flightSegment2 + mission already implement the full
-    segment loop:
-      – TAKEOFF, CLIMB, CRUISE, LOITER, COMBAT, LANDING
-      – W_in → W_out, WF, fuel_burned, plus segment info
-  • The F-18E sizing script shows how to chain segments and solve
-    ferry / strike missions, then feed results into sizeAircraft.
-
-Missing *in this script*:
-  • A direct mission driver loop; here we only do Breguet-style single
-    segments and "representative" mission L/D checks.
-
-What would be needed (if you want it fully self-contained here):
-  • A small mission definition (array of segment structs) and a wrapper
-    that either:
-      – Calls flightSegment2/planeObj/mission, or
-      – Replicates the same logic with the local Breguet formulas.
-
-----------------------------------------------------------------------
-2) AR / S_wet / S_ref sweeps tied to mission closure
-----------------------------------------------------------------------
-Status:
-  • planeObj already:
-      – Builds S_wet, CD0, k1, k2 from geometry and Raymer-style
-        regressions.
-      – Handles loadouts (external stores) and their CD0/weight impact.
-  • mission + flightSegment2 already provide a "mission closure" check
-    via WTO_next, fuel_burned, and W_end.
-
-Missing:
-  • A sweep in this script over AR, S_wet (or scalar corrections), and
-    S_ref that:
-      – Rebuilds the polar (CD0, k1, k2) via planeObj-like logic.
-      – Calls a mission solver (e.g., mission/flightSegment2) to see
-        which combinations actually close the naval strike mission.
-
-Needed:
-  • A geometry/performance wrapper that:
-      – For each (AR, SWET_scalar, Sref) set, builds a planeObj-style
-        polar (or directly instantiates a planeObj).
-      – Runs a mission object (like the F-18E ferry/strike examples).
-      – Records pass/fail and key metrics for plotting design spaces.
-
-----------------------------------------------------------------------
-3) Full TOFL / LFL curves and constraint plots
-----------------------------------------------------------------------
-Status:
-  • This script uses:
-      – Raymer TOP definition for single-point TOFL at Elmendorf /
-        Edwards.
-      – Raymer 5.11 for a single landing field length estimate.
-  • planeObj has takeoff/landing speed calculation, but not full
-    TOFL/LFL vs W/S curves by itself.
-
-Missing:
-  • TOFL vs W/S, altitude, and T/W surfaces/curves for naval carriers
-    and shore-based runways.
-  • LFL vs W/S and field elevation curves feeding into constraint plots
-    and sizing (to match what sizeAircraft does for the F-18E).
-
-Needed:
-  • Simple wrappers that:
-      – Loop over W/S and sigma and map TOP → S_TO.
-      – Loop over W/S and h and apply Raymer 5.11 for landing.
-      – Overlay these with T/W constraint curves already computed
-        here.
-
-----------------------------------------------------------------------
-4) Sustained turn performance and Ps-based envelopes
-----------------------------------------------------------------------
-Status:
-  • planeObj already has:
-      – calcExcessPower, calcMaxExcessPower, calcMaxClimbRate,
-        getMaxTurn, calcMaxAlt, calcMaxMach, etc.
-      – These give Ps, sustained climb, and turn metrics vs (M, h, W,
-        AB%).
-  • This script currently only checks Ps at a single (M, h) point and
-    prints pass/fail against a Ps_req.
-
-Missing:
-  • A sustained-turn envelope (Ps ≥ 0) in the (V, h) or (n, V) plane.
-  • A clean "instantaneous vs sustained" turn-rate comparison plot.
-
-Needed:
-  • A loop over M (or V) and h that calls planeObj.calcExcessPower
-    (AB and MIL) and:
-      – Filters Ps ≈ 0 for sustained turn.
-      – Computes n, turn rate, and radius for instantaneous vs
-        sustained and plots envelopes.
-
-----------------------------------------------------------------------
-5) More detailed payload trades and external stores effects
-----------------------------------------------------------------------
-Status:
-  • planeObj.applyLoadout already propagates:
-      – CD0_Payload, W_P, W_Tanks and updates CD0.
-  • mission + flightSegment2 already let you:
-      – Run ferry vs strike missions with different loadouts and see
-        WTO_next, fuel_burned, and W_end (F-18E example).
-
-Missing:
-  • A compact payload–range / payload–loiter "frontier" plot inside
-    this script for the naval strike fighter.
-
-Needed:
-  • A loop over payload cases (different loadouts / W_P / W_Tanks):
-      – Build a planeObj with that loadout.
-      – Run one or more mission objects or findTotalMaxRange /
-        findTotalMaxEndurance.
-      – Plot range vs payload and loiter vs payload for quick trades.
-
-----------------------------------------------------------------------
-6) Glide and engine-out performance
-----------------------------------------------------------------------
-Status:
-  • The CL–CD polar and L/D logic exist (both here and in planeObj).
-
-Missing:
-  • Explicit "engine-out" / power-off glide mode:
-      – Best-glide speed and L/D vs weight.
-      – Glide range from a given altitude (useful for divert /
-        recovery studies).
-
-Needed:
-  • A simple wrapper that sets thrust = 0 and:
-      – Uses the polar to find CL for best L/D.
-      – Computes corresponding V, descent angle, and glide range
-        from a chosen altitude.
-
-----------------------------------------------------------------------
-7) Documentation / references for report integration
-----------------------------------------------------------------------
-Status:
-  • The computations in this script mostly follow Raymer, but only a
-    few are explicitly tagged with sources.
-
-Missing:
-  • Systematic inline references from each major equation back to
-    Raymer (or other sources) to support a design report and future
-    traceability.
-
-Needed:
-  • Comment tags such as:
-      – % Raymer Eq. 3.21 – drag polar
-      – % Raymer Fig. 5.4 – TOP vs T/W
-      – % Raymer Eq. 17.23 – Breguet range
-    placed next to each key calculation, plus a brief summary
-    section in the write-up describing how this script, planeObj,
-    flightSegment2, and mission/sizeAircraft all tie together.
-
-======================================================================
 %}
 
 
@@ -397,8 +239,8 @@ fprintf('h = %.0f ft, M = %.2f\n', h_cruise, M_cruise);
 
 T_dry_alt = T_mil_R2;           % available dry thrust at altitude
 
-% TSFC_total [lbm/s] / T_SL_mil [lbf] -> [lbm/s/lbf] -> [lbm/hr/lbf]
-SFC = (TSFC_total / T_SL_mil) * 3600;
+TSFC_total = 0.00019;    % [1/s] Raymer c for turbojet/fan
+SFC = TSFC_total * 3600; % [1/hr], DO NOT divide by thrust
 
 % For a mission-level check, use full fuel as "cruise-like" burn
 Wi_R2  = W_TO;               % [lbf] start of mission
@@ -698,15 +540,53 @@ ylabel('Turn radius [nmi]');
 title(sprintf('Instantaneous Turn Radius (h = %.0f ft)', h_turn));
 
 %% =====================================================================
-%  PAYLOAD PERFORMANCE TRADES – Range & Loiter vs Payload  %% NEW
+%  TURN PERFORMANCE – Instantaneous vs Sustained (planeObj, OPTIONAL)
+% ======================================================================
+
+if exist('plane','var') == 1
+    fprintf('\n==== Turn performance using planeObj (sustained vs instantaneous) ====\n');
+
+    ft2m_loc = @(ft) ft * 0.3048;
+    kt2mps   = @(kt) kt * 0.514444;
+
+    h_turn_m  = ft2m_loc(h_turn);
+    W_turn_N  = plane.mid_mission_weight;   % or plane.MTOW for worst-case
+
+    V_grid_kt   = linspace(200, 700, 30);
+    omega_sus   = nan(size(V_grid_kt));
+
+    for i = 1:numel(V_grid_kt)
+        V_ms = kt2mps(V_grid_kt(i));
+
+        % Convert to Mach using atmosphere model already in your toolbox
+        [~, a, ~, ~, ~] = queryAtmosphere(h_turn_m, [0 1 0 0 0]);
+        M_i = V_ms / a;
+
+        [turn_rate_deg, ~] = plane.getSustainedTurn(h_turn_m, M_i, W_turn_N, 1); % AB=1
+        omega_sus(i) = turn_rate_deg;
+    end
+
+    figure; hold on; grid on; box on;
+    plot(V_turn,    omega_turn_deg, 'LineWidth',2, 'DisplayName','Instantaneous (Raymer approx)');
+    plot(V_grid_kt, omega_sus,      '--','LineWidth',2, 'DisplayName','Sustained (planeObj)');
+    xlabel('V [kt]');
+    ylabel('Turn rate [deg/s]');
+    title(sprintf('Instantaneous vs Sustained Turn (h = %.0f ft)', h_turn));
+    legend('Location','best');
+end
+
+%% =====================================================================
+%  PAYLOAD PERFORMANCE TRADES – Range & Loiter vs Payload
+%     (Raymer Breguet + OPTIONAL mission-based planeObj version)
 % ======================================================================
 
 % Sweep payload from 0 up to a "max naval load" (edit as needed)
-W_payload_max = 0.18 * W_TO;  % 18% of MTOW as max strike payload (example)
-payload_vec   = linspace(0, W_payload_max, 10);  % [lbf]
+W_payload_max = 0.18 * W_TO;                      % 18% of MTOW [lbf]
+payload_vec   = linspace(0, W_payload_max, 10);   % [lbf]
 
-range_payload_nm       = nan(size(payload_vec));
-t_loiter_payload_hr    = nan(size(payload_vec));
+% ---------- 1) Original Breguet-style approximation ----------
+range_payload_nm_simple    = nan(size(payload_vec));
+t_loiter_payload_hr_simple = nan(size(payload_vec));
 
 for i = 1:numel(payload_vec)
     W_pay_i = payload_vec(i);
@@ -717,33 +597,109 @@ for i = 1:numel(payload_vec)
 
     if W_fuel_i <= 0
         % Infeasible (no fuel left)
-        range_payload_nm(i)    = NaN;
-        t_loiter_payload_hr(i) = NaN;
+        range_payload_nm_simple(i)    = NaN;
+        t_loiter_payload_hr_simple(i) = NaN;
         continue;
     end
 
-    Wi_i = W_TO;                % start of mission
-    Wf_i = W_TO - W_fuel_i;     % "dry" weight (no mission fuel left)
+    Wi_i = W_TO;                % start of mission [lbf]
+    Wf_i = W_TO - W_fuel_i;     % "dry" weight [lbf]
 
     % Range with current L/D at (h_R2, M_R2)
-    range_payload_nm(i) = (V_kt_R2 / SFC) * LD_R2 * log(Wi_i / Wf_i);
+    range_payload_nm_simple(i) = (V_kt_R2 / SFC) * LD_R2 * log(Wi_i / Wf_i);
 
     % Loiter: assume same SFC and L/D_loit, all fuel available for loiter
-    t_loiter_payload_hr(i) = (1 / SFC_loit) * LD_loit * log(Wi_i / Wf_i);
+    t_loiter_payload_hr_simple(i) = (1 / SFC_loit) * LD_loit * log(Wi_i / Wf_i);
 end
 
+% Plot Breguet-style payload–range / loiter
 figure; hold on; grid on; box on;
-plot(payload_vec, range_payload_nm, '-o','LineWidth',2);
+plot(payload_vec, range_payload_nm_simple, '-o','LineWidth',2);
 xlabel('Payload [lbf]');
 ylabel('Range [nmi]');
-title('Payload–Range Trade (Naval Carrier MTOW Fixed)');
+title('Payload–Range Trade (Naval Carrier MTOW Fixed – Breguet)');
 
 figure; hold on; grid on; box on;
-plot(payload_vec, t_loiter_payload_hr, '-o','LineWidth',2);
+plot(payload_vec, t_loiter_payload_hr_simple, '-o','LineWidth',2);
 xlabel('Payload [lbf]');
 ylabel('Loiter time [hr]');
 title(sprintf('Payload–Loiter Trade (h = %.0f ft, M = %.2f)', ...
       h_loiter, M_loiter));
+
+% ---------- 2) OPTIONAL: mission-based payload–range using planeObj + flightSegment2 ----------
+% This block runs ONLY if a planeObj named "plane" is already in the workspace
+% (e.g., built by your sizing script).
+
+if exist('plane','var') == 1
+    fprintf('\n==== Mission-based payload–range using planeObj + flightSegment2 ====\n');
+
+    % Unit conversions for class-based world
+    lb2N = @(lb) lb * 4.4482216153;
+    nm2m = @(nm) nm * 1852;
+    ft2m_loc = @(ft) ft * 0.3048;  % local so it doesn't clash with other files
+
+    % Build a simple naval strike mission as an array of flightSegment2 objects.
+    % Outbound cruise -> combat -> inbound cruise -> loiter near carrier.
+    R_out_m = nm2m(R_outbound_nm);
+    R_in_m  = nm2m(R_inbound_nm);
+
+    h_cruise_m = ft2m_loc(h_cruise);
+    h_loiter_m = ft2m_loc(h_loiter);
+    h_combat_m = ft2m_loc(15000);   % representative combat altitude [ft -> m]
+
+    segs = [
+        flightSegment2("TAKEOFF")                                                          % sea-level, ~2 min, hard-coded WF
+        flightSegment2("CLIMB", M_cruise)                                                  % climb at M_cruise
+        flightSegment2("CRUISE", M_cruise, h_cruise_m, R_out_m)                            % outbound leg
+        flightSegment2("COMBAT", 0.85, h_combat_m, [t_combat_min, 0.5])                    % combat, drop 50% of stores
+        flightSegment2("CRUISE", M_cruise, h_cruise_m, R_in_m)                             % inbound leg
+        flightSegment2("LOITER", M_loiter, h_loiter_m, t_loiter_min)                       % loiter near carrier
+        flightSegment2("LANDING")                                                          % approach & land
+    ];
+
+    % Start weight for mission (use planeObj MTOW in Newtons)
+    W0_N = plane.MTOW;
+
+    range_payload_nm_mission = nan(size(payload_vec));
+    fuel_remaining_lb        = nan(size(payload_vec));
+
+    for i = 1:numel(payload_vec)
+        W_pay_lb = payload_vec(i);
+        W_pay_N  = lb2N(W_pay_lb);
+
+        % Copy the base aircraft and override payload weight for this case
+        plane_i = plane;
+        plane_i.W_P = W_pay_N;
+        plane_i = plane_i.updateWeights();
+
+        [W_final_N, total_range_m, ~] = run_naval_strike_mission(segs, plane_i, W0_N);
+
+        % Remaining fuel = leftover weight above (empty + fixed + payload + tanks)
+        W_struct_N = plane_i.WE + plane_i.W_F + plane_i.W_P + plane_i.W_Tanks;
+        fuel_remaining_N = max(W_final_N - W_struct_N, 0);
+
+        fuel_remaining_lb(i)        = fuel_remaining_N / 4.4482216153;
+        range_payload_nm_mission(i) = total_range_m / 1852;   % [nmi]
+    end
+
+    % Plot comparison: analytic vs mission-based
+    figure; hold on; grid on; box on;
+    plot(payload_vec, range_payload_nm_simple,  '-o','LineWidth',2, ...
+         'DisplayName','Breguet approx.');
+    plot(payload_vec, range_payload_nm_mission,'-s','LineWidth',2, ...
+         'DisplayName','planeObj mission');
+    xlabel('Payload [lbf]');
+    ylabel('Range [nmi]');
+    title('Payload–Range Trade (Analytic vs Mission-Based)');
+    legend('Location','best');
+
+    % (Optional) fuel remaining vs payload for this mission
+    figure; hold on; grid on; box on;
+    plot(payload_vec, fuel_remaining_lb, '-o','LineWidth',2);
+    xlabel('Payload [lbf]');
+    ylabel('Fuel remaining at recovery [lb]');
+    title('Fuel Reserve vs Payload (Naval Strike Mission)');
+end
 
 %% =====================================================================
 %  CONSTRAINT & ENVELOPE HELPERS (T/W vs W/S)
@@ -1038,3 +994,38 @@ for i = 1:numel(W_S_vec)
     TW(i) = D / W_S;        % D/W as before
 end
 end
+
+function [W_final_N, total_range_m, info_seg] = run_naval_strike_mission(segs, plane, W0_N)
+%RUN_NAVAL_STRIKE_MISSION
+%   Simple driver to march through a list of flightSegment2 objects using
+%   planeObj-based aerodynamics & propulsion.
+%
+%   Inputs:
+%       segs   - array of flightSegment2 objects
+%       plane  - planeObj for the aircraft
+%       W0_N   - initial weight at mission start [N]
+%
+%   Outputs:
+%       W_final_N     - final weight after all segments [N]
+%       total_range_m - sum of all CRUISE segment "input" distances [m]
+%       info_seg      - struct array with segment-level info from queryWF
+
+    W_in = W0_N;
+    total_range_m = 0;
+    info_seg = struct([]);
+
+    for k = 1:numel(segs)
+        [W_out, WF_k, fuel_k, info_k] = segs(k).queryWF(W_in, plane);
+        info_seg(k) = info_k;
+
+        % Accumulate only CRUISE segment distances.
+        if segs(k).type == "CRUISE"
+            total_range_m = total_range_m + segs(k).input; % input is range [m]
+        end
+
+        W_in = W_out;
+    end
+
+    W_final_N = W_in;
+end
+

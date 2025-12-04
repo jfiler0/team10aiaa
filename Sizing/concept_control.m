@@ -46,7 +46,7 @@
 
     skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(120000), 500); % Refresh atmosphere lookup
@@ -214,6 +214,10 @@ T = readcell(excelPath);
         disp("Working On Performance Plots...")
         buildPerformancePlots(plane, plane.MTOW, 30); % Can increase 50 for more resoultion at a time penalty
     end
+
+%% More Plots
+
+dragPolarPlot(plane);
     
 %% Assign Derived Aircraft Geometry
     disp("Writing Derived Geometry...")
@@ -230,7 +234,7 @@ T = readcell(excelPath);
     T = assignVar(plane.c_avg, 'Average Chord [m]', CN, T);
     T = assignVar(plane.Lambda_TE, 'TE Sweep [deg]', CN, T);
     T = assignVar(plane.S_wing, 'Wing Area [m2]', CN, T);
-    T = assignVar( m2ft(plane.span * plane.fixed_input.fold_ratio), 'Folded Span [ft]', CN, T);
+    % T = assignVar( m2ft(plane.span * plane.fixed_input.fold_ratio), 'Folded Span [ft]', CN, T);
     % T = assignVar(plane.x_MAC_verstab, 'X VTAIL MAC [m]', CN, T);
 
 

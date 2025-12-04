@@ -78,7 +78,7 @@ classdef planeObj
         y_MAC_wing % Y location of airfoil with same chord as MAC; distance of airfoil section out the right wing from the centerline 
         x_MAC_wing % X location of LE of airfoil section with same chord as MAC; distance of LE from tip of nose 
         
-        b_strake % span of strake
+        b_strake % span of strake 
         x_strake % location of LE at the root of strake from tip of nose
         lam_strake % taper ratio of strake
         c_root_strake % root chord of strake 
@@ -128,6 +128,7 @@ classdef planeObj
                 LAM_h % dihedral angle
                 inc_h % angle of incidence
                 AR_horstab % aspect ratio of horizontal stabilizer
+                
                 % Vertical
                 x_verstab % X location of LE of root airfoil of verstab from tip of nose
                 S_v % Planform Area
@@ -248,9 +249,7 @@ classdef planeObj
             obj.S_wing = obj.span*obj.c_avg;
             obj.S_ref = obj.S_wing; % Typical defenition for reference area
             obj.S_strakes = 0.5*obj.b_strake*obj.c_root_strake; % planform area of strakes calculation
-            
-            %% Tail Geometry
-            
+           
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4
             
@@ -322,7 +321,7 @@ classdef planeObj
             obj.x_ac_verstabs = obj.x_MAC_verstab +0.25*obj.MAC_verstab;
 
             obj.x_ac_wings_strakes = obj.x_ac_wings + (obj.x_ac_strakes - obj.x_ac_wings)*obj.S_strakes/((2*obj.S_wing)+obj.S_strakes);
-            obj.x_ac_wings_strakes_fuselage = obj.x_ac_wings_strakes - ((obj.L_fuselage*obj.A_max^2)*(0.005 + 0.111*(obj.x_ac_wings_strakes/obj.L_fuselage)^2)/((2*obj.S_wing)*CL_alpha_wing*57.29)); 
+            obj.x_ac_wings_strakes_fuselage = obj.x_ac_wings_strakes - ((obj.L_fuselage*(obj.A_max/pi)^2)*(0.005 + 0.111*(obj.x_ac_wings_strakes/obj.L_fuselage)^2)/((2*obj.S_wing)*CL_alpha_wing*57.29)); 
             obj.x_bar_ac_wings_strakes_fuselage = (obj.x_ac_wings_strakes_fuselage - obj.x_MAC_wing)/obj.MAC_wing;
 
             % tail arm

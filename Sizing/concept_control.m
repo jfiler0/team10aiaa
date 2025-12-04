@@ -1,5 +1,7 @@
 % This file is the main one to use when writing to concept_tabulations. It embeds all the rfp asks and assumptions we make. 
 
+% MAKE SURE YOU COPY concepts_tabulations_template.xlsx inside the Sizing folder and name it concepts_tabulations.xlsx
+
 % INSTRUCTIONS
 % --- Go to concept_tabulatons.xlsx. See the geometry inputs in the "Geometry Inputs" section
 % --- Select your concept below using the column number
@@ -44,7 +46,7 @@
 
     skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(120000), 500); % Refresh atmosphere lookup
@@ -135,6 +137,9 @@ T = readcell(excelPath);
     geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
     geom.num_engine = readVar('Number of Engines', CN, T);
 
+    % tail_input = struct();
+    % tail_input.mac = readVar('MAC', CN, T);
+
 %% Set Remaining Fixed Inputs
     % These should remain constant between concepts
     
@@ -158,7 +163,7 @@ T = readcell(excelPath);
 %% Make the plane object
     disp("Building plane object...")
     %                                     empty_weight,       Lambda_LE,     c_r,       c_t,    span,        num_engine,      engine,      W_F
-    plane = planeObj(fixed_input, name, geom.empty_weight, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,  geom.num_engine, geom.engine, geom.W_F);
+    plane = planeObj(fixed_input, tail_input, name, geom.empty_weight, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,  geom.num_engine, geom.engine, geom.W_F);
     plane = plane.applyLoadout(clean_loadout); % Just two sidewinders
 
 %% Size The Plane (Optional)
@@ -212,6 +217,10 @@ T = readcell(excelPath);
         disp("Working On Performance Plots...")
         buildPerformancePlots(plane, plane.MTOW, 30); % Can increase 50 for more resoultion at a time penalty
     end
+
+%% More Plots
+
+dragPolarPlot(plane);
     
 %% Assign Derived Aircraft Geometry
     disp("Writing Derived Geometry...")
@@ -228,7 +237,8 @@ T = readcell(excelPath);
     T = assignVar(plane.c_avg, 'Average Chord [m]', CN, T);
     T = assignVar(plane.Lambda_TE, 'TE Sweep [deg]', CN, T);
     T = assignVar(plane.S_wing, 'Wing Area [m2]', CN, T);
-    T = assignVar( m2ft(plane.span * plane.fixed_input.fold_ratio), 'Folded Span [ft]', CN, T);
+    % T = assignVar( m2ft(plane.span * plane.fixed_input.fold_ratio), 'Folded Span [ft]', CN, T);
+    % T = assignVar(plane.x_MAC_verstab, 'X VTAIL MAC [m]', CN, T);
 
 
 %% Compute Performance Data

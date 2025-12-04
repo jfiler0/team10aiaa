@@ -40,6 +40,7 @@
     mission_plots = false; % Fuel burn, LD, TSFC over time
     geometry_plot = false; % Outline of the wing geometry (not implemented yet)
     drag_polar = false;
+    print_components = false;
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
         sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
@@ -137,8 +138,8 @@
     geom.c_t = readVar('Tip Chord [m]', CN, T); % m - Tip Chordf
     geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
     geom.num_engine = readVar('Number of Engines', CN, T);
-    fixed_input.VH = readVar('Hor Stab Tail Ratio', CN, T);
-    fixed_input.VV = readVar('Ver Stab Tail Ratio', CN, T);
+    tail_input.VH = readVar('Hor Stab Tail Ratio', CN, T);
+    tail_input.VV = readVar('Ver Stab Tail Ratio', CN, T);
 
   
 %% Set Remaining Fixed Inputs
@@ -164,7 +165,7 @@
 %% Make the plane object
     disp("Building plane object...")
     %                                     empty_weight,       Lambda_LE,     c_r,       c_t,    span,        num_engine,      engine,      W_F
-    plane = planeObj(fixed_input, name, geom.empty_weight, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,  geom.num_engine, geom.engine, geom.W_F);
+    plane = planeObj(fixed_input, tail_input, name, geom.empty_weight, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,  geom.num_engine, geom.engine, geom.W_F);
     plane = plane.applyLoadout(clean_loadout); % Just two sidewinders
 
 %% Size The Plane (Optional)
@@ -227,16 +228,12 @@
 
 %% Testing Raymer Weights
 
-output = calcRaymerWeights(getPlaneRaymerWeightInput(plane));
+if print_components
 
-% Optional: sum total weight
-% total_weight = sum(struct2array(output));
+    disp('Raymer component weights(approximate, N):');
+    disp(obj.weights);
 
-disp('Raymer component weights(approximate, N):');
-disp(output);
-
-% fprintf('Total estimated weight: %.0f N (%.0f lb)\n', total_weight, N2lb(total_weight));
-% fprintf('Weight Fraction = %.4f\n', total_weight/plane.MTOW)
+end
     
 %% Assign Derived Aircraft Geometry
     disp("Writing Derived Geometry...")
@@ -254,8 +251,8 @@ disp(output);
     T = assignVar(plane.Lambda_TE, 'TE Sweep [deg]', CN, T);
     T = assignVar(plane.S_wing, 'Wing Area [m2]', CN, T);
     % T = assignVar( m2ft(plane.span * plane.fixed_input.fold_ratio), 'Folded Span [ft]', CN, T);
-    T = assignVar(plane.l_opt, 'Optimum Tail Arm', CN, T);
-    T = assignVar(plane.S_h, 'Hor Stab Planform Area', CN, T);
+    T = assignVar(plane.l_opt, 'Optimum Tail Arm [m]', CN, T);
+    T = assignVar(plane.S_h, 'Hor Stab Planform Area [m2]', CN, T);
     
 
 

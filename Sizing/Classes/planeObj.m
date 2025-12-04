@@ -210,8 +210,8 @@ classdef planeObj
             obj.fixed_input = fixed_input;
             obj.tail_input = tail_input;
             obj.Kc = 1.1; % assuming semi-conical rear fuselage 
-            obj.VH = fixed_input.VH;
-            obj.VV = fixed_input.VV;
+            obj.VH = tail_input.VH;
+            obj.VV = tail_input.VV;
             % Storing the raymer coefficents is much faster than reading the table every loop
             obj.type = fixed_input.type; % For regression lookup
             obj.raymer = struct(); % Raymer coefficents

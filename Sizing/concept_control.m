@@ -1,5 +1,7 @@
 % This file is the main one to use when writing to concept_tabulations. It embeds all the rfp asks and assumptions we make. 
 
+% MAKE SURE YOU COPY concepts_tabulations_template.xlsx inside the Sizing folder and name it concepts_tabulations.xlsx
+
 % INSTRUCTIONS
 % --- Go to concept_tabulatons.xlsx. See the geometry inputs in the "Geometry Inputs" section
 % --- Select your concept below using the column number
@@ -229,6 +231,7 @@ T = readcell(excelPath);
     T = assignVar(plane.Lambda_TE, 'TE Sweep [deg]', CN, T);
     T = assignVar(plane.S_wing, 'Wing Area [m2]', CN, T);
     T = assignVar( m2ft(plane.span * plane.fixed_input.fold_ratio), 'Folded Span [ft]', CN, T);
+    % T = assignVar(plane.x_MAC_verstab, 'X VTAIL MAC [m]', CN, T);
 
 
 %% Compute Performance Data

@@ -194,7 +194,7 @@ classdef planeObj
             obj.b_v = geom_array(1,18); 
             obj.LAM_v = geom_array(1,20); 
             obj.lam_v = geom_array(1,17);
-
+            
             % Note it returns the obj variable to be used. Use as plane = planeObj(...)
             obj.name = name;
 

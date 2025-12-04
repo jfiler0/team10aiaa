@@ -56,11 +56,6 @@ fixed_input.K1_Scalar   = 1.3;
 fixed_input.F_Scaler    = 1.0;          % <<< ADD THIS LINE
 
 
-%% "Superclean" set used only for max Mach (record run)
-fixed_input_superclean = fixed_input;
-fixed_input_superclean.SWET_Scalar = 2;
-fixed_input_superclean.CDW_Scalar  = 7/4;
-fixed_input_superclean.K1_Scalar   = 1;
 
 %% =================== DEFINE GENERIC LOADOUTS =======================
 
@@ -100,13 +95,23 @@ geom.num_engine        = readVar('Number of Engines', CN, T);
 
 % Store fold ratio inside fixed_input so planeObj can see it
 fixed_input.fold_ratio = readVar('Fold Ratio', CN, T);
+% ---- NOW build the superclean copy (after all fields are present) ----
+fixed_input_superclean = fixed_input;
+fixed_input_superclean.SWET_Scalar = 2;
+fixed_input_superclean.CDW_Scalar  = 7/4;
+fixed_input_superclean.K1_Scalar   = 1;
+
+
+tail_input.VH = readVar('Hor Stab Tail Ratio', CN, T);
+tail_input.VV = readVar('Ver Stab Tail Ratio', CN, T);
+
 
 
 %% ====================== BUILD PLANE OBJECT =========================
 
 disp("Building plane object...");
 
-plane = planeObj(fixed_input, ...
+plane = planeObj(fixed_input, tail_input,...
                  name, ...
                  geom.empty_weight, ...
                  geom.Lambda_LE, ...

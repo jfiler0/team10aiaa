@@ -51,7 +51,7 @@
     write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
-    build_atmosphere_lookup(-5000, ft2m(120000), 500); % Refresh atmosphere lookup
+    build_atmosphere_lookup(-5000, ft2m(100000), 500); % Refresh atmosphere lookup
     matlabSetup(); % Clears and sets plot defaults
 
 %% Define Loadouts

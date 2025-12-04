@@ -712,8 +712,11 @@ classdef planeObj
                 diff = excessPower - climb_rate_min;
                 if isnan(diff), diff = -1e2; end
             end
-
-            maxAlt = fzero(@helper, [10 30000]); % This might be problamatic
+            try
+                maxAlt = fzero(@helper, [10 30000]); % This might be problamatic
+            catch
+                maxAlt = obj.alt_range(2);
+            end
             [excessPower, ~, maxAltMach] = calcMaxExcessPower(obj, maxAlt, W, AB_perc, mach_save); % Have to recalculate to get remaining output
         end
         

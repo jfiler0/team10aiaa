@@ -40,10 +40,10 @@
     mission_plots = false; % Fuel burn, LD, TSFC over time
     geometry_plot = false; % Outline of the wing geometry (not implemented yet)
     drag_polar = false;
-    print_components = false;
+    print_components = true;
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
-        sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
+        sizing_plot = true; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
     sensitivities_plot = false; % Can change parameter selection in "Sensitivities Plot"
 
     skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
@@ -140,7 +140,6 @@
     geom.num_engine = readVar('Number of Engines', CN, T);
     tail_input.VH = readVar('Hor Stab Tail Ratio', CN, T);
     tail_input.VV = readVar('Ver Stab Tail Ratio', CN, T);
-
   
 %% Set Remaining Fixed Inputs
     % These should remain constant between concepts
@@ -231,7 +230,7 @@
 if print_components
 
     disp('Raymer component weights(approximate, N):');
-    disp(obj.weights);
+    disp(plane.weights);
 
 end
     
@@ -253,11 +252,13 @@ end
     
     T = assignVar(plane.l_opt, 'Optimum Tail Arm [m]', CN, T);
     T = assignVar(plane.S_h, 'Hor Stab Planform Area [m2]', CN, T);
+    T = assignVar(plane.AR_h, 'Hor Stab Aspect Ratio', CN, T);
+    T = assignVar(plane.lam_h, 'Hor Stab Taper Ratio', CN, T);
+    T = assignVar(plane.LAM_LE_horstab, 'Hor Stab LE Sweep [deg]', CN, T);
+
     T = assignVar( m2ft(plane.fold_span), 'Folded Span [ft]', CN, T);
     T = assignVar( m2ft(plane.fold_height), 'Folded Height [ft]', CN, T);
     
-
-
 %% Compute Performance Data
     disp("Computing Performance Data...")
 
@@ -314,6 +315,9 @@ end
 
     [~, ~, ~, LDmax] = plane.findMaxEnduranceState(plane.MTOW);
     T = assignVar(LDmax, 'Max L/D', CN, T);
+
+    maxMach = plane.calcMaxMachFixedAlt(ft2m(30000), plane.mid_mission_weight, 1, 1.1);
+    T = assignVar(maxMach, 'Max Mach at 30k ft', CN, T);
 
 %% Work on Missions
 
@@ -407,7 +411,14 @@ if write_to_xlsx
     
     % Using writetable instead of writecell preserves xlsx formatting
     T = cell2table(T);
-    writetable(T, excelPath,'WriteVariableNames',false);
+
+    try
+        writetable(T, excelPath,'WriteVariableNames',false);
+    catch
+        disp("EXCEL FILE IS OPEN. Close - then press a key to try again")
+        pause
+        writetable(T, excelPath,'WriteVariableNames',false);
+    end
 
 end
 
@@ -434,7 +445,8 @@ function T = assignVar(value, varName, CN, T)
     % Run through the first column to look for variable matching varName and read out number in CN
     varIndex = find(strcmp({T{:, 1}}, varName)); % Find the index of the variable in the first column
     if isempty(varIndex)
-        error('Variable %s not found in the table.', varName); % Error if variable not found
+        warning('Variable %s not found in the table.', varName); % Error if variable not found
+    else
+        T{varIndex, CN + 1} = value; % Retrieve the value from the specified column
     end
-    T{varIndex, CN + 1} = value; % Retrieve the value from the specified column
 end

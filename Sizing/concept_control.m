@@ -24,7 +24,7 @@
 
 % Controls
     % Chose Your Concept
-    CN = 8; % COLUMN NUMBER
+    CN = 1; % COLUMN NUMBER
         % 1 -> F18E
         % 2 -> F18E_Sized (for testing)
         % 3 -> F16
@@ -47,7 +47,7 @@
 
     skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(120000), 500); % Refresh atmosphere lookup
@@ -137,8 +137,8 @@
     geom.c_t = readVar('Tip Chord [m]', CN, T); % m - Tip Chordf
     geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
     geom.num_engine = readVar('Number of Engines', CN, T);
-    geom.VH = readVar('Hor Stab Tail Ratio', CN, T);
-    geom.VV = readVar('Ver Stab Tail Ratio', CN, T);
+    fixed_input.VH = readVar('Hor Stab Tail Ratio', CN, T);
+    fixed_input.VV = readVar('Ver Stab Tail Ratio', CN, T);
 
   
 %% Set Remaining Fixed Inputs
@@ -230,13 +230,13 @@
 output = calcRaymerWeights(getPlaneRaymerWeightInput(plane));
 
 % Optional: sum total weight
-total_weight = sum(struct2array(output));
+% total_weight = sum(struct2array(output));
 
 disp('Raymer component weights(approximate, N):');
 disp(output);
 
-fprintf('Total estimated weight: %.0f N (%.0f lb)\n', total_weight, N2lb(total_weight));
-fprintf('Weight Fraction = %.4f\n', total_weight/plane.MTOW)
+% fprintf('Total estimated weight: %.0f N (%.0f lb)\n', total_weight, N2lb(total_weight));
+% fprintf('Weight Fraction = %.4f\n', total_weight/plane.MTOW)
     
 %% Assign Derived Aircraft Geometry
     disp("Writing Derived Geometry...")

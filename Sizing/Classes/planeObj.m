@@ -202,7 +202,8 @@ classdef planeObj
             obj.g_limit = fixed_input.g_limit; % Just fixing for performance code
             obj.fixed_input = fixed_input;
             obj.Kc = 1.1; % assuming semi-conical rear fuselage 
-
+            obj.VH = fixed_input.VH;
+            obj.VV = fixed_input.VV;
             % Storing the raymer coefficents is much faster than reading the table every loop
             obj.type = fixed_input.type; % For regression lookup
             obj.raymer = struct(); % Raymer coefficents

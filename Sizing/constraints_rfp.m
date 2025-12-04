@@ -96,5 +96,7 @@ function [g_vec, g_names] = constraints_rfp(plane, missionList)
 
     %% Liftoff speed reqs
 
+    %% Check aircraft height with wing folding
+
 
 end

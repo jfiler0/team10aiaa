@@ -39,6 +39,7 @@
     performance_plots = false; % Aerodynamics, Propulsion, Atmospere, Performance grids
     mission_plots = false; % Fuel burn, LD, TSFC over time
     geometry_plot = false; % Outline of the wing geometry (not implemented yet)
+    drag_polar = true;
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
         sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
@@ -218,9 +219,11 @@
         buildPerformancePlots(plane, plane.MTOW, 30); % Can increase 50 for more resoultion at a time penalty
     end
 
-%% More Plots
-
-dragPolarPlot(plane);
+%% Drag Polar
+    if drag_polar
+        disp("Building drag polar...")
+        dragPolarPlot(plane);
+    end
     
 %% Assign Derived Aircraft Geometry
     disp("Writing Derived Geometry...")

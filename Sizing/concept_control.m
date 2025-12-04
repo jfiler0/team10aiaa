@@ -39,6 +39,7 @@
     performance_plots = false; % Aerodynamics, Propulsion, Atmospere, Performance grids
     mission_plots = false; % Fuel burn, LD, TSFC over time
     geometry_plot = false; % Outline of the wing geometry (not implemented yet)
+    drag_polar = false;
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
         sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
@@ -108,13 +109,13 @@
 
 %% Trying a different way to read file cause broken? idk
 
-disp("Reading Input Geometry...")
-
-thisFile = matlab.desktop.editor.getActiveFilename; % Pulls local file path
-[currentFolder, ~, ~] = fileparts(thisFile);
-
-excelPath = fullfile(currentFolder, "concepts_tabulations.xlsx");
-T = readcell(excelPath);
+% disp("Reading Input Geometry...")
+% 
+% thisFile = matlab.desktop.editor.getActiveFilename; % Pulls local file path
+% [currentFolder, ~, ~] = fileparts(thisFile);
+% 
+% excelPath = fullfile(currentFolder, "concepts_tabulations.xlsx");
+% T = readcell(excelPath);
 
 %% Gather Inputs
     name = readVar('Deliverable', CN, T);
@@ -137,7 +138,7 @@ T = readcell(excelPath);
     geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
     geom.num_engine = readVar('Number of Engines', CN, T);
 
-    % tail_input = struct();
+    tail_input = struct();
     % tail_input.mac = readVar('MAC', CN, T);
 
 %% Set Remaining Fixed Inputs
@@ -218,9 +219,24 @@ T = readcell(excelPath);
         buildPerformancePlots(plane, plane.MTOW, 30); % Can increase 50 for more resoultion at a time penalty
     end
 
-%% More Plots
+%% Drag Polar
+    if drag_polar
+        disp("Building drag polar...")
+        dragPolarPlot(plane);
+    end
 
-dragPolarPlot(plane);
+%% Testing Raymer Weights
+
+output = calcRaymerWeights(getPlaneRaymerWeightInput(plane));
+
+% Optional: sum total weight
+total_weight = sum(struct2array(output));
+
+disp('Raymer component weights(approximate, N):');
+disp(output);
+
+fprintf('Total estimated weight: %.0f N (%.0f lb)\n', total_weight, N2lb(total_weight));
+fprintf('Weight Fraction = %.4f\n', total_weight/plane.MTOW)
     
 %% Assign Derived Aircraft Geometry
     disp("Writing Derived Geometry...")

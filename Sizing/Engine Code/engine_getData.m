@@ -1,6 +1,11 @@
-function engineData = engine_getData(name)
+function engineData = engine_getData(name, geom_trigger)
     % Before, the table was searched and loaded in every time propulsion was called. This was EXTRMELY slow. With the regression, all we
     % actually need is the two max thrust values. So they are just saved into the plane engine_data object upon loading
+
+    % I am being lazy and reusing this code to fetch engine geometry. If geom_trigger = 1. This returns weight/diam instead of thrusts
+    if nargin < 2
+        geom_trigger = 0;
+    end
 
     % Thrust in engine_lookup is all in N
 
@@ -17,9 +22,14 @@ function engineData = engine_getData(name)
         error("Did not find engine: " + obj.engine)
     end
 
-    T0_NoAB = selectedEngine.h0_maxThrust_NoAB;
-    T0_AB = selectedEngine.h0_maxThrust_AB;
-
-    engineData = [T0_NoAB, T0_AB];
+    if geom_trigger == 1
+        dry_weight = selectedEngine.weight; % N
+        diam = selectedEngine.diameter; % m
+        engineData = [dry_weight, diam];
+    else
+        T0_NoAB = selectedEngine.h0_maxThrust_NoAB; % N
+        T0_AB = selectedEngine.h0_maxThrust_AB; % N
+        engineData = [T0_NoAB, T0_AB];
+    end
 
 end

@@ -24,7 +24,7 @@
 
 % Controls
     % Chose Your Concept
-    CN = 1; % COLUMN NUMBER
+    CN = 2; % COLUMN NUMBER
         % 1 -> F18E
         % 2 -> F18E_Sized (for testing)
         % 3 -> F16
@@ -48,7 +48,7 @@
 
     skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(120000), 500); % Refresh atmosphere lookup
@@ -183,7 +183,7 @@
         [g_vec, ~] = constraints_rfp(plane, missionList);
         if(max(g_vec) > 0)
             disp("\n")
-            warning("Sized aircraft does not satisfy all RFP constraints and is instead the least feasible (weighted) option.")
+            warning("Sized aircraft does not satisfy all RFP constraints and is instead the least infeasible (weighted) option.")
         end
 
     end

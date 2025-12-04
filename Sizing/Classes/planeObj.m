@@ -274,10 +274,10 @@ classdef planeObj
             obj.fold_span = obj.span * (1 - obj.fixed_input.fold_ratio);
             obj.wing_height = 0.1333 * obj.L_fuselage; % height of the leading edge from the ground (estimations)
             obj.fold_height = obj.wing_height + (obj.span * 0.5) * obj.fixed_input.fold_ratio; % How hight the wings would reach straight up
+            obj.D = 2*sqrt(obj.A_max/pi); % Assuming roughly circular cross section to get fuselage diameter/width
 
             obj = obj.updateWeights();
            
-
             %% Tail Geometry
 
             MAC = obj.c_avg;
@@ -311,11 +311,11 @@ classdef planeObj
             % obj.CD0_Body = CD_min + obj.k1_sub*CL_min_D^2 + obj.k2_sub*CL_min_D; % Actually has k2 term
             obj.CD0_Body = CD_min;
             obj.CD0 = obj.CD0_Body + obj.CD0_Payload;
+
             obj.M_CD0_max = 1/(cosd(obj.Lambda_LE))^0.2; % The only supersonic drag variable that is not dependent on Cl or M
 
             %% Homework 4 - Lift
             obj.Lambda_max_t = ( obj.Lambda_LE - obj.Lambda_TE )/2; % *** Feel like this should be addition instead for some reason
-            obj.D = 2*sqrt(obj.A_max/pi); % Assuming roughly circular cross section to get fuselage diameter/width
             obj.S_exposed = obj.S_wing * 1.3; % *** Trying to account for body lift/strakes/tail anything not in here
             obj.F = obj.fixed_input.F_Scaler * 1.07 * (1 + obj.D/obj.span)^2; % Lift Factor
             % obj.F = 1; % *** Needs to be fixed
@@ -864,7 +864,11 @@ classdef planeObj
             % Weight, W in N
             CL = obj.calcTrimCL(h, M, W);
             [CD, ~, ~, ~] = obj.calcCD(CL, M);
-            LD = CL / CD;
+            try
+                LD = CL / CD;
+            catch
+                disp("break")
+            end
         end
         
     end

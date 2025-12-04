@@ -137,6 +137,9 @@ T = readcell(excelPath);
     geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
     geom.num_engine = readVar('Number of Engines', CN, T);
 
+    % tail_input = struct();
+    % tail_input.mac = readVar('MAC', CN, T);
+
 %% Set Remaining Fixed Inputs
     % These should remain constant between concepts
     
@@ -160,7 +163,7 @@ T = readcell(excelPath);
 %% Make the plane object
     disp("Building plane object...")
     %                                     empty_weight,       Lambda_LE,     c_r,       c_t,    span,        num_engine,      engine,      W_F
-    plane = planeObj(fixed_input, name, geom.empty_weight, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,  geom.num_engine, geom.engine, geom.W_F);
+    plane = planeObj(fixed_input, tail_input, name, geom.empty_weight, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,  geom.num_engine, geom.engine, geom.W_F);
     plane = plane.applyLoadout(clean_loadout); % Just two sidewinders
 
 %% Size The Plane (Optional)

@@ -39,6 +39,7 @@ classdef planeObj
         g_limit
 
         fixed_input
+        tail_input
 
         % Parameters when missions and loadouts are applied
         CD0_Payload
@@ -174,7 +175,7 @@ classdef planeObj
     methods
         
         %% Primary class defenition functions (used on creation and updates)
-        function obj = planeObj(fixed_input, name, WE, Lambda_LE, c_r, c_t, span, num_engine, engine, W_F) 
+        function obj = planeObj(fixed_input, tail_input, name, WE, Lambda_LE, c_r, c_t, span, num_engine, engine, W_F) 
             % Note it returns the obj variable to be used. Use as plane = planeObj(...)
             obj.name = name;
 
@@ -193,6 +194,7 @@ classdef planeObj
             obj.E_WD = 2.2; % *** Still don't know what this is
             obj.g_limit = fixed_input.g_limit; % Just fixing for performance code
             obj.fixed_input = fixed_input;
+            obj.tail_input = tail_input;
 
             % Storing the raymer coefficents is much faster than reading the table every loop
             obj.type = fixed_input.type; % For regression lookup

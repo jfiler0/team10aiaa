@@ -30,13 +30,13 @@ classdef planeObj
             VH % Horizontal Tail Volume Ratio
             VV % Vertical Tail Volume Ratio
 
-        % How can these become inputs...
         L_fuselage % m
         A_max % m2
         A_0 % m2
         E_WD % no idea what this is
         x_rootchord % distance of beginning of leading edge of wing from tip of nose 
         g_limit
+        engine
 
         fixed_input
         tail_input
@@ -48,6 +48,7 @@ classdef planeObj
         W_Tanks % external fuel tank EMPTY weight
         max_fuel_weight % cause I keep recaluclating this
         mid_mission_weight % useful for mission calculations instead of using WE or MTOW
+        internal_fuel_weight
 
         % Parameters that remain fixed (need to edit the input function if you want them moved into the deisgn space)
         type % Name of the regrssion to use in Raymer for We/W0
@@ -64,6 +65,12 @@ classdef planeObj
         mach_range % vector [min mach, max mach] for interpolation range
         transonic_range % spline interpolation range
         alt_range % vector [min alt, max alt] in meters
+
+        % engine data (from lookup)
+            engine_dry_weight % N
+            engine_diameter % m
+            engine_T0 % max sealevel N
+            engine_T0AB % max sealevel AB N
 
         % Parameters that are derived
         c_t % m
@@ -208,7 +215,16 @@ classdef planeObj
             obj.CD0_Payload = 0;
 
             % Parameters that remain fixed
-            obj.engineData = engine_getData(engine); % Saves key engien data as an array [T0_NoAB, T0_AB]
+
+            obj.engine = engine;
+            engine_geom = engine_getData(engine, 1); % this flag makes the function return weight/diam instead
+            obj.engine_dry_weight = engine_geom(1);
+            obj.engine_diameter = engine_geom(2);
+
+            obj.engineData = engine_getData(engine); % Saves key engine data as an array [T0_NoAB, T0_AB]
+            obj.engine_T0 = obj.engineData(1);
+            obj.engine_T0AB = obj.engineData(2);
+
             obj.W_F = W_F; % fixed weight
             
             obj.a0 = -1; % deg (zero lift aoa)
@@ -363,6 +379,7 @@ classdef planeObj
 
         function obj = updateWeights(obj)
             obj.max_fuel_weight = obj.MTOW - obj.WE - obj.W_P - obj.W_Tanks - obj.W_F;
+            obj.internal_fuel_weight = 0.7 * obj.max_fuel_weight; % Accounts for tanks in an actual mission
             obj.mid_mission_weight = obj.MTOW - obj.max_fuel_weight / 2; % Assume half of fuel is burned
 
             % obj.landing_weight = getLandingWeight(obj);

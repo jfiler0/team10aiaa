@@ -39,7 +39,7 @@
     performance_plots = false; % Aerodynamics, Propulsion, Atmospere, Performance grids
     mission_plots = false; % Fuel burn, LD, TSFC over time
     geometry_plot = false; % Outline of the wing geometry (not implemented yet)
-    drag_polar = true;
+    drag_polar = false;
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
         sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
@@ -224,6 +224,21 @@
         disp("Building drag polar...")
         dragPolarPlot(plane);
     end
+
+%% Testing Raymer Weights
+
+output = calcRaymerWeights(getPlaneRaymerWeightInput(plane));
+
+% Optional: sum total weight
+total_weight = sum(struct2array(output));
+
+disp('Raymer component weights(approximate, N):');
+disp(output);
+
+plane.num_engine * plane.engine_dry_weight
+
+fprintf('Total estimated weight: %.0f N (%.0f lb)\n', total_weight, N2lb(total_weight));
+fprintf('Weight Fraction = %.4f\n', total_weight/plane.MTOW)
     
 %% Assign Derived Aircraft Geometry
     disp("Writing Derived Geometry...")

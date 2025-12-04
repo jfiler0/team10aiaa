@@ -44,7 +44,7 @@ function [g_vec, g_names] = constraints_rfp(plane, missionList)
     % % g3 = 0; % THIS DISABLES DASH
     % g_vec = [g_vec g3];
     % g_names = [g_names "M1.6 Dash"];
-    g3 = 1 - maxMach / 1.45;
+    g3 = 1 - maxMach / 1.6;
     g_vec = [g_vec g3];
     g_names = [g_names "M1.6 Dash"];
 
@@ -88,15 +88,17 @@ function [g_vec, g_names] = constraints_rfp(plane, missionList)
     g_vec = [g_vec g8];
     g_names = [g_names "Landing SEROC"];
 
-    %% 3.5.9 -> Foled wing span shall not exceed 35 ft
-    % folded_span = plane.span * plane.fixed_input.fold_ratio;
-    % g9 = folded_span / ft2m(35) - 1;
-    % g_vec = [g_vec g9];
-    % g_names = [g_names "35ft Fold Limit"];
+    %% 3.5.9 -> Folded wing span shall not exceed 35 ft
+    g9 = plane.fold_span / ft2m(35) - 1;
+    g_vec = [g_vec g9];
+    g_names = [g_names "35ft Fold Limit"];
 
     %% Liftoff speed reqs
 
-    %% Check aircraft height with wing folding
+    %% Check aircraft height with wing folding. Cannot exceed 18.5ft in height to fit in hanger
+    g10 = plane.fold_height / ft2m(18.5) - 1;
+    g_vec = [g_vec g10];
+    g_names = [g_names "18.5ft Fold Height Limit"];
 
 
 end

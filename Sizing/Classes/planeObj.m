@@ -39,7 +39,10 @@ classdef planeObj
         g_limit
         engine
 
+        weights % constructor from Raymer containing a bunch of component weights
+
         fixed_input
+        tail_input
 
         % Parameters when missions and loadouts are applied
         CD0_Payload
@@ -80,6 +83,9 @@ classdef planeObj
         AR
         S_wing % m2
         S_ref % m2
+        fold_span % m
+        wing_height % m -> for max height check cacl and landing gear height
+        fold_height % m -> how high up the wings go when folded (will it fit in hanger)
         x_rootLE_wing % x distance of leading edge of root chord from tip of nose
         MAC_wing % mean aerodynamic chord
         y_MAC_wing % Y location of airfoil with same chord as MAC; distance of airfoil section out the right wing from the centerline 
@@ -182,12 +188,12 @@ classdef planeObj
     methods
         
         %% Primary class defenition functions (used on creation and updates)
-        function obj = planeObj(fixed_input, name, WE, Lambda_LE, c_r, c_t, span, num_engine, engine, W_F) 
+        function obj = planeObj(fixed_input, tail_input, name, MTOW, Lambda_LE, c_r, c_t, span, num_engine, engine, W_F) 
             % Note it returns the obj variable to be used. Use as plane = planeObj(...)
             obj.name = name;
 
             %% Assign inputs
-            obj.WE = WE; % Newtons
+            obj.MTOW = MTOW; % Newtons (this used to be WE but to use the raymer eqns we need to go backwards. WE also required most of the variables so we need to assign everything an calc in derived)
             obj.Lambda_LE = Lambda_LE; % deg
             obj.c_r = c_r;
             obj.c_t = c_t;
@@ -201,6 +207,7 @@ classdef planeObj
             obj.E_WD = 2.2; % *** Still don't know what this is
             obj.g_limit = fixed_input.g_limit; % Just fixing for performance code
             obj.fixed_input = fixed_input;
+            obj.tail_input = tail_input;
             obj.Kc = 1.1; % assuming semi-conical rear fuselage 
             obj.VH = fixed_input.VH;
             obj.VV = fixed_input.VV;
@@ -226,7 +233,7 @@ classdef planeObj
             obj.engine_T0AB = obj.engineData(2);
 
             obj.W_F = W_F; % fixed weight
-            
+
             obj.a0 = -1; % deg (zero lift aoa)
             obj.cl_alpha = 0.1; % wing foil lift slope
             obj.cl_alpha_horstab = 2*pi*pi/180; % tail foil lift slope
@@ -252,9 +259,7 @@ classdef planeObj
             % empty_weight_fraction = obj.WE / obj.MTOW = 2.34*N2lb(obj.MTOW)^(-0.13) ; % Use historical data
             % obj.WE = obj.MTOW * 2.34 * N2lb(obj.MTOW)^(-0.13)
             % obj.MTOW = lb2N( ( N2lb(obj.WE) / 2.34)^(1/0.87) );
-            obj.MTOW = obj.fixed_input.MTOW_Scalar * lb2N( ( N2lb(obj.WE) / obj.raymer.A )^(1 / (1 + obj.raymer.C) ) );
-
-            obj = obj.updateWeights();
+            % obj.MTOW = obj.fixed_input.MTOW_Scalar * lb2N( ( N2lb(obj.WE) / obj.raymer.A )^(1 / (1 + obj.raymer.C) ) );
 
             %% Standard Wing Geometry Stuff
             obj.c_avg = 0.5*(obj.c_t + obj.c_r); % Average chord
@@ -265,12 +270,22 @@ classdef planeObj
             obj.S_wing = obj.span*obj.c_avg;
             obj.S_ref = obj.S_wing; % Typical defenition for reference area
             obj.S_strakes = 0.5*obj.b_strake*obj.c_root_strake; % planform area of strakes calculation
-            
+
+            %% Random but important
+            obj.fold_span = obj.span * (1 - obj.fixed_input.fold_ratio);
+            obj.wing_height = 0.1333 * obj.L_fuselage; % height of the leading edge from the ground (estimations)
+            obj.fold_height = obj.wing_height + (obj.span * 0.5) * obj.fixed_input.fold_ratio; % How hight the wings would reach straight up
+
+            obj = obj.updateWeights();
+           
+
             %% Tail Geometry
+
+            MAC = obj.c_avg;
             
-            obj.l_opt = obj.Kc*sqrt(4*obj.MAC_wing*obj.S_wing*obj.VH/(pi*obj.A_max));
-            obj.S_h = obj.VH*obj.MAC_wing*obj.S_wing/obj.l_opt;
-            
+            obj.l_opt = obj.Kc*sqrt(4*MAC*obj.S_wing*obj.tail_input.VH/(pi*obj.A_max));
+            obj.S_h = obj.tail_input.VH*MAC*obj.S_wing/obj.l_opt;
+
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4
             
@@ -383,6 +398,15 @@ classdef planeObj
         end
 
         function obj = updateWeights(obj)
+
+            obj.weights = calcRaymerWeights(getPlaneRaymerWeightInput(obj));
+            fn = fieldnames(obj.weights);  % get all field names
+            total = 0;
+            for i = 1:numel(fn)
+                total = total + obj.weights.(fn{i});
+            end
+            obj.WE = total;
+
             obj.max_fuel_weight = obj.MTOW - obj.WE - obj.W_P - obj.W_Tanks - obj.W_F;
             obj.internal_fuel_weight = 0.7 * obj.max_fuel_weight; % Accounts for tanks in an actual mission
             obj.mid_mission_weight = obj.MTOW - obj.max_fuel_weight / 2; % Assume half of fuel is burned

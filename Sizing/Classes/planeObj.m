@@ -328,17 +328,17 @@ classdef planeObj
             obj.V_hor = obj.S_h*obj.l_ht/(obj.S_wing*obj.MAC_wing);
 
              % Tail lift slope calculation
-            obj.e_notoswald_horstab = 2./(2 - obj.AR_horstab + sqrt(4 + obj.AR_horstab.^2 .* (1 + (tand(obj.LAM_LE_horstab)).^2)));
-            CL_alpha_tail = obj.cl_alpha_horstab/(1 + 57.3 * obj.cl_alpha_horstab/(pi * obj.e_notoswald_horstab * obj.AR_horstab));
-            CLalph_CLalpht = CL_alpha_tail/CL_alpha_wing;
-
-            obj.x_bar_n = obj.x_bar_ac_wings_strakes_fuselage + obj.V_hor*(CLalph_CLalpht*(1-obj.depsdalph));
+            % obj.e_notoswald_horstab = 2/(2 - obj.AR_horstab + sqrt(4 + obj.AR_horstab^2 * (1 + (tand(obj.LAM_LE_horstab))^2)));
+            % CL_alpha_tail = obj.cl_alpha_horstab/(1 + 57.3 * obj.cl_alpha_horstab/(pi * obj.e_notoswald_horstab * obj.AR_horstab));
+            % CLalph_CLalpht = CL_alpha_tail/CL_alpha_wing;
+            % 
+            % obj.x_bar_n = obj.x_bar_ac_wings_strakes_fuselage + obj.V_hor*(CLalph_CLalpht*(1-obj.depsdalph));
             
-            Final Static Margin Calculations
-            obj.x_np = obj.x_MAC_wing + (obj.x_bar_n*obj.MAC_wing);
-            obj.X_bar_cg = obj.x_cg/obj.x_MAC_wing;
-            obj.X_bar_np = obj.x_np/obj.x_MAC_wing;
-            obj.SM = obj.X_bar_np - obj.X_bar_cg
+            % Final Static Margin Calculations
+            % obj.x_np = obj.x_MAC_wing + (obj.x_bar_n*obj.MAC_wing);
+            % obj.X_bar_cg = obj.x_cg/obj.x_MAC_wing;
+            % obj.X_bar_np = obj.x_np/obj.x_MAC_wing;
+            % obj.SM = obj.X_bar_np - obj.X_bar_cg
 
             %% Interpolants
             M_vec = linspace(obj.mach_range(1), obj.mach_range(2), 100); % Can change last number to increase/decrease resolution

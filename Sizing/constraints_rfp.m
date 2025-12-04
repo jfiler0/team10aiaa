@@ -89,10 +89,10 @@ function [g_vec, g_names] = constraints_rfp(plane, missionList)
     g_names = [g_names "Landing SEROC"];
 
     %% 3.5.9 -> Foled wing span shall not exceed 35 ft
-    folded_span = plane.span * plane.fixed_input.fold_ratio;
-    g9 = folded_span / ft2m(35) - 1;
-    g_vec = [g_vec g9];
-    g_names = [g_names "35ft Fold Limit"];
+    % folded_span = plane.span * plane.fixed_input.fold_ratio;
+    % g9 = folded_span / ft2m(35) - 1;
+    % g_vec = [g_vec g9];
+    % g_names = [g_names "35ft Fold Limit"];
 
     %% Liftoff speed reqs
 

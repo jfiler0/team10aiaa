@@ -41,11 +41,11 @@ input.W_param= 100;         % W parameter for fuselage (not clear what this is s
 input.K_dwf  = 1.3;             % Correction
 
 % Landing gear
-input.WNl    = plane.mid_mission_weight;   % Landing weight [N] (while there is an actual landing weight calc it is very expensive)
+input.WNl    = 0.5 * plane.MTOW;   % Landing weight [N] (estimate since we don't have landing weight calculated at this point) ***
 input.K_cb   = 1; 
 input.K_tpg  = 1; 
-input.Lm     = 0.1333 * plane.L_fuselage;             % Main gear length [m]
-input.Ln     = 0.1 * plane.L_fuselage;           % Nose gear length [m]
+input.Lm     = plane.wing_height;             % Main gear length [m]
+input.Ln     = 0.8 * plane.wing_height;           % Nose gear length [m]
 input.Nnw    = 2;             % Number of nose wheels
 
 % Engines
@@ -65,7 +65,11 @@ input.Te     = 500;           % Starter pneumatic param
 fuel_den = 0.8; % g/ml -> 1000ml/m3 * kg / 1000g -> kg/m3
 
 % Fuel system
-input.Vi     = (plane.internal_fuel_weight / 9.805)/fuel_den;             % Internal volume [m^3]
+
+% fuel_vol = plane.internal_fuel_weight; % would be nice but we haven't actually calculated this
+fuel_vol = 0.3 * plane.MTOW; % rough estimate ***
+
+input.Vi     = (fuel_vol / 9.805)/fuel_den;             % Internal volume [m^3]
 input.Vt     = 1.2 * input.Vi;             % Total fuel volume [m^3]
 input.Vp     = input.Vt/1.5;             % External volume [m^3]
 input.Nt     = 2;             % Number of tanks

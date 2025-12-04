@@ -15,12 +15,14 @@ input = metricToImperial(input);
 
 output = calcWeightsImperial(input);
 
+weight_error_scaler = 31 / 24; % Because its too low so just scale to match
+
 % -----------------------------
-% Convert outputs to Newtons
+% Convert outputs to Newtons and correct error
 % -----------------------------
 fnames = fieldnames(output);
 for i = 1:numel(fnames)
-    output.(fnames{i}) = lb2N( output.(fnames{i}) ); % lb -> N
+    output.(fnames{i}) = weight_error_scaler * lb2N( output.(fnames{i}) ); % lb -> N
 end
 
 end

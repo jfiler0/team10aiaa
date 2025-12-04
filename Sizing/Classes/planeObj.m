@@ -22,6 +22,7 @@ classdef planeObj
         MTOW % Max takeoff weight
         Lambda_LE % deg
         Lambda_TE % deg
+        Gamma % dihedral angle of wing
         c_avg % m
         tr % taper ratio
         x_cg % location of CG of aircraft
@@ -269,7 +270,7 @@ classdef planeObj
             obj.AR = obj.span / obj.c_avg;
             obj.S_wing = obj.span*obj.c_avg;
             obj.S_ref = obj.S_wing; % Typical defenition for reference area
-            obj.S_strakes = 0.5*obj.b_strake*obj.c_root_strake; % planform area of strakes calculation
+            %obj.S_strakes = 0.5*obj.b_strake*obj.c_root_strake; % planform area of strakes calculation
 
             %% Random but important
             obj.fold_span = obj.span * (1 - obj.fixed_input.fold_ratio);
@@ -285,6 +286,9 @@ classdef planeObj
             
             obj.l_opt = obj.Kc*sqrt(4*MAC*obj.S_wing*obj.tail_input.VH/(pi*obj.A_max));
             obj.S_h = obj.tail_input.VH*MAC*obj.S_wing/obj.l_opt;
+            obj.AR_h =(2/3)*obj.AR;
+            obj.lam_h = 0.35; % textbook estimate
+            obj.LAM_LE_horstab = obj.Lambda_LE; % stealth requirement
 
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4

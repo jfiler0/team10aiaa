@@ -289,7 +289,9 @@ classdef planeObj
             obj.AR_h =(2/3)*obj.AR;
             obj.lam_h = 0.35; % textbook estimate
             obj.LAM_LE_horstab = obj.Lambda_LE; % stealth requirement
-
+            obj.l_vt = obj.l_opt;
+            obj.S_v = obj.span*obj.S_wing*obj.VV/obj.l_vt;
+            
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4
             

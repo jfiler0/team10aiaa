@@ -5,7 +5,7 @@
 %% ===================== USER CONTROLS ===============================
 clear; clc; close all;
 %  Choose your concept (column in concepts_tabulations.xlsx)
-CN = 8;   % 1 = F18E, 2 = F18E sized, ... 8 = Concept 4, etc.
+CN = 6;   % 1 = F18E, 2 = F18E sized, ... 8 = Concept 4, etc.
 
 % Toggles
 performance_plots = true;    % Aerodynamics / propulsion / performance grids

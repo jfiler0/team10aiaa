@@ -1,3 +1,4 @@
+clear all
 % This file is the main one to use when writing to concept_tabulations. It embeds all the rfp asks and assumptions we make. 
 
 % MAKE SURE YOU COPY concepts_tabulations_template.xlsx inside the Sizing folder and name it concepts_tabulations.xlsx
@@ -44,7 +45,7 @@
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
         sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
-    sensitivities_plot = true; % Can change parameter selection in "Sensitivities Plot"
+    sensitivities_plot = false; % Can change parameter selection in "Sensitivities Plot"
 
     skip_max_ranges = false; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
@@ -129,18 +130,32 @@
     fixed_input.g_limit = readVar('G Limit', CN, T); % G -> FA18 limit
     fixed_input.KLOC = readVar('KLOC', CN, T); % in kilo-lines of code
     fixed_input.fold_ratio = readVar('Fold Ratio', CN, T);
+    fixed_input.x_rootLE_wing = readVar('X coor root LE wing',CN,T);
+    fixed_input.x_horstab = readVar('X coor root LE Hor Stab',CN,T);
+    fixed_input.c_root_strake = readVar('Strake root chord',CN,T);
+    fixed_input.lam_strake = readVar('Strake taper ratio',CN,T);
+    fixed_input.b_strake = readVar('Strake span',CN,T);
+    fixed_input.x_strake = readVar('X coor root LE Strake',CN,T);
+    fixed_input.Lambda_LE_strake = readVar('Strake LE Sweep',CN,T);
+    fixed_input.c_r_v = readVar('Ver Stab Root Chord',CN,T);
+    fixed_input.lam_v = readVar('Ver Stab Taper Ratio',CN,T);
+    fixed_input.b_v = readVar('Ver Stab Span',CN,T);
+    fixed_input.x_verstab = readVar('X coor root LE Ver Stab',CN,T);
+    fixed_input.LAM_v = readVar('Ver Stab LE Sweep',CN,T);
+    fixed_input.c_r_horstab = readVar('Hor Stab Root Chord',CN,T);
+    fixed_input.b_h = readVar('Hor Stab Span',CN,T);
     
-    % geom.mtow = lb2N(readVar('MTOW [lb]', CN, T)); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
-    % geom.W_F = lb2N(readVar('Fixed Weight [lb]', CN, T)); % N - Fixed Weight (Avionics)
-    % geom.span = readVar('Wing Span [m]', CN, T); % m - Wing Span
-    % geom.Lambda_LE = readVar('LE Sweep [deg]', CN, T); % deg - Leading Edge Sweep
-    % geom.c_r = readVar('Root Chord [m]', CN, T); % m - Root Chord
-    % geom.c_t = readVar('Tip Chord [m]', CN, T); % m - Tip Chordf
-    % geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
-    % geom.num_engine = readVar('Number of Engines', CN, T);
+    geom.mtow = lb2N(readVar('MTOW [lb]', CN, T)); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
+    geom.W_F = lb2N(readVar('Fixed Weight [lb]', CN, T)); % N - Fixed Weight (Avionics)
+    geom.span = readVar('Wing Span [m]', CN, T); % m - Wing Span
+    geom.Lambda_LE = readVar('LE Sweep [deg]', CN, T); % deg - Leading Edge Sweep
+    geom.c_r = readVar('Root Chord [m]', CN, T); % m - Root Chord
+    geom.c_t = readVar('Tip Chord [m]', CN, T); % m - Tip Chordf
+    geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
+    geom.num_engine = readVar('Number of Engines', CN, T);
     tail_input.VH = readVar('Hor Stab Tail Ratio', CN, T);
     tail_input.VV = readVar('Ver Stab Tail Ratio', CN, T);
-  
+    
 %% Set Remaining Fixed Inputs
     % These should remain constant between concepts
     

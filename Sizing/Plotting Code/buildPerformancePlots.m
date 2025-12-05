@@ -123,7 +123,7 @@ function buildPerformancePlots(plane, W, N)
         [Tvec(i), avec(i), Pvec(i), rhovec(i), muvec(i)] = queryAtmosphere(hvec(i), [1 1 1 1 1]);
 
         if(i == 1)
-            calcMaxExcessPower_NoAB_Mguess = 0.5;
+            calcMaxExcessPower_NoAB_Mguess = 2;
             calcMaxMachFixedAlt_NoAB_Mguess = 2;
 
             calcMaxExcessPower_AB_Mguess = 0.5;
@@ -352,13 +352,13 @@ function buildPerformancePlots(plane, W, N)
     ylabel("Mach to Fly")
     xlabel('$h$ [kft]')
     title("Max Excess Power at Altitude")
-    legend(Location="best")
+    % legend(Location="best")
     hold off;
 
     subplot(2, 3, 5);
-    plot(m2ft(hvec)/1000, maxMach_NoAB, DisplayName="No AB")
+    plot(m2ft(hvec)/1000, maxMach_NoAB, DisplayName="No AB", Color='r')
     hold on;
-    plot(m2ft(hvec)/1000, maxMach_AB, DisplayName="AB")
+    plot(m2ft(hvec)/1000, maxMach_AB, DisplayName="AB", Color='b')
     xlabel('$h$ [kft]')
     ylabel("Mach")
     title("Max Mach Number at Altitude")
@@ -376,7 +376,7 @@ function buildPerformancePlots(plane, W, N)
     ylabel("Climb Angle [deg]")
     xlabel('$h$ [kft]')
     title("Max Sustained Climb Rate")
-    legend(Location="best")
+    % legend(Location="best")
     hold off;
 
     sgtitle("PERFORMANCE")

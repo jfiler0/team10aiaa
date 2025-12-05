@@ -24,7 +24,7 @@
 
 % Controls
     % Chose Your Concept
-    CN = 9; % COLUMN NUMBER
+    CN = 11; % COLUMN NUMBER
         % 1 -> F18E
         % 2 -> F18E_Sized (for testing)
         % 3 -> F16
@@ -34,7 +34,7 @@
         % 7 -> Concept 3
         % 8 -> Concept 4
         % 9 -> Concept 5
-        % 10 -> Temp (can paste in values here to save them temporarily)
+        % 11 -> PSC (can paste in values here to save them temporarily)
 
     performance_plots = false; % Aerodynamics, Propulsion, Atmospere, Performance grids
     mission_plots = false; % Fuel burn, LD, TSFC over time

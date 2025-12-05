@@ -24,7 +24,7 @@
 
 % Controls
     % Chose Your Concept
-    CN = 10; % COLUMN NUMBER
+    CN = 9; % COLUMN NUMBER
         % 1 -> F18E
         % 2 -> F18E_Sized (for testing)
         % 3 -> F16
@@ -44,11 +44,11 @@
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
         sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
-    sensitivities_plot = false; % Can change parameter selection in "Sensitivities Plot"
+    sensitivities_plot = true; % Can change parameter selection in "Sensitivities Plot"
 
-    skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
+    skip_max_ranges = false; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(100000), 500); % Refresh atmosphere lookup
@@ -174,7 +174,7 @@
         plane = sizeAircraft(plane, missionList, @constraints_rfp, sizing_plot, 1.5);
         plane = plane.updateDerivedVariables();
 
-        T = assignVar(N2lb(plane.WE), 'Empty Weight [lb]', CN, T);
+        T = assignVar(N2lb(plane.MTOW), 'MTOW [lb]', CN, T);
         T = assignVar(plane.span, 'Wing Span [m]', CN, T);
         T = assignVar(plane.c_r, 'Root Chord [m]', CN, T);
         T = assignVar(plane.c_t, 'Tip Chord [m]', CN, T);
@@ -191,12 +191,12 @@
     if(sensitivities_plot)
         disp("Working on sensitvities plot...")
         values_to_change = { ...
-                           "WE", "Empty Weight [N]" ; ...
+                           % "WE", "Empty Weight [N]" ; ...
                            % "c_r", "Root Chord [m]" ; ...
                            % "c_t", "Tip Chord [m]" ; ...
-                           "span", "Span [m]" ; ...
-                           "Lambda_LE", "LE Sweep [deg]" ; ...
-                           "L_fuselage", "Fuselage Length [m]" ; ...
+                           % "span", "Span [m]" ; ...
+                           % "Lambda_LE", "LE Sweep [deg]" ; ...
+                           % "L_fuselage", "Fuselage Length [m]" ; ...
                            "A_max", "Max Fuse Area [m2]" ; ...
                            % "span", "Span [m]" ; ...
                            % "span", "Span [m]" ; ...

@@ -289,7 +289,9 @@ classdef planeObj
             obj.AR_h =(2/3)*obj.AR;
             obj.lam_h = 0.35; % textbook estimate
             obj.LAM_LE_horstab = obj.Lambda_LE; % stealth requirement
-
+            obj.l_vt = obj.l_opt;
+            obj.S_v = obj.span*obj.S_wing*obj.VV/obj.l_vt;
+            
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4
             
@@ -713,9 +715,9 @@ classdef planeObj
                 if isnan(diff), diff = -1e2; end
             end
             try
-                maxAlt = fzero(@helper, [10 30000]); % This might be problamatic
-            catch
-                maxAlt = obj.alt_range(2);
+            maxAlt = fzero(@helper, [10 30000]); % This might be problamatic
+            catch 
+                maxAlt = max(obj.alt_range);
             end
             [excessPower, ~, maxAltMach] = calcMaxExcessPower(obj, maxAlt, W, AB_perc, mach_save); % Have to recalculate to get remaining output
         end

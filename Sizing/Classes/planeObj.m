@@ -288,7 +288,7 @@ classdef planeObj
             
             % Run function
             [x_cg_est,~,~] = CG_Location(S_exposed_PSC,S_wet_PSC,W_engine_PSC,TOGW_PSC,c_PSC,xstart_PSC);
-            obj.x_cg = x_cg_est;
+            obj.x_cg = x_cg_est(1);
 
             %% Standard Wing Geometry Stuff
             obj.c_avg = 0.5*(obj.c_t + obj.c_r); % Average chord

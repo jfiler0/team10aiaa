@@ -836,7 +836,9 @@ classdef planeObj
             % Weight, W in N
             CL = obj.calcTrimCL(h, M, W);
             [CD, ~, ~, ~] = obj.calcCD(CL, M);
+            % fprintf("CL = '%f%+fj' , CD = '%f%+fj\n'", real(CL), imag(CL), real(CD), imag(CD))
             L2D = CL ^ (0.5) / CD;
+
         end
         
         function [h, M, V, LD] = findMaxEnduranceState(obj, W) 

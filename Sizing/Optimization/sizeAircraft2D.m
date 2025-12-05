@@ -5,7 +5,7 @@ function plane = sizeAircraft2D(plane_in, missionList, constrainFun)
 
     x0 = [plane_in.MTOW 1];
 
-    f = @(x) objective_constrained(x(1), x(2), plane_in, missionList, constrainFun);
+    f = @(x) objective_constrained(scalePlane(plane_in, x(1), x(2)), missionList, constrainFun);
 
     options = optimset( ...
         'Display', 'iter', ...      % Display iteration info
@@ -20,14 +20,7 @@ function plane = sizeAircraft2D(plane_in, missionList, constrainFun)
     MTOW_opt    = x_opt(1);
     scale_opt = x_opt(2);
 
-    plane = plane_in;
-
-    plane.span = plane_in.span * scale_opt;
-    plane.c_r = plane_in.c_r * scale_opt;
-    plane.c_t = plane_in.c_t * scale_opt;
-    plane.MTOW = MTOW_opt;
-
-    plane = plane.updateDerivedVariables();
+    plane = scalePlane(plane_in, MTOW_opt, scale_opt);
 
     fprintf("Aicraft: %s | Sized has MTOW = %.3f lb + Wings scaled by %.5f\n", plane.name, N2lb(plane.MTOW), scale_opt)
 

@@ -24,7 +24,7 @@
 
 % Controls
     % Chose Your Concept
-    CN = 1; % COLUMN NUMBER
+    CN = 9; % COLUMN NUMBER
         % 1 -> F18E
         % 2 -> F18E_Sized (for testing)
         % 3 -> F16
@@ -43,12 +43,12 @@
     print_components = true;
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
-        sizing_plot = true; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
-    sensitivities_plot = false; % Can change parameter selection in "Sensitivities Plot"
+        sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
+    sensitivities_plot = true; % Can change parameter selection in "Sensitivities Plot"
 
-    skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
+    skip_max_ranges = false; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(100000), 500); % Refresh atmosphere lookup
@@ -130,14 +130,14 @@
     fixed_input.KLOC = readVar('KLOC', CN, T); % in kilo-lines of code
     fixed_input.fold_ratio = readVar('Fold Ratio', CN, T);
     
-    geom.mtow = lb2N(readVar('MTOW [lb]', CN, T)); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
-    geom.W_F = lb2N(readVar('Fixed Weight [lb]', CN, T)); % N - Fixed Weight (Avionics)
-    geom.span = readVar('Wing Span [m]', CN, T); % m - Wing Span
-    geom.Lambda_LE = readVar('LE Sweep [deg]', CN, T); % deg - Leading Edge Sweep
-    geom.c_r = readVar('Root Chord [m]', CN, T); % m - Root Chord
-    geom.c_t = readVar('Tip Chord [m]', CN, T); % m - Tip Chordf
-    geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
-    geom.num_engine = readVar('Number of Engines', CN, T);
+    % geom.mtow = lb2N(readVar('MTOW [lb]', CN, T)); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
+    % geom.W_F = lb2N(readVar('Fixed Weight [lb]', CN, T)); % N - Fixed Weight (Avionics)
+    % geom.span = readVar('Wing Span [m]', CN, T); % m - Wing Span
+    % geom.Lambda_LE = readVar('LE Sweep [deg]', CN, T); % deg - Leading Edge Sweep
+    % geom.c_r = readVar('Root Chord [m]', CN, T); % m - Root Chord
+    % geom.c_t = readVar('Tip Chord [m]', CN, T); % m - Tip Chordf
+    % geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
+    % geom.num_engine = readVar('Number of Engines', CN, T);
     tail_input.VH = readVar('Hor Stab Tail Ratio', CN, T);
     tail_input.VV = readVar('Ver Stab Tail Ratio', CN, T);
   
@@ -174,7 +174,7 @@
         plane = sizeAircraft(plane, missionList, @constraints_rfp, sizing_plot, 1.5);
         plane = plane.updateDerivedVariables();
 
-        T = assignVar(N2lb(plane.WE), 'Empty Weight [lb]', CN, T);
+        T = assignVar(N2lb(plane.MTOW), 'MTOW [lb]', CN, T);
         T = assignVar(plane.span, 'Wing Span [m]', CN, T);
         T = assignVar(plane.c_r, 'Root Chord [m]', CN, T);
         T = assignVar(plane.c_t, 'Tip Chord [m]', CN, T);
@@ -191,12 +191,12 @@
     if(sensitivities_plot)
         disp("Working on sensitvities plot...")
         values_to_change = { ...
-                           "WE", "Empty Weight [N]" ; ...
+                           % "WE", "Empty Weight [N]" ; ...
                            % "c_r", "Root Chord [m]" ; ...
                            % "c_t", "Tip Chord [m]" ; ...
-                           "span", "Span [m]" ; ...
-                           "Lambda_LE", "LE Sweep [deg]" ; ...
-                           "L_fuselage", "Fuselage Length [m]" ; ...
+                           % "span", "Span [m]" ; ...
+                           % "Lambda_LE", "LE Sweep [deg]" ; ...
+                           % "L_fuselage", "Fuselage Length [m]" ; ...
                            "A_max", "Max Fuse Area [m2]" ; ...
                            % "span", "Span [m]" ; ...
                            % "span", "Span [m]" ; ...
@@ -255,6 +255,8 @@ end
     T = assignVar(plane.AR_h, 'Hor Stab Aspect Ratio', CN, T);
     T = assignVar(plane.lam_h, 'Hor Stab Taper Ratio', CN, T);
     T = assignVar(plane.LAM_LE_horstab, 'Hor Stab LE Sweep [deg]', CN, T);
+    T = assignVar(plane.l_vt,'Ver Stab Tail Arm',CN,T);
+    T = assignVar(plane.S_v,'Ver Stab Planform Area [m2]',CN,T);
 
     T = assignVar( m2ft(plane.fold_span), 'Folded Span [ft]', CN, T);
     T = assignVar( m2ft(plane.fold_height), 'Folded Height [ft]', CN, T);
@@ -274,7 +276,8 @@ end
     max_mach = plane.calcMaxMach(plane.WE, 1);
     T = assignVar(max_mach, 'Max Mach Number', CN, T);
 
-    % plane.calcMaxMachFixedAlt(ft2m(30000), plane.mid_mission_weight, 1, 1.1)
+    maxMach = plane.calcMaxMachFixedAlt(ft2m(30000), plane.mid_mission_weight, 1, 1.1);
+    T = assignVar(maxMach, 'Max Mach at 30k ft', CN, T);
 
     plane.fixed_input = fixed_input; % Back to normal
     plane = plane.updateDerivedVariables();
@@ -316,8 +319,7 @@ end
     [~, ~, ~, LDmax] = plane.findMaxEnduranceState(plane.MTOW);
     T = assignVar(LDmax, 'Max L/D', CN, T);
 
-    maxMach = plane.calcMaxMachFixedAlt(ft2m(30000), plane.mid_mission_weight, 1, 1.1);
-    T = assignVar(maxMach, 'Max Mach at 30k ft', CN, T);
+    
 
 %% Work on Missions
 

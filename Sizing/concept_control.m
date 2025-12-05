@@ -36,14 +36,15 @@
         % 9 -> Concept 5
         % 10 -> Temp (can paste in values here to save them temporarily)
 
-    performance_plots = true; % Aerodynamics, Propulsion, Atmospere, Performance grids
+    performance_plots = false; % Aerodynamics, Propulsion, Atmospere, Performance grids
     mission_plots = false; % Fuel burn, LD, TSFC over time
     geometry_plot = false; % Outline of the wing geometry (not implemented yet)
     drag_polar = false;
     print_components = false;
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
-        sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
+        experiemental = false; % switches from sizeAircaft2D to sizeAircaftFull. This takes longer but optimizes all the variables
+    sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
     sensitivities_plot = false; % Can change parameter selection in "Sensitivities Plot"
 
     skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
@@ -172,18 +173,43 @@
     if run_sizing
         disp("Running Sizing...")
 
-        plane = sizeAircraft2D(plane, missionList, @constraints_rfp);
+        if(experiemental)
+            % setting a limit to -Inf to Inf essentially means unconstrained
+            % Note that bad bound can easily break things. Start small and slowly expand
+            % DONT set any bounds to or less than 0. Just don't
+            variables = {   "Lambda_LE", 5, 60 ; ...
+                            "span", 4, 20 ; ...
+                            "c_r", 1, 10 ; ...
+                            "c_t", 1, 10 ; ...
+                            "MTOW", 1000, lb2N(90000)
+                            "A_max", 2.1, 3.5};
+
+            plane = sizeAircraftFull(variables, plane, missionList, @constraints_rfp);
+
+        else
+            plane = sizeAircraft2D(plane, missionList, @constraints_rfp);
+        end
         plane = plane.updateDerivedVariables();
 
+        T = assignVar(plane.L_fuselage, 'Fuselage Length [m]', CN, T);
+        T = assignVar(plane.A_max, 'Max Fuselage Area [m2]', CN, T);
+        T = assignVar(plane.g_limit, 'G Limit', CN, T);
+        % KLOC Not assigned
         T = assignVar(N2lb(plane.MTOW), 'MTOW [lb]', CN, T);
+        % Fixed Wieght not assigned
         T = assignVar(plane.span, 'Wing Span [m]', CN, T);
+        T = assignVar(plane.Lambda_LE, 'LE Sweep [deg]', CN, T);
         T = assignVar(plane.c_r, 'Root Chord [m]', CN, T);
         T = assignVar(plane.c_t, 'Tip Chord [m]', CN, T);
+        % stability, fold not assigned
+        T = assignVar(plane.engine, 'Engine Selection', CN, T);
+        T = assignVar(plane.num_engine, 'Number of Engines', CN, T);
 
         [g_vec, ~] = constraints_rfp(plane, missionList);
+        g_max = max(g_vec);
         if(max(g_vec) > 0)
             disp("\n")
-            warning("Sized aircraft does not satisfy all RFP constraints and is instead the least infeasible (weighted) option.")
+            warning("Sized aircraft does not satisfy all RFP constraints and is instead the least infeasible (weighted) option. g_max = %.3g", g_max)
         end
 
     end

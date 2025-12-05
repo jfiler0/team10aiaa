@@ -24,7 +24,7 @@
 
 % Controls
     % Chose Your Concept
-    CN = 1; % COLUMN NUMBER
+    CN = 10; % COLUMN NUMBER
         % 1 -> F18E
         % 2 -> F18E_Sized (for testing)
         % 3 -> F16
@@ -274,7 +274,8 @@ end
     max_mach = plane.calcMaxMach(plane.WE, 1);
     T = assignVar(max_mach, 'Max Mach Number', CN, T);
 
-    % plane.calcMaxMachFixedAlt(ft2m(30000), plane.mid_mission_weight, 1, 1.1)
+    maxMach = plane.calcMaxMachFixedAlt(ft2m(30000), plane.mid_mission_weight, 1, 1.1);
+    T = assignVar(maxMach, 'Max Mach at 30k ft', CN, T);
 
     plane.fixed_input = fixed_input; % Back to normal
     plane = plane.updateDerivedVariables();
@@ -316,8 +317,7 @@ end
     [~, ~, ~, LDmax] = plane.findMaxEnduranceState(plane.MTOW);
     T = assignVar(LDmax, 'Max L/D', CN, T);
 
-    maxMach = plane.calcMaxMachFixedAlt(ft2m(30000), plane.mid_mission_weight, 1, 1.1);
-    T = assignVar(maxMach, 'Max Mach at 30k ft', CN, T);
+    
 
 %% Work on Missions
 

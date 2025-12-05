@@ -24,7 +24,7 @@
 
 % Controls
     % Chose Your Concept
-    CN = 9; % COLUMN NUMBER
+    CN = 8; % COLUMN NUMBER
         % 1 -> F18E
         % 2 -> F18E_Sized (for testing)
         % 3 -> F16
@@ -40,19 +40,20 @@
     mission_plots = false; % Fuel burn, LD, TSFC over time
     geometry_plot = false; % Outline of the wing geometry (not implemented yet)
     drag_polar = false;
-    print_components = true;
+    print_components = false;
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
         sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
-    sensitivities_plot = true; % Can change parameter selection in "Sensitivities Plot"
+    sensitivities_plot = false; % Can change parameter selection in "Sensitivities Plot"
 
     skip_max_ranges = false; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(100000), 500); % Refresh atmosphere lookup
     matlabSetup(); % Clears and sets plot defaults
+    clear fixed_input geom plane
 
 %% Define Loadouts
     % When applied to a plane they set extra payload weight, can add to potential fuel volume (if a tank), and add to CD0
@@ -130,14 +131,14 @@
     fixed_input.KLOC = readVar('KLOC', CN, T); % in kilo-lines of code
     fixed_input.fold_ratio = readVar('Fold Ratio', CN, T);
     
-    % geom.mtow = lb2N(readVar('MTOW [lb]', CN, T)); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
-    % geom.W_F = lb2N(readVar('Fixed Weight [lb]', CN, T)); % N - Fixed Weight (Avionics)
-    % geom.span = readVar('Wing Span [m]', CN, T); % m - Wing Span
-    % geom.Lambda_LE = readVar('LE Sweep [deg]', CN, T); % deg - Leading Edge Sweep
-    % geom.c_r = readVar('Root Chord [m]', CN, T); % m - Root Chord
-    % geom.c_t = readVar('Tip Chord [m]', CN, T); % m - Tip Chordf
-    % geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
-    % geom.num_engine = readVar('Number of Engines', CN, T);
+    geom.mtow = lb2N(readVar('MTOW [lb]', CN, T)); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
+    geom.W_F = lb2N(readVar('Fixed Weight [lb]', CN, T)); % N - Fixed Weight (Avionics)
+    geom.span = readVar('Wing Span [m]', CN, T); % m - Wing Span
+    geom.Lambda_LE = readVar('LE Sweep [deg]', CN, T); % deg - Leading Edge Sweep
+    geom.c_r = readVar('Root Chord [m]', CN, T); % m - Root Chord
+    geom.c_t = readVar('Tip Chord [m]', CN, T); % m - Tip Chordf
+    geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
+    geom.num_engine = readVar('Number of Engines', CN, T);
     tail_input.VH = readVar('Hor Stab Tail Ratio', CN, T);
     tail_input.VV = readVar('Ver Stab Tail Ratio', CN, T);
   
@@ -191,11 +192,11 @@
     if(sensitivities_plot)
         disp("Working on sensitvities plot...")
         values_to_change = { ...
-                           % "WE", "Empty Weight [N]" ; ...
-                           % "c_r", "Root Chord [m]" ; ...
+                           "MTOW", "MTOW [N]" ; ...
+                           % "g_limit", "G Limit" ; ...
                            % "c_t", "Tip Chord [m]" ; ...
                            % "span", "Span [m]" ; ...
-                           % "Lambda_LE", "LE Sweep [deg]" ; ...
+                           "Lambda_LE", "LE Sweep [deg]" ; ...
                            % "L_fuselage", "Fuselage Length [m]" ; ...
                            "A_max", "Max Fuse Area [m2]" ; ...
                            % "span", "Span [m]" ; ...

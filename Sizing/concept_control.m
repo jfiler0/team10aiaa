@@ -43,7 +43,7 @@
     print_components = true;
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
-        sizing_plot = true; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
+        sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
     sensitivities_plot = false; % Can change parameter selection in "Sensitivities Plot"
 
     skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
@@ -130,14 +130,14 @@
     fixed_input.KLOC = readVar('KLOC', CN, T); % in kilo-lines of code
     fixed_input.fold_ratio = readVar('Fold Ratio', CN, T);
     
-    geom.mtow = lb2N(readVar('MTOW [lb]', CN, T)); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
-    geom.W_F = lb2N(readVar('Fixed Weight [lb]', CN, T)); % N - Fixed Weight (Avionics)
-    geom.span = readVar('Wing Span [m]', CN, T); % m - Wing Span
-    geom.Lambda_LE = readVar('LE Sweep [deg]', CN, T); % deg - Leading Edge Sweep
-    geom.c_r = readVar('Root Chord [m]', CN, T); % m - Root Chord
-    geom.c_t = readVar('Tip Chord [m]', CN, T); % m - Tip Chordf
-    geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
-    geom.num_engine = readVar('Number of Engines', CN, T);
+    % geom.mtow = lb2N(readVar('MTOW [lb]', CN, T)); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
+    % geom.W_F = lb2N(readVar('Fixed Weight [lb]', CN, T)); % N - Fixed Weight (Avionics)
+    % geom.span = readVar('Wing Span [m]', CN, T); % m - Wing Span
+    % geom.Lambda_LE = readVar('LE Sweep [deg]', CN, T); % deg - Leading Edge Sweep
+    % geom.c_r = readVar('Root Chord [m]', CN, T); % m - Root Chord
+    % geom.c_t = readVar('Tip Chord [m]', CN, T); % m - Tip Chordf
+    % geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
+    % geom.num_engine = readVar('Number of Engines', CN, T);
     tail_input.VH = readVar('Hor Stab Tail Ratio', CN, T);
     tail_input.VV = readVar('Ver Stab Tail Ratio', CN, T);
   
@@ -255,6 +255,8 @@ end
     T = assignVar(plane.AR_h, 'Hor Stab Aspect Ratio', CN, T);
     T = assignVar(plane.lam_h, 'Hor Stab Taper Ratio', CN, T);
     T = assignVar(plane.LAM_LE_horstab, 'Hor Stab LE Sweep [deg]', CN, T);
+    T = assignVar(plane.l_vt,'Ver Stab Tail Arm',CN,T);
+    T = assignVar(plane.S_v,'Ver Stab Planform Area [m2]',CN,T);
 
     T = assignVar( m2ft(plane.fold_span), 'Folded Span [ft]', CN, T);
     T = assignVar( m2ft(plane.fold_height), 'Folded Height [ft]', CN, T);

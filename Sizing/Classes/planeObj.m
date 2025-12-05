@@ -22,27 +22,37 @@ classdef planeObj
         MTOW % Max takeoff weight
         Lambda_LE % deg
         Lambda_TE % deg
+        Gamma % dihedral angle of wing
         c_avg % m
         tr % taper ratio
+        x_cg % location of CG of aircraft
 
             % Tail Parameters
             VH % Horizontal Tail Volume Ratio
             VV % Vertical Tail Volume Ratio
+            Kc % fudge factor for tail arm = fuselage half length assumption
 
-        % How can these become inputs...
         L_fuselage % m
         A_max % m2
         A_0 % m2
         E_WD % no idea what this is
+        x_rootchord % distance of beginning of leading edge of wing from tip of nose 
         g_limit
+        engine
+
+        weights % constructor from Raymer containing a bunch of component weights
 
         fixed_input
+        tail_input
 
         % Parameters when missions and loadouts are applied
         CD0_Payload
         loadout
         W_P % payload weight (weapon type stores)
         W_Tanks % external fuel tank EMPTY weight
+        max_fuel_weight % cause I keep recaluclating this
+        mid_mission_weight % useful for mission calculations instead of using WE or MTOW
+        internal_fuel_weight
 
         % Parameters that remain fixed (need to edit the input function if you want them moved into the deisgn space)
         type % Name of the regrssion to use in Raymer for We/W0
@@ -52,12 +62,19 @@ classdef planeObj
         engineData % [T0_NoAB, T0_AB]
         W_F % fixed weight
         a0 % deg
-        cl_alpha = 0.1; % foil lift sope
+        cl_alpha = 0.1; % foil lift slope
+        cl_alpha_horstab % tail foil lift slope
         tc = 0.04; % airfoil thickness
         max_alpha % max angle of attack in deg
         mach_range % vector [min mach, max mach] for interpolation range
         transonic_range % spline interpolation range
-        alt_range % vecot [min alt, max alt] in meters
+        alt_range % vector [min alt, max alt] in meters
+
+        % engine data (from lookup)
+            engine_dry_weight % N
+            engine_diameter % m
+            engine_T0 % max sealevel N
+            engine_T0AB % max sealevel AB N
 
         % Parameters that are derived
         c_t % m
@@ -67,6 +84,25 @@ classdef planeObj
         AR
         S_wing % m2
         S_ref % m2
+        fold_span % m
+        wing_height % m -> for max height check cacl and landing gear height
+        fold_height % m -> how high up the wings go when folded (will it fit in hanger)
+        x_rootLE_wing % x distance of leading edge of root chord from tip of nose
+        MAC_wing % mean aerodynamic chord
+        y_MAC_wing % Y location of airfoil with same chord as MAC; distance of airfoil section out the right wing from the centerline 
+        x_MAC_wing % X location of LE of airfoil section with same chord as MAC; distance of LE from tip of nose 
+        
+        b_strake % span of strake
+        x_strake % location of LE at the root of strake from tip of nose
+        lam_strake % taper ratio of strake
+        c_root_strake % root chord of strake 
+        Lambda_LE_strake % Leading edge sweep angle of strake
+        MAC_strake % mean aerodynamic chord of strake 
+        y_MAC_strake % Y location of airfoil with same chord as MAC; distance of airfoil section out the right wing from the centerline 
+        x_MAC_strake % X location of LE of airfoil section with same chord as MAC; distance of LE from tip of nose 
+        S_strakes % planform area of strakes
+
+        depsdalph % downwash slope
         Lambda_qc % deg
         S_wet  % m2
         e_notoswald
@@ -92,27 +128,57 @@ classdef planeObj
                 AR_h % Aspect Ratio
                 lam_h % Taper ratio
                 c_t_h % tip chord
-                c_r_h % root chord
-                MAC_h % mean aerodynamic chord
-                b_h % span
-                LAM_h % sweep angle
-                GAM_h % dihedral angle
-                inc_h % angle of incidence
 
+                V_hor % calculated horizontal tail ratio
+
+                c_r_horstab % root chord
+                MAC_horstab % mean aerodynamic chord
+                y_MAC_horstab % Y location of airfoil with same chord as MAC; distance of airfoil section out the right wing from the centerline 
+                x_MAC_horstab % X location of LE of airfoil section with same chord as MAC; distance of LE from tip of nose 
+                x_horstab % X location of LE of root airfoil of horstab from tip of nose
+                e_notoswald_horstab % whatever this is
+                b_h % span
+                LAM_LE_horstab % sweep angle
+                LAM_h % dihedral angle
+                inc_h % angle of incidence
+                AR_horstab % aspect ratio of horizontal stabilizer
                 % Vertical
+                x_verstab % X location of LE of root airfoil of verstab from tip of nose
                 S_v % Planform Area
                 l_vt % Tail arm
                 v_tc % Airfoil Thickness
                 AR_v % Aspect Ratio
                 lam_v % Taper ratio
                 c_t_v % tip chord
+
+                V_ver % calculated vertical tail ratio
+
                 c_r_v % root chord
-                MAC_v % mean aerodynamic chord
+                MAC_verstab % mean aerodynamic chord
                 b_v % span
                 LAM_v % sweep angle
                 GAM_v % dihedral angle
                 inc_v % angle of incidence
+                z_MAC_verstab % Z location of airfoil with same chord as verstab MAC; distance of airfoil section up the tail from the centerline 
+                x_MAC_verstab % X location of LE of airfoil section with same chord as MAC; distance of LE of verstab from tip of nose 
 
+
+                % Aerodynamic Centers
+                x_ac_wings % distance of aerodynamic centers from tip of nose
+                x_ac_horstabs
+                x_ac_strakes
+                x_ac_verstabs
+                x_ac_wings_strakes
+                x_ac_wings_strakes_fuselage
+                x_bar_ac_wings_strakes_fuselage % normalized ac w/o tail w/r/t MAC of wing
+
+           % STABILITY PARAMETERS: STATIC MARGIN
+           x_np 
+           x_bar_n
+           X_bar_np
+           X_bar_cg
+           l_opt % optimal tail arm 
+           SM % static margin, distance from cg to neutral point 
         % filling out these interpolation function helps considerably with speed
         CLa_interp
         CDW_interp
@@ -123,12 +189,12 @@ classdef planeObj
     methods
         
         %% Primary class defenition functions (used on creation and updates)
-        function obj = planeObj(fixed_input, name, WE, Lambda_LE, c_r, c_t, span, num_engine, engine, W_F) 
+        function obj = planeObj(fixed_input, tail_input, name, MTOW, Lambda_LE, c_r, c_t, span, num_engine, engine, W_F) 
             % Note it returns the obj variable to be used. Use as plane = planeObj(...)
             obj.name = name;
 
             %% Assign inputs
-            obj.WE = WE; % Newtons
+            obj.MTOW = MTOW; % Newtons (this used to be WE but to use the raymer eqns we need to go backwards. WE also required most of the variables so we need to assign everything an calc in derived)
             obj.Lambda_LE = Lambda_LE; % deg
             obj.c_r = c_r;
             obj.c_t = c_t;
@@ -142,7 +208,10 @@ classdef planeObj
             obj.E_WD = 2.2; % *** Still don't know what this is
             obj.g_limit = fixed_input.g_limit; % Just fixing for performance code
             obj.fixed_input = fixed_input;
-
+            obj.tail_input = tail_input;
+            obj.Kc = 1.1; % assuming semi-conical rear fuselage 
+            obj.VH = tail_input.VH;
+            obj.VV = tail_input.VV;
             % Storing the raymer coefficents is much faster than reading the table every loop
             obj.type = fixed_input.type; % For regression lookup
             obj.raymer = struct(); % Raymer coefficents
@@ -154,11 +223,21 @@ classdef planeObj
             obj.CD0_Payload = 0;
 
             % Parameters that remain fixed
-            obj.engineData = engine_getData(engine); % Saves key engien data as an array [T0_NoAB, T0_AB]
+
+            obj.engine = engine;
+            engine_geom = engine_getData(engine, 1); % this flag makes the function return weight/diam instead
+            obj.engine_dry_weight = engine_geom(1);
+            obj.engine_diameter = engine_geom(2);
+
+            obj.engineData = engine_getData(engine); % Saves key engine data as an array [T0_NoAB, T0_AB]
+            obj.engine_T0 = obj.engineData(1);
+            obj.engine_T0AB = obj.engineData(2);
+
             obj.W_F = W_F; % fixed weight
-            
+
             obj.a0 = -1; % deg (zero lift aoa)
-            obj.cl_alpha = 0.1; % foil lift sope
+            obj.cl_alpha = 0.1; % wing foil lift slope
+            obj.cl_alpha_horstab = 2*pi*pi/180; % tail foil lift slope
             obj.tc = 0.04; % airfoil thickness
             obj.max_alpha = fixed_input.max_alpha; % deg 
 
@@ -175,12 +254,13 @@ classdef planeObj
             obj.WE = MTOW * obj.raymer.A * N2lb(obj.MTOW)^(obj.raymer.C);
         end
         
+        % IMPORTANT -> WHEN USING THIS YOU HAVE TO DO plane = plane.updateDerivedVariables
         function obj = updateDerivedVariables(obj)
            
             % empty_weight_fraction = obj.WE / obj.MTOW = 2.34*N2lb(obj.MTOW)^(-0.13) ; % Use historical data
             % obj.WE = obj.MTOW * 2.34 * N2lb(obj.MTOW)^(-0.13)
             % obj.MTOW = lb2N( ( N2lb(obj.WE) / 2.34)^(1/0.87) );
-            obj.MTOW = obj.fixed_input.MTOW_Scalar * lb2N( ( N2lb(obj.WE) / obj.raymer.A )^(1 / (1 + obj.raymer.C) ) );
+            % obj.MTOW = obj.fixed_input.MTOW_Scalar * lb2N( ( N2lb(obj.WE) / obj.raymer.A )^(1 / (1 + obj.raymer.C) ) );
 
             %% Standard Wing Geometry Stuff
             obj.c_avg = 0.5*(obj.c_t + obj.c_r); % Average chord
@@ -190,15 +270,32 @@ classdef planeObj
             obj.AR = obj.span / obj.c_avg;
             obj.S_wing = obj.span*obj.c_avg;
             obj.S_ref = obj.S_wing; % Typical defenition for reference area
-            
+            %obj.S_strakes = 0.5*obj.b_strake*obj.c_root_strake; % planform area of strakes calculation
+
+            %% Random but important
+            obj.fold_span = obj.span * (1 - obj.fixed_input.fold_ratio);
+            obj.wing_height = 0.1333 * obj.L_fuselage; % height of the leading edge from the ground (estimations)
+            obj.fold_height = obj.wing_height + (obj.span * 0.5) * obj.fixed_input.fold_ratio; % How hight the wings would reach straight up
+            obj.D = 2*sqrt(obj.A_max/pi); % Assuming roughly circular cross section to get fuselage diameter/width
+
+            obj = obj.updateWeights();
+           
             %% Tail Geometry
+
+            MAC = obj.c_avg;
+            
+            obj.l_opt = obj.Kc*sqrt(4*MAC*obj.S_wing*obj.tail_input.VH/(pi*obj.A_max));
+            obj.S_h = obj.tail_input.VH*MAC*obj.S_wing/obj.l_opt;
+            obj.AR_h =(2/3)*obj.AR;
+            obj.lam_h = 0.35; % textbook estimate
+            obj.LAM_LE_horstab = obj.Lambda_LE; % stealth requirement
 
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4
             
             c = -0.1289; d = 0.7506; % Regression from somewhere lol
             obj.S_wet = obj.fixed_input.SWET_Scalar * 0.09290304*(10^c  * N2lb(obj.WE)^d); % Converting S_wet in ft and W0 in lb
-            Cf = 0.0035; % For fighters?
+            Cf = 0.004; % Raymer gives this value for navy fighters
             CD_min = Cf * obj.S_wet/obj.S_ref;
             
             % Induced Drag Polar
@@ -212,24 +309,77 @@ classdef planeObj
             
             % Can reuse these later
             obj.k1_sub = 1 / (pi * obj.e_osw* obj.AR);
-            obj.k2_sub = -2 * obj.k1_sub * CL_min_D;
+            % obj.k2_sub = -2 * obj.k1_sub * CL_min_D;
+            obj.k2_sub = 0; % set to 0 for a sec ***
             
             % CD_0
-            obj.CD0_Body = CD_min + obj.k1_sub*CL_min_D^2 + obj.k2_sub*CL_min_D; % Actually has k2 term
+            % obj.CD0_Body = CD_min + obj.k1_sub*CL_min_D^2 + obj.k2_sub*CL_min_D; % Actually has k2 term
+            obj.CD0_Body = CD_min;
             obj.CD0 = obj.CD0_Body + obj.CD0_Payload;
 
             obj.M_CD0_max = 1/(cosd(obj.Lambda_LE))^0.2; % The only supersonic drag variable that is not dependent on Cl or M
 
             %% Homework 4 - Lift
             obj.Lambda_max_t = ( obj.Lambda_LE - obj.Lambda_TE )/2; % *** Feel like this should be addition instead for some reason
-            obj.D = 2*sqrt(obj.A_max/pi); % Assuming roughly circular cross section to get fuselage diameter/width
             obj.S_exposed = obj.S_wing * 1.3; % *** Trying to account for body lift/strakes/tail anything not in here
-            obj.F = 1.07 * (1 + obj.D/obj.span)^2; % Lift Factor
-            obj.F = 1; % *** Needs to be fixed
+            obj.F = obj.fixed_input.F_Scaler * 1.07 * (1 + obj.D/obj.span)^2; % Lift Factor
+            % obj.F = 1; % *** Needs to be fixed
 
             obj.S_flapped = obj.S_wing * 0.6; % *** Obviously has a big impact on landing CL
             obj.Delta_flap_param = 0.9; % Factor depending on the type of flap
             obj.Lambda_HL = obj.Lambda_TE; % *** What is the actual way to calculate the hinge line
+
+            %% Static Margin / Neutral Point Calculations
+            % 
+            % % Downwash slope calculation
+            % obj.depsdalph = 2*CL_alpha_wing /(pi*obj.AR);
+            % 
+            % obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
+            % obj.y_MAC_wing = (obj.span/6)*((1 + 2*obj.tr)/(1+obj.tr));
+            % obj.x_MAC_wing = obj.x_rootLE_wing + obj.y_MAC_wing*tand(obj.Lambda_LE);
+            % 
+            % % Some fixes so the tail code works -> Liam correct how you want
+            % obj.lam_h = obj.tr; % set taper ratio to be the same as the wing for stealth reasons
+            % 
+            % obj.MAC_horstab = (2/3)*obj.c_r_horstab*(1 + obj.lam_h + obj.lam_h.^2)/(1+obj.lam_h);
+            % obj.y_MAC_horstab = (obj.b_h/6)*((1 + 2*obj.lam_h)/(1+obj.lam_h));
+            % obj.x_MAC_horstab = obj.x_horstab + obj.y_MAC_horstab*tand(obj.LAM_LE_horstab);
+            % obj.AR_horstab = obj.b_h / obj.MAC_horstab;
+            % % swapped lam for obj.tr
+            % obj.MAC_strake = (2/3)*obj.c_root_strake*(1 + obj.lam_strake + obj.lam_strake.^2)/(1+obj.lam_strake);
+            % obj.y_MAC_strake = (obj.b_strake/6)*((1 + 2*obj.lam_strake)/(1+obj.lam_strake));
+            % obj.x_MAC_strake = obj.x_strake + obj.y_MAC_strake*tand(obj.Lambda_LE_strake);
+            % 
+            % obj.MAC_verstab = (2/3)*obj.c_r_v*(1 + obj.lam_v + obj.lam_v.^2)/(1+ obj.lam_v);
+            % obj.z_MAC_verstab = (obj.b_v/6)*((1 + 2*obj.lam_v)/(1 + obj.lam_v));
+            % obj.x_MAC_verstab = obj.x_verstab + obj.z_MAC_verstab*tan(deg2rad(obj.LAM_v));
+            % 
+            % % Calculating Aerodynamic Centers of Each Portion 
+            % obj.x_ac_wings = obj.x_MAC_wing + 0.25*obj.MAC_wing;
+            % obj.x_ac_horstabs = obj.x_MAC_horstab + 0.25*obj.MAC_horstab;
+            % obj.x_ac_strakes = obj.x_MAC_strake + 0.25*obj.MAC_strake;
+            % obj.x_ac_verstabs = obj.x_MAC_verstab +0.25*obj.MAC_verstab;
+            % 
+            % obj.x_ac_wings_strakes = obj.x_ac_wings + (obj.x_ac_strakes - obj.x_ac_wings)*obj.S_strakes/((2*obj.S_wing)+obj.S_strakes);
+            % obj.x_ac_wings_strakes_fuselage = obj.x_ac_wings_strakes - ((obj.L_fuselage*obj.A_max^2)*(0.005 + 0.111*(obj.x_ac_wings_strakes/obj.L_fuselage)^2)/((2*obj.S_wing)*CL_alpha_wing*57.29)); 
+            % obj.x_bar_ac_wings_strakes_fuselage = (obj.x_ac_wings_strakes_fuselage - obj.x_MAC_wing)/obj.MAC_wing;
+            % 
+            % % % tail arm
+            % % obj.l_ht = obj.x_ac_horstabs - obj.x_ac_wings_strakes_fuselage; % tail arm from aerodynamic centers
+            % % obj.V_hor = obj.S_h*obj.l_ht/(obj.S_wing*obj.MAC_wing);
+            % 
+            %  % Tail lift slope calculation
+            % % obj.e_notoswald_horstab = 2/(2 - obj.AR_horstab + sqrt(4 + obj.AR_horstab^2 * (1 + (tand(obj.LAM_LE_horstab))^2)));
+            % % CL_alpha_tail = obj.cl_alpha_horstab/(1 + 57.3 * obj.cl_alpha_horstab/(pi * obj.e_notoswald_horstab * obj.AR_horstab));
+            % % CLalph_CLalpht = CL_alpha_tail/CL_alpha_wing;
+            % % 
+            % % obj.x_bar_n = obj.x_bar_ac_wings_strakes_fuselage + obj.V_hor*(CLalph_CLalpht*(1-obj.depsdalph));
+            % 
+            % % Final Static Margin Calculations
+            % % obj.x_np = obj.x_MAC_wing + (obj.x_bar_n*obj.MAC_wing);
+            % % obj.X_bar_cg = obj.x_cg/obj.x_MAC_wing;
+            % % obj.X_bar_np = obj.x_np/obj.x_MAC_wing;
+            % % obj.SM = obj.X_bar_np - obj.X_bar_cg
 
             %% Interpolants
             M_vec = linspace(obj.mach_range(1), obj.mach_range(2), 100); % Can change last number to increase/decrease resolution
@@ -240,13 +390,32 @@ classdef planeObj
 
         end
 
-        function obj = applyLoadout(obj, loadout)
+        function obj = applyLoadout(obj, loadout) % verify strike loadout does give big impact on drag
             % loadout variable must compre from buildLoadout function
             obj.W_P = loadout.weight_weapons;
             obj.W_Tanks = loadout.weight_tanks_empty;
             obj.CD0_Payload = loadout.CD0;
             obj.CD0 = obj.CD0_Body + obj.CD0_Payload;
             obj.loadout = loadout;
+
+            obj = obj.updateWeights();
+        end
+
+        function obj = updateWeights(obj)
+
+            obj.weights = calcRaymerWeights(getPlaneRaymerWeightInput(obj));
+            fn = fieldnames(obj.weights);  % get all field names
+            total = 0;
+            for i = 1:numel(fn)
+                total = total + obj.weights.(fn{i});
+            end
+            obj.WE = total;
+
+            obj.max_fuel_weight = obj.MTOW - obj.WE - obj.W_P - obj.W_Tanks - obj.W_F;
+            obj.internal_fuel_weight = 0.7 * obj.max_fuel_weight; % Accounts for tanks in an actual mission
+            obj.mid_mission_weight = obj.MTOW - obj.max_fuel_weight / 2; % Assume half of fuel is burned
+
+            % obj.landing_weight = getLandingWeight(obj);
         end
         
         %% Iterpolation creators for updateDerviedVariables
@@ -264,7 +433,7 @@ classdef planeObj
         end
         
         function CDW_interp = buildCDWInterpolant(obj, M_vec)
-            CD_wave = obj.fixed_input.CDW_Scalar * 4.5 * pi / obj.S_ref * ((obj.A_max - obj.A_0)/obj.L_fuselage)^2 * obj.E_WD * (0.74 + 0.37 * cosd(obj.Lambda_LE)) * (1 - 0.3*sqrt(M_vec - obj.M_CD0_max));
+            CD_wave = 4.5 * pi / obj.S_ref * ((obj.A_max - obj.A_0)/obj.L_fuselage)^2 * obj.E_WD * (0.74 + 0.37 * cosd(obj.Lambda_LE)) * (1 - 0.3*sqrt(M_vec - obj.M_CD0_max));
             CDW = obj.generateTransonicSpline(zeros(size(CD_wave)), CD_wave, M_vec);
             CDW_interp = griddedInterpolant(M_vec, CDW, 'linear');
         end
@@ -295,16 +464,21 @@ classdef planeObj
         
         %% Core analyisis functions
         function [CL_max_clean, CL_max_flapped, CLa] = calcCL(obj, M)
-            CLa = obj.CLa_interp(M);
+            CLa = obj.F * obj.CLa_interp(M);
             CL_max_clean = CLa * (obj.max_alpha - obj.a0);
             CL_max_flapped = CL_max_clean + obj.Delta_flap_param *obj.S_flapped/obj.S_ref * cosd(obj.Lambda_HL);
         end
         
-        function [CD, CD0, CDi, CDW] = calcCD(obj, CL, M)
+        function [CD, CD0, CDi, CDW, eosw] = calcCD(obj, CL, M)
+            % Add any scaler corrections (though SWET is embedded in the update and is essentially a CD0 scaler)
             CD0 = obj.CD0;
-            CDi = obj.K1_interp(M) * CL^2 + obj.K2_interp(M) * CL;
-            CDW = obj.CDW_interp(M);
+            CDi = obj.fixed_input.K1_Scalar * obj.K1_interp(M) * CL^2 + obj.K2_interp(M) * CL;
+            CDW = obj.fixed_input.CDW_Scalar * obj.CDW_interp(M);
             CD = CD0 + CDi + CDW;
+
+            eosw = CL.^2 / (pi * (CDi + CDW) * obj.AR);
+
+            % CD = CL^2 / pi*e*AR
         end
         
         function [TA, TSFC, alpha, mdotf] = calcProp(obj, M, h, AB_perc)
@@ -329,9 +503,13 @@ classdef planeObj
         function stallSpeed = calcStallSpeed(obj, h, W)
             [~, a, ~, rho, ~] = queryAtmosphere(h, [0 1 0 1 0]);
             % For some reason an imaginary comp shows up so real helps
-            f = @(V) real( W - get_output_at_index(@() obj.calcCL(V / a), 2) * obj.S_ref * rho * V^2 ); % I don't know why @() is required but it does work
+
+            q = @(V) 0.5 * rho * V^2;
+
+            f = @(V) real( W - get_output_at_index(@() obj.calcCL(V / a), 2) * obj.S_ref * q(V) ); % I don't know why @() is required but it does work
             x0 = 0.5 * a;
             stallSpeed = fzero(f , x0);
+            % [~, CL_max_flapped, ~] = obj.calcCL(stallSpeed/a)
         end
         
         function takeoffSpeed = calcTakeoffSpeed(obj, h, W)
@@ -341,10 +519,11 @@ classdef planeObj
         
         function landingSpeed = calcLandingSpeed(obj, h, W)
             % Can vary h to see change with alt.
-            landingSpeed = 1.3 * obj.calcStallSpeed(h, W);
+            landingSpeed = 1.3 * obj.calcStallSpeed(h, W); % RFP says 10% instead of 1.3 that is traditional
         end
         
         % Note the absolute max turn rate seems to always be at sea level
+        % If you pull as hard as you can without stalling or as hard as the airframe can go - how many deg/s
         function [turn_rate, n] = getMaxTurn(obj, h, M, W)
             % Input: h (alt) = m, M (mach number), W (weight) = N, g_limit
             % Output: turn_rate = deg/s, n (load factor)
@@ -358,6 +537,85 @@ classdef planeObj
             n = min( L_max / W, obj.g_limit);
             turn_rate = rad2deg( n * 9.8051 / V);
             
+        end
+
+        function [turn_rate, mach] = getMaxTurnAtAlt(obj, h, W, M_guess)
+            % If the guess was not provided use fall back (should be standard)
+
+            [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
+
+            if(nargin < 5)
+                M_guess = 0.5;
+            end
+
+            fun = @(M) -obj.getMaxTurn(h, M, W); % negative for maximization
+            opts = optimset('Display','off','TolX',1e-3,'MaxFunEvals',200);
+        
+            % Solve for max excess power speed
+            [mach, turn_rate] = fminsearch(fun, M_guess, opts);
+            turn_rate = - turn_rate; % since it was minimization
+
+        end
+        
+        % Maintain a turn rate without slowing down or exceeding structural limits
+        function [turn_rate, n] = getSustainedTurn(obj, h, M, W, AB_perc)
+            [TA, ~, ~, ~] = obj.calcProp(M, h, AB_perc);
+            [q, V, ~, ~] = metricFreestream(h, M);
+
+            fun = @(CL) TA - q * obj.S_ref * obj.calcCD(CL, M); % max prevents a negative CL
+
+            if(fun(0) <= 0) % wave drag is so large you can't have any lift
+                turn_rate = NaN;
+                n = NaN;
+            else
+                try
+                    CL_sustain = fzero(fun, [0 10]); % Max sustainable Cl
+                
+                    if(CL_sustain < 0)
+                        warning("wtf why does this become negative")
+                    end
+                    if( isnan(CL_sustain) )
+        
+                        clvec = linspace(-5, 5, 30);
+                        funvec = arrayfun(@(CL) fun(CL), clvec);
+                        plot(clvec, funvec)
+        
+                        warning("wtf why does this become negative")
+                    end
+        
+                    [CL_max_clean, ~, ~] = calcCL(obj, M);
+        
+                    Cl = min([CL_sustain CL_max_clean]);
+        
+                    L_max = q * Cl * obj.S_ref;
+                    n = min( L_max / W, obj.g_limit);
+                    turn_rate = rad2deg( n * 9.8051 / V);
+
+                catch
+                    turn_rate = NaN;
+                    n = NaN;
+                end
+
+            end
+        end
+        
+        % Note that absolute max seems to always be at 0 altitude
+        function [turn_rate, mach] = getMaxSustainedTurnAtAlt(obj, h, W, AB_perc, M_guess)
+            % If the guess was not provided use fall back (should be standard)
+
+            [~, a, ~, ~, ~] = queryAtmosphere(h, [0 1 0 0 0]);
+
+            if(nargin < 5)
+                M_guess = 0.5;
+            end
+
+            fun = @(M) -obj.getSustainedTurn(h, M, W, AB_perc); % negative for maximization
+            opts = optimset('Display','off','TolX',1e-3,'MaxFunEvals',200);
+        
+            % Solve for max excess power speed
+            [mach, turn_rate] = fminsearch(fun, M_guess, opts);
+            turn_rate = - turn_rate; % since it was minimization
+
         end
         
         function [excessPower, speed, mach] = getMaxTurnOverall(obj, AB_perc, M_guess)
@@ -382,21 +640,20 @@ classdef planeObj
             cost= ( getcost(N2lb(obj.WE), obj.KLOC) / 500 )  / 1000000; % Divide by 500 since getcost assumes 500 aircraft in the program, and convert to mil
         end
 
-        function area = calcFoldedWingProjection(obj, fold_ratio)
+        function area = calcFoldedWingProjection(obj)
             % fold_ratio = 0.1 -> 10% of the wing is folded
 
             % The FA18E has a wingspan of 40.4 ft and when folded goes to 27.5. Thus for it, fold_ratio = 1 - 27.5 / 40.4 = 0.3193
             % We then get a area of 49.1823 when projected which is now the spot facto = 1 reference
 
-            fold_span = obj.span * ( 1 - fold_ratio);
-            fold_tipChord = obj.c_r + (obj.c_r - obj.c_t) * ( 1 - fold_ratio);
+            fold_span = obj.span * ( 1 - obj.fixed_input.fold_ratio);
+            fold_tipChord = obj.c_r + (obj.c_r - obj.c_t) * ( 1 - obj.fixed_input.fold_ratio);
             area = fold_span * ( fold_tipChord + obj.c_r) / 2;
         end
         
-        function spotFactor = calcSpotFactor(obj, fold_ratio)
-            % fold_ratio = 0.1 -> 10% of the wing is folded
-            % f18.calcSpotFactor(0.3193)
-            area = obj.calcFoldedWingProjection(fold_ratio);
+        function spotFactor = calcSpotFactor(obj)
+            % fold_ratio = 0.1 -> 10% of the wing is folded, 0.3193 for hornet
+            area = obj.calcFoldedWingProjection();
             spotFactor = area / 51.033; % From F18 comparison. Setting it to 1 when area matches
         end
        
@@ -455,8 +712,11 @@ classdef planeObj
                 diff = excessPower - climb_rate_min;
                 if isnan(diff), diff = -1e2; end
             end
-
-            maxAlt = fzero(@helper, [10 30000]); % This might be problamatic
+            try
+                maxAlt = fzero(@helper, [10 30000]); % This might be problamatic
+            catch
+                maxAlt = obj.alt_range(2);
+            end
             [excessPower, ~, maxAltMach] = calcMaxExcessPower(obj, maxAlt, W, AB_perc, mach_save); % Have to recalculate to get remaining output
         end
         
@@ -487,6 +747,49 @@ classdef planeObj
         end
 
         %% Functions for mission calculations (Range/Endurance)
+        function [range_m, fuel_burned_N] = findTotalMaxRange(obj, W, N_divide)
+            % Assuming the aircraft goes from some starting W to its empty weight + any payload + avionics
+            % What range can it get?
+            % N_divide - How many division to apply to the weight for accuracy in changing max range state
+
+            Wvec = linspace(W, obj.WE + obj.W_F + obj.W_P + obj.W_Tanks, N_divide);
+
+            range_m = 0;
+
+            for i = 2:length(Wvec)
+                Wi = (Wvec(i - 1) + Wvec(i))/2; % Use midpoint weight to find optimum
+                [h, M, V, L2D] = obj.findMaxRangeState(Wi);
+                LD = obj.calcLD(h, M, Wi);
+                [~, TSFC, ~, ~] = obj.calcProp(M, h, 0);
+
+                range_m = range_m + LD * V * log(Wvec(i - 1)/Wvec(i)) / (TSFC*9.805);
+            end
+
+            fuel_burned_N = Wvec(1) - Wvec(end);
+
+        end
+
+        function [time_s, fuel_burned_N] = findTotalMaxEndurance(obj, W, N_divide)
+            % Assuming the aircraft goes from some starting W to its empty weight + any payload + avionics
+            % What range can it get?
+            % N_divide - How many division to apply to the weight for accuracy in changing max range state
+
+            Wvec = linspace(W, obj.WE + obj.W_F + obj.W_P + obj.W_Tanks, N_divide);
+
+            time_s = 0;
+
+            for i = 2:length(Wvec)
+                Wi = (Wvec(i - 1) + Wvec(i))/2; % Use midpoint weight to find optimum
+                [h, M, V, LD] = obj.findMaxEnduranceState(Wi);
+                % LD = obj.calcLD(h, M, Wi);
+                [~, TSFC, ~, ~] = obj.calcProp(M, h, 0);
+
+                time_s = time_s + LD * log(Wvec(i - 1)/Wvec(i)) / (TSFC*9.805);
+            end
+
+            fuel_burned_N = Wvec(1) - Wvec(end);
+
+        end
 
         function [h, M, V, L2D] = findMaxRangeState(obj, W) 
             % Maximize L ^ (1/2) / D
@@ -569,388 +872,12 @@ classdef planeObj
             % Weight, W in N
             CL = obj.calcTrimCL(h, M, W);
             [CD, ~, ~, ~] = obj.calcCD(CL, M);
-            LD = CL / CD;
+            try
+                LD = CL / CD;
+            catch
+                disp("break")
+            end
         end
         
-        %% Sizing function
-
-        % TODO
-        % - Takeoff & Landing Distance https://archive.aoe.vt.edu/lutze/AOE3104/takeoff&landing.pdf
-
-        % Sensitivites
-        % Cost if W0 is 10% higher or lower
-        % Spot factor if wing folding is 10% higher or lower
-        % Max mach if sweep is increased 10% higher or lower
-
-        function buildPlots(obj, W, N)
-
-            % M: Input the weight you want to check for all of these. Likely obj.MTOW
-            % N: Master resolution. Likely betwen 10 and 50
-
-            hvec = linspace(obj.alt_range(1), obj.alt_range(2), N);  % Altitude from 100 m to 40,000 ft but still in m here
-            Mvec = linspace(obj.mach_range(1), obj.mach_range(2), N);
-
-            [M, h] = meshgrid(Mvec, hvec);
-
-            emptyM = zeros(size(M));
-            % Preallocate result matrices - h and M
-
-                % AERODYNAMICS
-                trimCL = emptyM;
-                CD = emptyM;
-                CDi = emptyM;
-                D = emptyM;
-    
-                % PROPULSION
-                TA_AB    = zeros(size(M));
-                TSFC_AB  = zeros(size(M));
-                alpha_AB = zeros(size(M));
-                mdotf_AB = zeros(size(M));
-
-                TA_NoAB    = zeros(size(M));
-                TSFC_NoAB  = zeros(size(M));
-                alpha_NoAB = zeros(size(M));
-                mdotf_NoAB = zeros(size(M));
-
-                qinf = zeros(size(M));
-    
-                % PEFORMANCE
-                turn_rate = emptyM;
-                n_max = emptyM;
-                excessPower_NoAB = emptyM;
-                excessPower_AB = emptyM;
-                
-            % % Preallocate - just M
-                CL_max_clean = zeros(size(Mvec));
-                CL_max_flapped = zeros(size(Mvec));
-                CLa = zeros(size(Mvec));
-                CDW = zeros(size(Mvec));
-            
-            emptyhvec = zeros(size(hvec));
-            % % Preallocate - just h
-                stallSpeed = emptyhvec;
-                takeoffSpeed = emptyhvec;
-                landingSpeed = emptyhvec;
-
-                Tvec = emptyhvec;
-                avec = emptyhvec;
-                Pvec = emptyhvec;
-                rhovec = emptyhvec;
-                muvec = emptyhvec;
-
-                excessPowerMax_NoAB = emptyhvec;
-                mach_maxExcess_NoAB = emptyhvec;
-                maxMach_NoAB = emptyhvec;
-
-                excessPowerMax_AB = emptyhvec;
-                mach_maxExcess_AB = emptyhvec;
-                maxMach_AB = emptyhvec;
-
-                climbRate_AB = emptyhvec;
-                climbAngle_AB = emptyhvec;
-                climbSpeed_AB = emptyhvec;
-
-                climbRate_NoAB = emptyhvec;
-                climbAngle_NoAB = emptyhvec;
-                climbSpeed_NoAB = emptyhvec;
-            
-
-            % Query functions for each point
-            for i = 1:numel(M)
-                [q, ~, ~, ~] = metricFreestream(h(i), M(i));
-                qinf(i) = q;
-
-                trimCL(i) = obj.calcTrimCL(h(i), M(i), W);
-                [CD(i), ~, CDi(i), ~] = obj.calcCD(trimCL(i), M(i));
-                D(i) = CD(i) * q * obj.S_ref;
-
-                [TA_AB(i), TSFC_AB(i), alpha_AB(i), mdotf_AB(i)] = obj.calcProp(M(i), h(i), 1);
-                [TA_NoAB(i), TSFC_NoAB(i), alpha_NoAB(i), mdotf_NoAB(i)] = obj.calcProp(M(i), h(i), 0);
-                
-
-                [turn_rate(i), n_max(i)] = obj.getMaxTurn( h(i), M(i), W);
-                excessPower_AB(i) = obj.calcExcessPower(h(i), M(i), W, 1);
-                excessPower_NoAB(i) = obj.calcExcessPower(h(i), M(i), W, 0);
-
-                if excessPower_NoAB(i) < 0
-                    excessPower_NoAB(i) = NaN;
-                end
-                if excessPower_AB(i) < 0
-                    excessPower_AB(i) = NaN;
-                end
-
-            end
-
-            for i = 1:numel(Mvec)
-                [CL_max_clean(i), CL_max_flapped(i), CLa(i)] = obj.calcCL(Mvec(i));
-                CDW(i) = obj.CDW_interp(Mvec(i));
-            end
-
-            for i = 1:numel(hvec)
-                [CL_max_clean(i), CL_max_flapped(i), CLa(i)] = obj.calcCL(Mvec(i));
-
-                stallSpeed(i) = obj.calcStallSpeed(hvec(i), W);
-                takeoffSpeed(i) = obj.calcTakeoffSpeed(hvec(i), W);
-                landingSpeed(i) = obj.calcLandingSpeed(hvec(i), W);
-
-                [Tvec(i), avec(i), Pvec(i), rhovec(i), muvec(i)] = queryAtmosphere(hvec(i), [1 1 1 1 1]);
-
-                if(i == 1)
-                    calcMaxExcessPower_NoAB_Mguess = 0.5;
-                    calcMaxMachFixedAlt_NoAB_Mguess = 2;
-
-                    calcMaxExcessPower_AB_Mguess = 0.5;
-                    calcMaxMachFixedAlt_AB_Mguess = 2;
-                else
-                    calcMaxExcessPower_NoAB_Mguess = mach_maxExcess_NoAB(i - 1);
-                    calcMaxMachFixedAlt_NoAB_Mguess = maxMach_NoAB(i - 1);
-
-                    calcMaxExcessPower_AB_Mguess = mach_maxExcess_AB(i - 1);
-                    calcMaxMachFixedAlt_AB_Mguess = maxMach_AB(i - 1);
-
-                end
-
-                [excessPowerMax_NoAB(i), ~, mach_maxExcess_NoAB(i)] = obj.calcMaxExcessPower(hvec(i), W, 0, calcMaxExcessPower_NoAB_Mguess);
-                maxMach_NoAB(i) = obj.calcMaxMachFixedAlt( hvec(i), W, 0, calcMaxMachFixedAlt_NoAB_Mguess);
-
-                [excessPowerMax_AB(i), ~, mach_maxExcess_AB(i)] = obj.calcMaxExcessPower(hvec(i), W, 1, calcMaxExcessPower_AB_Mguess);
-                maxMach_AB(i) = obj.calcMaxMachFixedAlt( hvec(i), W, 1, calcMaxMachFixedAlt_AB_Mguess);
-
-                [climbRate_AB(i), climbAngle_AB(i), climbSpeed_AB(i)] = obj.calcMaxClimbRate( hvec(i), W, 1);
-                [climbRate_NoAB(i), climbAngle_NoAB(i), climbSpeed_NoAB(i)] = obj.calcMaxClimbRate( hvec(i), W, 0);
-
-            end
-
-            %% AERODYNAMICS PLOT
-
-            figure;
-            subplot(3, 3, 1);
-            surf(M, m2ft(h)/1000, trimCL, 'EdgeColor', 'none')
-            xlabel('$M$')
-            ylabel('$h$ [kft]')
-            zlabel('$C_L$')
-            title('Trim Lift Coefficent')
-
-            subplot(3, 3, 2);
-            surf(M, m2ft(h)/1000, CD, 'EdgeColor', 'none')
-            xlabel('$M$')
-            ylabel('$h$ [kft]')
-            zlabel('$CD$')
-            title('Drag Coefficent')
-
-            subplot(3, 3, 3);
-            surf(M, m2ft(h)/1000, CDi, 'EdgeColor', 'none')
-            xlabel('$M$')
-            ylabel('$h$ [kft]')
-            zlabel('$CD_i$')
-            title('Induced Drag Coefficent')
-
-            subplot(3, 3, 4);
-            scatter(CD, trimCL, 'black', 'filled')
-            xlabel('$C_D$')
-            title("Drag Polar")
-            ylabel('$C_L$')
-
-            subplot(3, 3, 5)
-            surf(Mvec, m2ft(h)/1000, D/1000, 'EdgeColor', 'none')
-            xlabel('$M$')
-            ylabel('$h$ [kft]')
-            zlabel('$D$ [kN]')
-            title('Total Drag')
-
-            subplot(3, 3, 6)
-            plot(Mvec, CDW)
-            xlabel('$M$')
-            ylabel('$C_{D_W}$')
-            title("Wave Drag")
-
-            subplot(3, 3, 7)
-            plot(Mvec, CL_max_clean, DisplayName="Clean")
-            hold on;
-            plot(Mvec, CL_max_flapped, DisplayName="Flapped")
-            xlabel('$M$')
-            ylabel('$C_{L_{max}}$')
-            title("Max Lift Coefficent")
-            legend(Location="best");
-
-            subplot(3, 3, 8)
-            plot(Mvec, CLa)
-            xlabel('$M$')
-            ylabel('$C_{L_\alpha}$')
-            title("Lift Slope")
-
-            subplot(3, 3, 9)
-            surf(M, m2ft(h)/1000, trimCL./CD, 'EdgeColor', 'none')
-            xlabel('$M$')
-            ylabel('$h$ [kft]')
-            zlabel('$\frac{L}{D}$')
-            title('Lift over Drag')
-
-            sgtitle("AERODYNAMICS")
-
-            %% ATMOSPHERE PLOT
-
-            figure;
-            subplot(2, 2, 1)
-            plot(m2ft(hvec)/1000, Tvec);
-            ylabel("$T$ [K]")
-            yyaxis right;
-            plot(m2ft(hvec)/1000, avec);
-            ylabel("$a$ [m/s]")
-
-            xlabel("$h$ [kft]")
-            title("Temperature \& Speed of Sound")
-
-            subplot(2, 2, 2)
-            plot(m2ft(hvec)/1000, Pvec/1000);
-            xlabel("$h$ [kft]")
-            ylabel("$P$ [kPa]")
-            title("Pressure")
-
-            subplot(2, 2, 3)
-            plot(m2ft(hvec)/1000, rhovec);
-            xlabel("$h$ [kft]")
-            ylabel("$\rho$ [kg/m3]")
-            title("Density")
-
-            subplot(2, 2, 4)
-            plot(m2ft(hvec)/1000, muvec);
-            xlabel("$h$ [kft]")
-            ylabel("$\mu$ [Pa*s]")
-            title("Dynamic Viscosity")
-
-            sgtitle("ATMOSPHERE")
-
-            %% PROPULSION
-            figure;
-            
-            subplot(2, 2, 1);
-            surf(M, m2ft(h)/1000, TA_NoAB/1000, 'EdgeColor', 'none', 'FaceAlpha', 1.0);
-            hold on
-            surf(M, m2ft(h)/1000, TA_AB/1000, 'EdgeColor', 'none', 'FaceAlpha', 0.5);
-            hold off
-            view(3)
-            axis tight
-            shading interp
-            set(gcf, 'Renderer', 'opengl')
-            xlabel('$M$')
-            ylabel('$h$ [kft]')
-            zlabel('$T_A$ [kN]')
-            title('Thrust Available')
-            
-            subplot(2, 2, 2);
-            surf(M, m2ft(h)/1000, TSFC_NoAB, 'EdgeColor', 'none', 'FaceAlpha', 1.0);
-            hold on
-            surf(M, m2ft(h)/1000, TSFC_AB, 'EdgeColor', 'none', 'FaceAlpha', 0.5);
-            hold off
-            view(3)
-            axis tight
-            shading interp
-            set(gcf, 'Renderer', 'opengl')
-            xlabel('$M$')
-            ylabel('$h$ [kft]')
-            zlabel('TSFC [kg/Ns]')
-            title('Thrust Specific Fuel Consumption')
-            
-            subplot(2, 2, 3);
-            surf(M, m2ft(h)/1000, alpha_NoAB, 'EdgeColor', 'none', 'FaceAlpha', 1.0);
-            hold on
-            surf(M, m2ft(h)/1000, alpha_AB, 'EdgeColor', 'none', 'FaceAlpha', 0.5);
-            hold off
-            view(3)
-            axis tight
-            shading interp
-            set(gcf, 'Renderer', 'opengl')
-            xlabel('$M$')
-            ylabel('$h$ [kft]')
-            zlabel('$\alpha$')
-            title('Thrust Lapse')
-            
-            subplot(2, 2, 4);
-            surf(M, m2ft(h)/1000, mdotf_NoAB, 'EdgeColor', 'none', 'FaceAlpha', 1.0);
-            hold on
-            surf(M, m2ft(h)/1000, mdotf_AB, 'EdgeColor', 'none', 'FaceAlpha', 0.5);
-            hold off
-            view(3)
-            axis tight
-            shading interp
-            set(gcf, 'Renderer', 'opengl')
-            xlabel('$M$')
-            ylabel('$h$ [kft]')
-            zlabel('$\dot{m}_f$ [kg/s]')
-            title('Max Fuel Flow')
-            
-            sgtitle("PROPULSION")
-
-            %% PERFORMANCE
-            figure;
-            subplot(2, 3, 1);
-            surf(M, m2ft(hvec)/1000, turn_rate, 'EdgeColor', 'none')
-            xlabel('$M$')
-            ylabel('$h$ [kft]')
-            zlabel('Turn Rate [deg/s]')
-            title('Maximum Turn Rate')
-
-            subplot(2, 3, 2);
-            surf(M, m2ft(hvec)/1000, n_max, 'EdgeColor', 'none')
-            xlabel('$M$')
-            ylabel('$h$ [kft]')
-            zlabel('Load Factor')
-            title('Maximum Load Factor')
-
-            subplot(2, 3, 3);
-            surf(M, m2ft(hvec)/1000, excessPower_NoAB, 'EdgeColor', 'none', 'FaceAlpha', 1.0);
-            hold on
-            surf(M, m2ft(hvec)/1000, excessPower_AB, 'EdgeColor', 'none', 'FaceAlpha', 0.5);
-            hold off
-            view(3)
-            axis tight
-            shading interp
-            set(gcf, 'Renderer', 'opengl')
-            xlabel('$M$')
-            ylabel('$h$ [kft]')
-            zlabel('Excess Power [m/s]')
-            title('Excess Power')
-
-            subplot(2, 3, 4);
-            hold on;
-            plot(m2ft(hvec)/1000, excessPowerMax_NoAB, DisplayName="No AB [Excess]", Color='r', LineStyle='-')
-            plot(m2ft(hvec)/1000, excessPowerMax_AB, DisplayName="AB [Excess]", Color='b', LineStyle='-')
-            ylabel("Excess Power [m/s]")
-            yyaxis right;
-            plot(m2ft(hvec)/1000, mach_maxExcess_NoAB, DisplayName="No AB [Angle]", Color='r', LineStyle='--')
-            plot(m2ft(hvec)/1000, mach_maxExcess_AB, DisplayName="AB [Angle]", Color='b', LineStyle='--')
-            ylabel("Mach to Fly")
-            xlabel('$h$ [kft]')
-            title("Max Excess Power at Altitude")
-            legend(Location="best")
-            hold off;
-
-            subplot(2, 3, 5);
-            plot(m2ft(hvec)/1000, maxMach_NoAB, DisplayName="No AB")
-            hold on;
-            plot(m2ft(hvec)/1000, maxMach_AB, DisplayName="AB")
-            xlabel('$h$ [kft]')
-            ylabel("Mach")
-            title("Max Mach Number at Altitude")
-            legend(Location="best")
-            hold off;
-
-            subplot(2, 3, 6);
-            hold on;
-            plot(m2ft(hvec)/1000, climbRate_NoAB, DisplayName="No AB [Rate]", Color='r', LineStyle='-')
-            plot(m2ft(hvec)/1000, climbRate_AB, DisplayName="AB [Rate]", Color='b', LineStyle='-')
-            ylabel("Climb Rate [m/s]")
-            yyaxis right;
-            plot(m2ft(hvec)/1000, climbAngle_NoAB, DisplayName="No AB [Angle]", Color='r', LineStyle='--')
-            plot(m2ft(hvec)/1000, climbAngle_AB, DisplayName="AB [Angle]", Color='b', LineStyle='--')
-            ylabel("Climb Angle [deg]")
-            xlabel('$h$ [kft]')
-            title("Max Sustained Climb Rate")
-            legend(Location="best")
-            hold off;
-
-
-        end
     end
 end

@@ -18,17 +18,21 @@ matlabSetup(); % Clears and sets plot defaults
 
 %% Set Geometry Inputs - All FA-18E Super Hornet
 fixed_input.L_fuselage = ft2m(60.2); % m -> FA18 fuselage length
-fixed_input.A_max = 4.5; % m2 -> trying to get the right FA18 wave drag. This was tuned to get M1.6
+fixed_input.A_max = 4.5; % m2 -> trying to get the right FA18 wave drag. This was tuned to get M1.6 % Jeff, fuselage CS area (max girth) 
 fixed_input.g_limit = 7.5; % G -> FA18 limit
 fixed_input.max_alpha = 14; % deg -> Guess
 fixed_input.type = "Jet fighter"; % Which empty weight coefficents to take from Raymer. In weight_regression_lookup
 fixed_input.KLOC = 15000; % in kilo-lines of code
 
-geom.empty_weight = lb2N(28450); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
+fixed_input.MTOW_Scalar = 66/50; % Since the Raymer fighter jet corrections is 16k lb lower than the F18
+fixed_input.SWET_Scalar = 243/152; % Shifting SWET historical regression to match VSP
+fixed_input.CDW_Scalar = 7/4; % Wave drag estimate is typically too low
+
+geom.empty_weight = lb2N(42307); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
 geom.Lambda_LE = 22.3; % deg - Leading Edge Sweep
 geom.c_r = 5.07; % m - Root Chord
 geom.c_t = 1.686; % m - Tip Chordf1
-geom.span = ft2m(44.9); % m - Wing Span
+geom.span = ft2m(42.8); % m - Wing Span
 geom.W_F = lb2N(2000); % N - Fixed Weight (Avionics)
 geom.engine = "F414"; % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
 

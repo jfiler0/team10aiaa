@@ -49,7 +49,7 @@ classdef flightSegment2
             % LD = 1 / ( (q*obj.Cd0) / (W_IN/plane.S) + (W_IN/plane.S) / (q * pi * plane.e * plane.AR) );
             
             if isnan(W_IN)
-                disp("BREAK")
+                disp("Bad: W_IN is NaN")
             end
             % info is a struct holding
             % mach, altitude (meters), time (seconds), speed (m/s)
@@ -173,11 +173,11 @@ classdef flightSegment2
             V = M * a;
             
             [~, TSFC, ~, ~] = plane.calcProp(M, h, 0); % No AB
-            WF = exp( -(obj.input*TSFC) / (V*L2D) ); % input distance is in meters
+            WF = exp( -(obj.input*TSFC*9.805) / (V*L2D) ); % input distance is in meters
         end
         function [WF, TSFC] = Loiter_WF(obj, LD, h, M, plane)
             [~, TSFC, ~, ~] = plane.calcProp(M, h, 0); % No AB
-            WF = exp( (-60*obj.input*TSFC/LD) ); % input time is in minutes
+            WF = exp( (-60*obj.input*TSFC*9.805/LD) ); % input time is in minutes
         end
     end
 end

@@ -1,39 +1,10 @@
-function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, graphSize)
+function plane = sizeAircraft(plane_in, missionList, constrainFun)
 
     % A graphSize of 2 will go from 0.5 * opt to 2 * opt. Don't go less than 1
 
-    plane = plane_in; % copy it
-
-    % Function to MAXIMIZE
-    function objf = objective(MTOW, scale)
-        plane.span = plane_in.span * scale;
-        plane.c_r = plane_in.c_r * scale;
-        plane.c_t = plane_in.c_t * scale;
-
-        plane.MTOW = MTOW;
-
-        plane = plane.updateDerivedVariables();
-
-        objf = plane.calcUnitCost();
-    end
-
-    R = 500; % Penalty parameter
-
-    % Objective is now negative so goal is to MINIMIZE
-    function [objf_cons, cost, g_vec] = objective_constrained(MTOW, scale)
-        cost = objective(MTOW, scale);
-        objf =  cost;
-
-        [g_vec, g_names] = constrainFun(plane, missionList);
-
-        g_max = max(g_vec);
-
-        objf_cons = objf + R * g_max;
-    end
-
     x0 = [plane_in.MTOW 1];
 
-    f = @(x) objective_constrained(x(1), x(2));
+    f = @(x) objective_constrained(x(1), x(2), plane_in, missionList, constrainFun);
 
     options = optimset( ...
         'Display', 'iter', ...      % Display iteration info
@@ -48,16 +19,15 @@ function plane = sizeAircraft(plane_in, missionList, constrainFun, do_plot, grap
     MTOW_opt    = x_opt(1);
     scale_opt = x_opt(2);
 
+    plane = plane_in;
+
     plane.span = plane_in.span * scale_opt;
     plane.c_r = plane_in.c_r * scale_opt;
     plane.c_t = plane_in.c_t * scale_opt;
-
     plane.MTOW = MTOW_opt;
 
     plane = plane.updateDerivedVariables();
 
-    objective(MTOW_opt, scale_opt); % This updates the plane object
-    
     fprintf("Aicraft: %s | Sized has MTOW = %.3f lb + Wings scaled by %.5f\n", plane.name, N2lb(plane.MTOW), scale_opt)
 
     if(do_plot)

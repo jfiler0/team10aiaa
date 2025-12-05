@@ -43,12 +43,12 @@
     print_components = false;
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
-        sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
+        sizing_plot = true; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
     sensitivities_plot = false; % Can change parameter selection in "Sensitivities Plot"
 
-    skip_max_ranges = false; % This can take a bit of time so if you are exploring other parameters consider just disabling it
+    skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(100000), 500); % Refresh atmosphere lookup
@@ -172,7 +172,7 @@
     if run_sizing
         disp("Running Sizing...")
 
-        plane = sizeAircraft(plane, missionList, @constraints_rfp, sizing_plot, 1.5);
+        plane = sizeAircraft(plane, missionList, @constraints_rfp);
         plane = plane.updateDerivedVariables();
 
         T = assignVar(N2lb(plane.MTOW), 'MTOW [lb]', CN, T);
@@ -187,6 +187,12 @@
         end
 
     end
+%% Carpet Plot
+
+    if sizing_plot
+        carpetPlot(plane, missionList, @constraints_rfp, 1.5);
+    end
+
 %% Sensitivities Plot
 
     if(sensitivities_plot)

@@ -172,7 +172,7 @@
     if run_sizing
         disp("Running Sizing...")
 
-        plane = sizeAircraft(plane, missionList, @constraints_rfp);
+        plane = sizeAircraft2D(plane, missionList, @constraints_rfp);
         plane = plane.updateDerivedVariables();
 
         T = assignVar(N2lb(plane.MTOW), 'MTOW [lb]', CN, T);

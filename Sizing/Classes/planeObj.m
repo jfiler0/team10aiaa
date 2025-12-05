@@ -616,6 +616,7 @@ classdef planeObj
         
             % Solve for max excess power speed
             [mach, turn_rate] = fminsearch(fun, M_guess, opts);
+       
             turn_rate = - turn_rate; % since it was minimization
 
         end
@@ -699,8 +700,9 @@ classdef planeObj
             else
                 climbAngle = atand(climbRate / climbSpeed);
             end
-            if(isnan(climbRate))
+            if(isnan(climbRate) || climbRate < 0)
                 climbSpeed = NaN; %Otherwise it will return even if it is not a viable flight condition
+                climbRate = NaN;
             end
         end
         
@@ -728,7 +730,7 @@ classdef planeObj
             end
             function objf = helper(M)
                 excess = obj.calcExcessPower(h, M, W, AB_perc);
-                objf = 1 / M - 10* min(excess, 0); % If excess is less than 0 it begins to penalize
+                objf = - M - min(excess, 0); % If excess is less than 0 it begins to penalize
             end
 
             opts = optimset('Display','off','TolX',1e-3,'MaxFunEvals',100);

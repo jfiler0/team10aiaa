@@ -124,7 +124,6 @@ classdef planeObj
                 % Horizontal
                 S_h % Planform Area
                 l_ht % Tail arm
-                v_hc % Airfoil Thickness
                 AR_h % Aspect Ratio
                 lam_h % Taper ratio
                 c_t_h % tip chord
@@ -208,10 +207,27 @@ classdef planeObj
             obj.E_WD = 2.2; % *** Still don't know what this is
             obj.g_limit = fixed_input.g_limit; % Just fixing for performance code
             obj.fixed_input = fixed_input;
+            
+            %Liam static margin inputs 
             obj.tail_input = tail_input;
             obj.Kc = 1.1; % assuming semi-conical rear fuselage 
             obj.VH = tail_input.VH;
             obj.VV = tail_input.VV;
+        
+            obj.x_rootLE_wing = fixed_input.x_rootLE_wing;
+            obj.x_horstab = fixed_input.x_horstab;
+            obj.c_root_strake = fixed_input.c_root_strake;
+            obj.lam_strake = fixed_input.lam_strake;
+            obj.b_strake = fixed_input.b_strake;
+            obj.x_strake = fixed_input.x_strake;
+            obj.Lambda_LE_strake = fixed_input.Lambda_LE_strake;
+            obj.c_r_v = fixed_input.c_r_v;
+            obj.lam_v = fixed_input.lam_v;
+            obj.b_v = fixed_input.b_v;
+            obj.x_verstab = fixed_input.x_verstab;
+            obj.LAM_v = fixed_input.LAM_v;
+            obj.c_r_horstab = fixed_input.c_r_horstab;
+            obj.b_h = fixed_input.b_h;
             % Storing the raymer coefficents is much faster than reading the table every loop
             obj.type = fixed_input.type; % For regression lookup
             obj.raymer = struct(); % Raymer coefficents
@@ -262,6 +278,18 @@ classdef planeObj
             % obj.MTOW = lb2N( ( N2lb(obj.WE) / 2.34)^(1/0.87) );
             % obj.MTOW = obj.fixed_input.MTOW_Scalar * lb2N( ( N2lb(obj.WE) / obj.raymer.A )^(1 / (1 + obj.raymer.C) ) );
 
+            %% CG Calculation
+            S_exposed_PSC = obj.S_exposed;
+            S_wet_PSC = obj.S_wet;
+            W_engine_PSC = obj.engine_dry_weight;
+            TOGW_PSC = obj.MTOW;
+            c_PSC = [obj.c_avg,obj.MAC_horstab,obj.MAC_verstab,obj.L_fuselage];
+            xstart_PSC = [obj.x_rootLE_wing,obj.x_horstab,obj.x_verstab,0];
+            
+            % Run function
+            [x_cg_est,~,~] = CG_Location(S_exposed_PSC,S_wet_PSC,W_engine_PSC,TOGW_PSC,c_PSC,xstart_PSC);
+            obj.x_cg = x_cg_est(1);
+
             %% Standard Wing Geometry Stuff
             obj.c_avg = 0.5*(obj.c_t + obj.c_r); % Average chord
             obj.tr = obj.c_t / obj.c_r; % Taper Ratio
@@ -270,7 +298,7 @@ classdef planeObj
             obj.AR = obj.span / obj.c_avg;
             obj.S_wing = obj.span*obj.c_avg;
             obj.S_ref = obj.S_wing; % Typical defenition for reference area
-            %obj.S_strakes = 0.5*obj.b_strake*obj.c_root_strake; % planform area of strakes calculation
+            obj.S_strakes = 0.5*obj.b_strake*obj.c_root_strake; % planform area of strakes calculation
 
             %% Random but important
             obj.fold_span = obj.span * (1 - obj.fixed_input.fold_ratio);
@@ -289,6 +317,9 @@ classdef planeObj
             obj.AR_h =(2/3)*obj.AR;
             obj.lam_h = 0.35; % textbook estimate
             obj.LAM_LE_horstab = obj.Lambda_LE; % stealth requirement
+            obj.l_vt = obj.l_opt;
+            obj.lam_v = obj.lam_h;
+            obj.S_v = obj.span*obj.S_wing*obj.VV/obj.l_vt;
 
             %% Homework 4 - Drag
             obj.Lambda_qc = atand(tand(obj.Lambda_LE) - ( 1 - obj.tr)/(obj.AR*(1+obj.tr))); % Compute the quarter-chord sweep angle (deg) - HW4
@@ -330,56 +361,56 @@ classdef planeObj
             obj.Lambda_HL = obj.Lambda_TE; % *** What is the actual way to calculate the hinge line
 
             %% Static Margin / Neutral Point Calculations
-            % 
-            % % Downwash slope calculation
-            % obj.depsdalph = 2*CL_alpha_wing /(pi*obj.AR);
-            % 
-            % obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
-            % obj.y_MAC_wing = (obj.span/6)*((1 + 2*obj.tr)/(1+obj.tr));
-            % obj.x_MAC_wing = obj.x_rootLE_wing + obj.y_MAC_wing*tand(obj.Lambda_LE);
-            % 
-            % % Some fixes so the tail code works -> Liam correct how you want
-            % obj.lam_h = obj.tr; % set taper ratio to be the same as the wing for stealth reasons
-            % 
-            % obj.MAC_horstab = (2/3)*obj.c_r_horstab*(1 + obj.lam_h + obj.lam_h.^2)/(1+obj.lam_h);
-            % obj.y_MAC_horstab = (obj.b_h/6)*((1 + 2*obj.lam_h)/(1+obj.lam_h));
-            % obj.x_MAC_horstab = obj.x_horstab + obj.y_MAC_horstab*tand(obj.LAM_LE_horstab);
-            % obj.AR_horstab = obj.b_h / obj.MAC_horstab;
-            % % swapped lam for obj.tr
-            % obj.MAC_strake = (2/3)*obj.c_root_strake*(1 + obj.lam_strake + obj.lam_strake.^2)/(1+obj.lam_strake);
-            % obj.y_MAC_strake = (obj.b_strake/6)*((1 + 2*obj.lam_strake)/(1+obj.lam_strake));
-            % obj.x_MAC_strake = obj.x_strake + obj.y_MAC_strake*tand(obj.Lambda_LE_strake);
-            % 
-            % obj.MAC_verstab = (2/3)*obj.c_r_v*(1 + obj.lam_v + obj.lam_v.^2)/(1+ obj.lam_v);
-            % obj.z_MAC_verstab = (obj.b_v/6)*((1 + 2*obj.lam_v)/(1 + obj.lam_v));
-            % obj.x_MAC_verstab = obj.x_verstab + obj.z_MAC_verstab*tan(deg2rad(obj.LAM_v));
-            % 
-            % % Calculating Aerodynamic Centers of Each Portion 
-            % obj.x_ac_wings = obj.x_MAC_wing + 0.25*obj.MAC_wing;
-            % obj.x_ac_horstabs = obj.x_MAC_horstab + 0.25*obj.MAC_horstab;
-            % obj.x_ac_strakes = obj.x_MAC_strake + 0.25*obj.MAC_strake;
-            % obj.x_ac_verstabs = obj.x_MAC_verstab +0.25*obj.MAC_verstab;
-            % 
-            % obj.x_ac_wings_strakes = obj.x_ac_wings + (obj.x_ac_strakes - obj.x_ac_wings)*obj.S_strakes/((2*obj.S_wing)+obj.S_strakes);
-            % obj.x_ac_wings_strakes_fuselage = obj.x_ac_wings_strakes - ((obj.L_fuselage*obj.A_max^2)*(0.005 + 0.111*(obj.x_ac_wings_strakes/obj.L_fuselage)^2)/((2*obj.S_wing)*CL_alpha_wing*57.29)); 
-            % obj.x_bar_ac_wings_strakes_fuselage = (obj.x_ac_wings_strakes_fuselage - obj.x_MAC_wing)/obj.MAC_wing;
-            % 
-            % % % tail arm
-            % % obj.l_ht = obj.x_ac_horstabs - obj.x_ac_wings_strakes_fuselage; % tail arm from aerodynamic centers
-            % % obj.V_hor = obj.S_h*obj.l_ht/(obj.S_wing*obj.MAC_wing);
-            % 
-            %  % Tail lift slope calculation
-            % % obj.e_notoswald_horstab = 2/(2 - obj.AR_horstab + sqrt(4 + obj.AR_horstab^2 * (1 + (tand(obj.LAM_LE_horstab))^2)));
-            % % CL_alpha_tail = obj.cl_alpha_horstab/(1 + 57.3 * obj.cl_alpha_horstab/(pi * obj.e_notoswald_horstab * obj.AR_horstab));
-            % % CLalph_CLalpht = CL_alpha_tail/CL_alpha_wing;
-            % % 
-            % % obj.x_bar_n = obj.x_bar_ac_wings_strakes_fuselage + obj.V_hor*(CLalph_CLalpht*(1-obj.depsdalph));
-            % 
-            % % Final Static Margin Calculations
-            % % obj.x_np = obj.x_MAC_wing + (obj.x_bar_n*obj.MAC_wing);
-            % % obj.X_bar_cg = obj.x_cg/obj.x_MAC_wing;
-            % % obj.X_bar_np = obj.x_np/obj.x_MAC_wing;
-            % % obj.SM = obj.X_bar_np - obj.X_bar_cg
+
+            % Downwash slope calculation
+            obj.depsdalph = 2*CL_alpha_wing /(pi*obj.AR);
+
+            obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
+            obj.y_MAC_wing = (obj.span/6)*((1 + 2*obj.tr)/(1+obj.tr));
+            obj.x_MAC_wing = obj.x_rootLE_wing + obj.y_MAC_wing*tand(obj.Lambda_LE);
+
+            % Some fixes so the tail code works -> Liam correct how you want
+            obj.lam_h = obj.tr; % set taper ratio to be the same as the wing for stealth reasons
+
+            obj.MAC_horstab = (2/3)*obj.c_r_horstab*(1 + obj.lam_h + obj.lam_h.^2)/(1+obj.lam_h);
+            obj.y_MAC_horstab = (obj.b_h/6)*((1 + 2*obj.lam_h)/(1+obj.lam_h));
+            obj.x_MAC_horstab = obj.x_horstab + obj.y_MAC_horstab*tand(obj.LAM_LE_horstab);
+            obj.AR_horstab = obj.b_h / obj.MAC_horstab;
+            % swapped lam for obj.tr
+            obj.MAC_strake = (2/3)*obj.c_root_strake*(1 + obj.lam_strake + obj.lam_strake.^2)/(1+obj.lam_strake);
+            obj.y_MAC_strake = (obj.b_strake/6)*((1 + 2*obj.lam_strake)/(1+obj.lam_strake));
+            obj.x_MAC_strake = obj.x_strake + obj.y_MAC_strake*tand(obj.Lambda_LE_strake);
+
+            obj.MAC_verstab = (2/3)*obj.c_r_v*(1 + obj.lam_v + obj.lam_v.^2)/(1+ obj.lam_v);
+            obj.z_MAC_verstab = (obj.b_v/6)*((1 + 2*obj.lam_v)/(1 + obj.lam_v));
+            obj.x_MAC_verstab = obj.x_verstab + obj.z_MAC_verstab*tan(deg2rad(obj.LAM_v));
+
+            % Calculating Aerodynamic Centers of Each Portion 
+            obj.x_ac_wings = obj.x_MAC_wing + 0.25*obj.MAC_wing;
+            obj.x_ac_horstabs = obj.x_MAC_horstab + 0.25*obj.MAC_horstab;
+            obj.x_ac_strakes = obj.x_MAC_strake + 0.25*obj.MAC_strake;
+            obj.x_ac_verstabs = obj.x_MAC_verstab +0.25*obj.MAC_verstab;
+
+            obj.x_ac_wings_strakes = obj.x_ac_wings + (obj.x_ac_strakes - obj.x_ac_wings)*obj.S_strakes/((2*obj.S_wing)+obj.S_strakes);
+            obj.x_ac_wings_strakes_fuselage = obj.x_ac_wings_strakes - ((obj.L_fuselage*obj.A_max^2)*(0.005 + 0.111*(obj.x_ac_wings_strakes/obj.L_fuselage)^2)/((2*obj.S_wing)*CL_alpha_wing*57.29)); 
+            obj.x_bar_ac_wings_strakes_fuselage = (obj.x_ac_wings_strakes_fuselage - obj.x_MAC_wing)/obj.MAC_wing;
+
+            % tail arm
+            obj.l_ht = obj.x_ac_horstabs - obj.x_ac_wings_strakes_fuselage; % tail arm from aerodynamic centers
+            obj.V_hor = obj.S_h*obj.l_ht/(obj.S_wing*obj.MAC_wing);
+
+            % Tail lift slope calculation
+            obj.e_notoswald_horstab = 2/(2 - obj.AR_horstab + sqrt(4 + obj.AR_horstab^2 * (1 + (tand(obj.LAM_LE_horstab))^2)));
+            CL_alpha_tail = obj.cl_alpha_horstab/(1 + 57.3 * obj.cl_alpha_horstab/(pi * obj.e_notoswald_horstab * obj.AR_horstab));
+            CLalph_CLalpht = CL_alpha_tail/CL_alpha_wing;
+
+            obj.x_bar_n = obj.x_bar_ac_wings_strakes_fuselage + obj.V_hor*(CLalph_CLalpht*(1-obj.depsdalph));
+
+            % Final Static Margin Calculations
+            obj.x_np = obj.x_MAC_wing + (obj.x_bar_n*obj.MAC_wing);
+            obj.X_bar_cg = obj.x_cg/obj.x_MAC_wing;
+            obj.X_bar_np = obj.x_np/obj.x_MAC_wing;
+            obj.SM = obj.X_bar_np - obj.X_bar_cg;
 
             %% Interpolants
             M_vec = linspace(obj.mach_range(1), obj.mach_range(2), 100); % Can change last number to increase/decrease resolution
@@ -614,6 +645,7 @@ classdef planeObj
         
             % Solve for max excess power speed
             [mach, turn_rate] = fminsearch(fun, M_guess, opts);
+       
             turn_rate = - turn_rate; % since it was minimization
 
         end
@@ -697,8 +729,9 @@ classdef planeObj
             else
                 climbAngle = atand(climbRate / climbSpeed);
             end
-            if(isnan(climbRate))
+            if(isnan(climbRate) || climbRate < 0)
                 climbSpeed = NaN; %Otherwise it will return even if it is not a viable flight condition
+                climbRate = NaN;
             end
         end
         
@@ -713,9 +746,9 @@ classdef planeObj
                 if isnan(diff), diff = -1e2; end
             end
             try
-                maxAlt = fzero(@helper, [10 30000]); % This might be problamatic
-            catch
-                maxAlt = obj.alt_range(2);
+            maxAlt = fzero(@helper, [10 30000]); % This might be problamatic
+            catch 
+                maxAlt = max(obj.alt_range);
             end
             [excessPower, ~, maxAltMach] = calcMaxExcessPower(obj, maxAlt, W, AB_perc, mach_save); % Have to recalculate to get remaining output
         end
@@ -726,7 +759,7 @@ classdef planeObj
             end
             function objf = helper(M)
                 excess = obj.calcExcessPower(h, M, W, AB_perc);
-                objf = 1 / M - 10* min(excess, 0); % If excess is less than 0 it begins to penalize
+                objf = - M - min(excess, 0); % If excess is less than 0 it begins to penalize
             end
 
             opts = optimset('Display','off','TolX',1e-3,'MaxFunEvals',100);
@@ -832,7 +865,9 @@ classdef planeObj
             % Weight, W in N
             CL = obj.calcTrimCL(h, M, W);
             [CD, ~, ~, ~] = obj.calcCD(CL, M);
+            % fprintf("CL = '%f%+fj' , CD = '%f%+fj\n'", real(CL), imag(CL), real(CD), imag(CD))
             L2D = CL ^ (0.5) / CD;
+
         end
         
         function [h, M, V, LD] = findMaxEnduranceState(obj, W) 

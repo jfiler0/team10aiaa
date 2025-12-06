@@ -28,6 +28,10 @@ function [T, a, P, rho, mu] = queryAtmosphere(alt, values_to_get)
         mu = 0;
         return
    end
+   if imag(alt)~=0
+        error("queryAtmosphere alt became imaginary: %.3f + i %.3f . Taking real part.", real(alt),imag(alt))
+        alt = real(alt);
+   end
 
     % Quick bounds check
     if min(alt) < cachedAtmosphere.alt(1) || max(alt) > cachedAtmosphere.alt(end)

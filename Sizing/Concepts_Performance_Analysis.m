@@ -5,7 +5,7 @@
 %% ===================== USER CONTROLS ===============================
 clear; clc; close all;
 %  Choose your concept (column in concepts_tabulations.xlsx)
-CN = 6;   % 1 = F18E, 2 = F18E sized, ... 8 = Concept 4, etc.
+CN = 9;   % 1 = F18E, 2 = F18E sized, ... 8 = Concept 4, etc.
 
 % Toggles
 performance_plots = true;    % Aerodynamics / propulsion / performance grids
@@ -394,8 +394,8 @@ if legacy_plots
     T_W_TO      = (TA_mil / 4.4482216153) / W_TO_lbf; % rough MIL T/W at sea level
 
     % Runway requirement and altitudes
-    Sa             = 450;    % [ft] landing allowance
-    S_takeoff_req  = 4000;   % [ft]
+    Sa             = m2ft(120);    % [ft] landing allowance
+    S_takeoff_req  = m2ft(99);   % [ft]
     h_Elmendorf    = 213;
     h_Edwards      = 2311;
     h_TO_sweep     = linspace(0, 5000, 100);

@@ -24,7 +24,7 @@
 
 % Controls
     % Chose Your Concept
-    CN = 1; % COLUMN NUMBER
+    CN = 9; % COLUMN NUMBER
         % 1 -> F18E
         % 2 -> F18E_Sized (for testing)
         % 3 -> F16

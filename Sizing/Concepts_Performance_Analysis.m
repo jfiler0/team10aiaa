@@ -339,44 +339,29 @@ end
 
 %% ================== LEGACY RAYMER-STYLE PLOTS ======================
 % This block recreates the "old performance toolbox" style plots using a
-% simple Raymer-style polar & engine model. Currently uses default
-% F-16-ish values – TODO: wire CDo/k1/k2/TSFC from your aero/prop models.
+% simple Raymer-style polar & engine model, but now pulls as much as
+% possible from the planeObj instead of hard-coding F-16-ish numbers.
 
 if legacy_plots
     disp("Building legacy Raymer-style plots...");
 
-    % ---- Constants (imperial) ----
+    % ---- Basic atmospheric constants (imperial) ----
     gamma  = 1.4;
-    R_im   = 1716;        % [ft*lbf/(slug*R)]
+    R_im   = 1716;        % [ft·lbf/(slug·R)]
     T_std  = 518.69;      % [R]
     rho_SL = 0.002377;    % [slug/ft^3]
 
-    % ---- Extract basic geometry in imperial ----
-    S_ref_ft2 = plane.S_wing / 0.092903;   % m^2 -> ft^2
+    % ---- Extract geometry and weight directly from planeObj ----
+    S_ref_ft2 = plane.S_ref / 0.092903;   % m^2 -> ft^2
     W_TO_lbf  = N2lb(plane.MTOW);
     W_S       = W_TO_lbf / S_ref_ft2;
+    AR        = plane.AR;
 
-    % Raymer-ish drag polar (EDIT or wire from planeObj)
-    AR   = plane.AR;
-    CDo  = 0.0170;       % TODO: tie to clean CD0 from aero model
-    k1   = 0.1160;       % TODO: tie to induced coefficient
-    k2   = -0.0063;      % tweak term if needed
-    e_osw = 1/(pi*AR*k1);
-
-    % Engine data (per-engine thrust at sea level, MIL/AB) – EDIT to match engine lookup
-    % For now, approximate from sea-level kN we printed earlier:
-    T_SL_mil = TA_mil / 4.4482216153;   % convert kN->N->lbf if needed
-    T_SL_AB  = TA_AB  / 4.4482216153;
-    n_eng    = plane.num_engine;
-
-    % TSFC-like constant for Raymer Breguet [1/s]
-    TSFC_total = 0.00019;  % turbojet/fan Raymer c (you can adjust)
-    SFC_hr     = TSFC_total * 3600; % [1/hr]
-
-    % Generic segment assumptions
-    beta_segment = 0.90;   % W_segment / W_TO for performance calc
+    % Use the mid-mission weight fraction for performance segment beta
+    beta_segment = plane.mid_mission_weight / plane.MTOW;
     W_segment    = beta_segment * W_TO_lbf;
 
+<<<<<<< HEAD
     % Key altitudes / Machs
     h_perf   = 35000;                    % [ft] main performance altitude
     M_vec    = linspace(0.5, 2.0, 15);   % baseline Mach sweep
@@ -399,6 +384,58 @@ if legacy_plots
     h_Elmendorf    = 213;
     h_Edwards      = 2311;
     h_TO_sweep     = linspace(0, 5000, 100);
+=======
+    % ---- Use plane's aero model for drag polar coefficients ----
+    % Pick a representative subsonic Mach to sample the polar
+    M_ref = 0.8;
+    k1    = plane.fixed_input.K1_Scalar * plane.K1_interp(M_ref);
+    k2    = plane.K2_interp(M_ref);
+    CDo   = plane.CD0;                 % already includes payload drag
+    e_osw = plane.e_osw;               %#ok<NASGU> % kept for info if needed
+
+    % ---- Takeoff / landing CLs from plane.calcCL (low Mach) ----
+    [~, CLmax_flapped, ~] = plane.calcCL(0.2);
+    CL_TO_ref  = 0.80 * CLmax_flapped;   % effective CL_TO used for TOP
+    CL_TO_req  = CL_TO_ref;             % can tweak if RFP wants tighter
+    CLmax_land = CLmax_flapped;         % assume same high-lift config
+    
+    % ---- Engine data from plane.calcProp at sea level ----
+    [TA_mil_SL, TSFC_mil_SL, ~, ~] = plane.calcProp(0, 0, 0);  % MIL, SL
+    [TA_AB_SL,  ~,           ~, ~] = plane.calcProp(0, 0, 1);  % AB, SL
+
+    T_SL_mil = N2lb(TA_mil_SL);   % [lbf]
+    T_SL_AB  = N2lb(TA_AB_SL);    % [lbf]
+    n_eng    = plane.num_engine;
+
+    % Convert TSFC (SI) to an "SFC" in lbm/(lbf·hr) for the Breguet form
+    % TSFC_mil_SL is ~ kg/(N·s):
+    %   c_imperial = TSFC_si * (lbm/kg) * (N/lbf) * (s/hr)
+    TSFC_total = TSFC_mil_SL;  % kg/(N·s)
+    SFC_hr     = TSFC_total * 3600 / (0.453592 * 4.4482216153);  % [1/hr]
+
+    % ---- Performance altitudes/Machs tied to your mission setup ----
+    % Use the same cruise/loiter altitudes defined earlier
+    h_perf   = m2ft(h_cruise_m);      % main performance altitude
+    h_loiter = m2ft(h_loiter_m);
+    h_cruise = h_perf;
+    h_R2     = h_perf;                % use same as cruise for range
+    M_vec    = linspace(0.5, 2.0, 15);
+
+    % Mission-level Mach choices (reuse your mission definitions)
+    M_loiter = M_loiter;    %#ok<NASGU> % already defined in mission section
+    M_cruise = M_cruise1;   % cruise Mach from 700 nm missions
+    M_R2     = M_cruise;    % reuse for Breguet range
+
+    % ---- Takeoff / landing spec values that are RFP-driven ----
+    Sa            = m2ft(120);     % [ft] landing allowance
+    S_takeoff_req = m2ft(99);    % [ft] required over-50-ft TO distance
+    h_Elmendorf   = 213;     % [ft]
+    h_Edwards     = 2311;    % [ft]
+    h_TO_sweep    = linspace(0, 5000, 100);
+
+    % Takeoff thrust loading using true sea-level MIL thrust
+    T_W_TO = T_SL_mil / W_TO_lbf;
+>>>>>>> 469d1921821ff3d3470f7247b5d4f7ae74cfbbe4
 
     % ---- Baseline performance vs Mach at h_perf ----
     [T_perf, rho_perf, ~, P0_perf, a_perf, V_perf, q_perf, ~, theta0_perf] = ...
@@ -472,11 +509,11 @@ if legacy_plots
     figure; hold on; grid on; box on;
     plot(h_TO_sweep, TOP_sweep, 'LineWidth', 2);
     xlabel('Takeoff Altitude [ft]');
-    ylabel('TOP = (W/S) / (\sigma C_{L,TO} T/W)');
+    ylabel('TOP = (W/S) / (\\sigma C_{L,TO} T/W)');
     title('Takeoff Parameter vs Altitude');
 
     % ---- Required W/S for 4000-ft TO ----
-    TOP_req_4000ft = 100;   % adjust per Fig. 5.4 if desired
+    TOP_req_4000ft = 100;   % still from Raymer Fig. 5.4
     W_S_TO_req = TOP_req_4000ft * 1.0 * CL_TO_req * T_W_TO;
 
     fprintf('\n==== Legacy Takeoff Part 2 – Required W/S ====\n');
@@ -538,7 +575,7 @@ if legacy_plots
 
     % ---- Simple payload–range / loiter trades (Breguet) ----
     if exist('plane','var')
-        W_empty = plane.WE / 4.4482216153;  % N -> lbf
+        W_empty = N2lb(plane.WE);  % N -> lbf
     else
         W_empty = 0.55 * W_TO_lbf;
     end
@@ -546,7 +583,7 @@ if legacy_plots
     W_payload_max = 0.18 * W_TO_lbf;
     payload_vec   = linspace(0, W_payload_max, 10);
 
-    % range segment L/D & V
+    % range segment L/D & V at (h_R2, M_R2)
     [~, rho_R2, ~, P0_R2, a_R2, V_R2, q_R2, ~, theta0_R2] = ...
         atmos_and_flow(h_R2, M_R2, gamma, R_im, T_std);
     [T_mil_R2, ~] = engine_thrust(T_SL_mil, T_SL_AB, n_eng, ...
@@ -560,7 +597,7 @@ if legacy_plots
 
     V_kt_R2 = V_R2 / 1.68781;
 
-    % loiter segment L/D
+    % loiter segment L/D at (h_loiter, M_loiter)
     [~, rho_loit, ~, ~, a_loit, V_loit, q_loit, ~, ~] = ...
         atmos_and_flow(h_loiter, M_loiter, gamma, R_im, T_std);
     CL_loit = beta_segment * W_S ./ q_loit;
@@ -602,7 +639,7 @@ if legacy_plots
     % ---- Simple constraint diagram T/W vs W/S ----
     W_S_vec = linspace(50, 200, 100);
 
-    TOP_req   = TOP_req_4000ft;
+    TOP_req    = TOP_req_4000ft;
     TW_takeoff = takeoff_constraint(W_S_vec, TOP_req, 1.0, CL_TO_req);
 
     [~, rho_land, ~, ~, ~, ~, ~, ~, ~] = ...
@@ -643,7 +680,6 @@ if legacy_plots
     fprintf('NOTE: Landing constraint gives W/S_max ≈ %.1f lb/ft^2.\n', WS_land_max);
 end
 
-disp("Performance analysis complete.");
 
 %% =================== LOCAL HELPER FUNCTIONS ========================
 

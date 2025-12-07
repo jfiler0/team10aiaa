@@ -41,19 +41,19 @@ clear all
         % 9 -> Concept 5
         % 11 -> PSC (can paste in values here to save them temporarily)
 
-    performance_plots = true; % Aerodynamics, Propulsion, Atmospere, Performance grids
-    mission_plots = true; % Fuel burn, LD, TSFC over time
-    geometry_plot = true; % Outline of the wing geometry (not implemented yet)
-    drag_polar = true;
-    print_components = true;
+    performance_plots = false; % Aerodynamics, Propulsion, Atmospere, Performance grids
+    mission_plots = false; % Fuel burn, LD, TSFC over time
+    geometry_plot = false; % Outline of the wing geometry (not implemented yet)
+    drag_polar = false;
+    print_components = false;
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
-        sizing_plot = true; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
-    sensitivities_plot = true; % Can change parameter selection in "Sensitivities Plot"
+        sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
+    sensitivities_plot = false; % Can change parameter selection in "Sensitivities Plot"
 
     skip_max_ranges = false; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(100000), 500); % Refresh atmosphere lookup

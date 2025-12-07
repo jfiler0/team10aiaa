@@ -278,17 +278,17 @@ classdef planeObj
             % obj.MTOW = lb2N( ( N2lb(obj.WE) / 2.34)^(1/0.87) );
             % obj.MTOW = obj.fixed_input.MTOW_Scalar * lb2N( ( N2lb(obj.WE) / obj.raymer.A )^(1 / (1 + obj.raymer.C) ) );
 
-            %% CG Calculation
-            S_exposed_PSC = obj.S_exposed;
-            S_wet_PSC = obj.S_wet;
-            W_engine_PSC = obj.engine_dry_weight;
-            TOGW_PSC = obj.MTOW;
-            c_PSC = [obj.c_avg,obj.MAC_horstab,obj.MAC_verstab,obj.L_fuselage];
-            xstart_PSC = [obj.x_rootLE_wing,obj.x_horstab,obj.x_verstab,0];
-            
-            % Run function
-            [x_cg_est,~,~] = CG_Location(S_exposed_PSC,S_wet_PSC,W_engine_PSC,TOGW_PSC,c_PSC,xstart_PSC);
-            obj.x_cg = x_cg_est(1);
+            % %% CG Calculation
+            % S_exposed_PSC = obj.S_exposed;
+            % S_wet_PSC = obj.S_wet;
+            % W_engine_PSC = obj.engine_dry_weight;
+            % TOGW_PSC = obj.MTOW;
+            % c_PSC = [obj.c_avg,obj.MAC_horstab,obj.MAC_verstab,obj.L_fuselage];
+            % xstart_PSC = [obj.x_rootLE_wing,obj.x_horstab,obj.x_verstab,0];
+            % 
+            % % Run function
+            % [x_cg_est,~,~] = CG_Location(S_exposed_PSC,S_wet_PSC,W_engine_PSC,TOGW_PSC,c_PSC,xstart_PSC);
+            % obj.x_cg = x_cg_est(1);
 
             %% Standard Wing Geometry Stuff
             obj.c_avg = 0.5*(obj.c_t + obj.c_r); % Average chord
@@ -405,7 +405,17 @@ classdef planeObj
             CLalph_CLalpht = CL_alpha_tail/CL_alpha_wing;
 
             obj.x_bar_n = obj.x_bar_ac_wings_strakes_fuselage + obj.V_hor*(CLalph_CLalpht*(1-obj.depsdalph));
-
+            %% CG Calculation
+            S_exposed_PSC = obj.S_exposed;
+            S_wet_PSC = obj.S_wet;
+            W_engine_PSC = obj.engine_dry_weight;
+            TOGW_PSC = obj.MTOW;
+            c_PSC = [obj.c_avg,obj.MAC_horstab,obj.MAC_verstab,obj.L_fuselage];
+            xstart_PSC = [obj.x_rootLE_wing,obj.x_horstab,obj.x_verstab,0];
+            
+            % Run function
+            [x_cg_est,~,~] = CG_Location(S_exposed_PSC,S_wet_PSC,W_engine_PSC,TOGW_PSC,c_PSC,xstart_PSC);
+            obj.x_cg = x_cg_est(1);
             % Final Static Margin Calculations
             obj.x_np = obj.x_MAC_wing + (obj.x_bar_n*obj.MAC_wing);
             obj.X_bar_cg = obj.x_cg/obj.x_MAC_wing;

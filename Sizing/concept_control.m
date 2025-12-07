@@ -26,7 +26,7 @@ clear all
 % Controls
     % Chose Your Concept
 % <<<<<<< HEAD
-    CN = 9; % COLUMN NUMBER
+    CN = 11; % COLUMN NUMBER
 % =======
 %     CN = 11; % COLUMN NUMBER
 % >>>>>>> 5f932614bc24142f1b7a15d03487d1f75867d070

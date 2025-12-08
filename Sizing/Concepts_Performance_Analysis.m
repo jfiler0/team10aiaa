@@ -5,7 +5,7 @@
 %% ===================== USER CONTROLS ===============================
 clear; clc; close all;
 %  Choose your concept (column in concepts_tabulations.xlsx)
-CN = 9;   % 1 = F18E, 2 = F18E sized, ... 8 = Concept 4, etc.
+CN = 11;   % 1 = F18E, 2 = F18E sized, ... 8 = Concept 4, etc.
 
 % Toggles
 performance_plots = true;    % Aerodynamics / propulsion / performance grids
@@ -79,49 +79,78 @@ T = readcell(excelPath);
 name = readVar('Deliverable', CN, T);
 disp("Loaded geometry for: " + name);
 
-fixed_input.L_fuselage = readVar('Fuselage Length [m]', CN, T);
-fixed_input.A_max      = readVar('Max Fuselage Area [m2]', CN, T);
-fixed_input.g_limit    = readVar('G Limit', CN, T);
-fixed_input.KLOC       = readVar('KLOC', CN, T);
+% fixed_input.L_fuselage = readVar('Fuselage Length [m]', CN, T);
+% fixed_input.A_max      = readVar('Max Fuselage Area [m2]', CN, T);
+% fixed_input.g_limit    = readVar('G Limit', CN, T);
+% fixed_input.KLOC       = readVar('KLOC', CN, T);
+fixed_input = struct();
+fixed_input.L_fuselage = readVar('Fuselage Length [m]', CN, T); % m
+fixed_input.A_max = readVar('Max Fuselage Area [m2]', CN, T); % m2 -> From VSP
+fixed_input.g_limit = readVar('G Limit', CN, T); % G -> FA18 limit
+fixed_input.KLOC = readVar('KLOC', CN, T); % in kilo-lines of code
+fixed_input.fold_ratio = readVar('Fold Ratio', CN, T);
+fixed_input.x_rootLE_wing = readVar('X coor root LE wing',CN,T);
+fixed_input.x_horstab = readVar('X coor root LE Hor Stab',CN,T);
+fixed_input.c_root_strake = readVar('Strake root chord',CN,T);
+fixed_input.lam_strake = readVar('Strake taper ratio',CN,T);
+fixed_input.b_strake = readVar('Strake span',CN,T);
+fixed_input.x_strake = readVar('X coor root LE Strake',CN,T);
+fixed_input.Lambda_LE_strake = readVar('Strake LE Sweep',CN,T);
+fixed_input.c_r_v = readVar('Ver Stab Root Chord',CN,T);
+fixed_input.lam_v = readVar('Ver Stab Taper Ratio',CN,T);
+fixed_input.b_v = readVar('Ver Stab Span',CN,T);
+fixed_input.x_verstab = readVar('X coor root LE Ver Stab',CN,T);
+fixed_input.LAM_v = readVar('Ver Stab LE Sweep',CN,T);
+fixed_input.c_r_horstab = readVar('Hor Stab Root Chord',CN,T);
+fixed_input.b_h = readVar('Hor Stab Span',CN,T);
 
-geom.empty_weight = lb2N(readVar('Empty Weight [lb]', CN, T));
-geom.W_F          = lb2N(readVar('Fixed Weight [lb]', CN, T));
-geom.span         = readVar('Wing Span [m]', CN, T);
-geom.Lambda_LE    = readVar('LE Sweep [deg]', CN, T);
-geom.c_r          = readVar('Root Chord [m]', CN, T);
-geom.c_t          = readVar('Tip Chord [m]', CN, T);
-geom.engine            = readVar('Engine Selection', CN, T);
-geom.num_engine        = readVar('Number of Engines', CN, T);
 
+geom.mtow = lb2N(readVar('MTOW [lb]', CN, T)); % Gotta be Newtons m8. This drives MTOW using historical relations which eventually informs the amount of fuel which can be carried
+geom.W_F = lb2N(readVar('Fixed Weight [lb]', CN, T)); % N - Fixed Weight (Avionics)
+geom.span = readVar('Wing Span [m]', CN, T); % m - Wing Span
+geom.Lambda_LE = readVar('LE Sweep [deg]', CN, T); % deg - Leading Edge Sweep
+geom.c_r = readVar('Root Chord [m]', CN, T); % m - Root Chord
+geom.c_t = readVar('Tip Chord [m]', CN, T); % m - Tip Chordf
+geom.engine = readVar('Engine Selection', CN, T); % engine: A string code which you can see in engine_lookup.xslx. More info in engine_getData
+geom.num_engine = readVar('Number of Engines', CN, T);
+tail_input.VH = readVar('Hor Stab Tail Ratio', CN, T);
+tail_input.VV = readVar('Ver Stab Tail Ratio', CN, T);
 % Store fold ratio inside fixed_input so planeObj can see it
 fixed_input.fold_ratio = readVar('Fold Ratio', CN, T);
 % ---- NOW build the superclean copy (after all fields are present) ----
-fixed_input_superclean = fixed_input;
-fixed_input_superclean.SWET_Scalar = 2;
-fixed_input_superclean.CDW_Scalar  = 7/4;
-fixed_input_superclean.K1_Scalar   = 1;
+% fixed_input.MTOW_Scalar = 66/50; % Since the Raymer fighter jet corrections is 16k lb lower than the F18
+fixed_input.MTOW_Scalar = 60/50;
+fixed_input.SWET_Scalar = 3; % Shifting SWET historical regression to match VSP (and scaled CD0 to correct LD)
+fixed_input.CDW_Scalar = 9/4; % Wave drag estimate is typically too low
+fixed_input.K1_Scalar = 1.3; % Scales induced drag (and thus reduces eosw)
+fixed_input.F_Scaler = 1.3; % Increases max possible lift (by scaling fuselage lift factor)
+
+fixed_input_superclean = fixed_input; % Making another set of corrections for the mach mach condition (when you scrub down the plane and make it super sleek to set a record)
+
+fixed_input_superclean.SWET_Scalar = 2; % Set this to 1 for totally clean, max speed (bring to 243/152 for real performance)
+fixed_input_superclean.CDW_Scalar = 7/4; % Set this to 1 for totally clean, max speed (bring to 7/4 for real performance)
+fixed_input_superclean.K1_Scalar = 1;
 
 
-tail_input.VH = readVar('Hor Stab Tail Ratio', CN, T);
-tail_input.VV = readVar('Ver Stab Tail Ratio', CN, T);
-
-
+fixed_input.max_alpha = 10; % deg -> Guess (This defins max LANDING Cl) -> Too high for landing now!
+fixed_input.type = "Jet fighter"; % Which empty weight coefficents to take from Raymer. In weight_regression_lookup
 
 %% ====================== BUILD PLANE OBJECT =========================
 
 disp("Building plane object...");
-
-plane = planeObj(fixed_input, tail_input,...
-                 name, ...
-                 geom.empty_weight, ...
-                 geom.Lambda_LE, ...
-                 geom.c_r, ...
-                 geom.c_t, ...
-                 geom.span, ...
-                 geom.num_engine, ...
-                 geom.engine, ...
-                 geom.W_F);
-
+% 
+% plane = planeObj(fixed_input, tail_input,...
+%                  name, ...
+%                  geom.empty_weight, ...
+%                  geom.Lambda_LE, ...
+%                  geom.c_r, ...
+%                  geom.c_t, ...
+%                  geom.span, ...
+%                  geom.num_engine, ...
+%                  geom.engine, ...
+%                  geom.W_F);
+plane = planeObj(fixed_input, tail_input, name, geom.mtow, geom.Lambda_LE, geom.c_r, geom.c_t, geom.span,  geom.num_engine, geom.engine, geom.W_F);
+plane = plane.applyLoadout(clean_loadout); % Just two sidewinders
 % Start in a clean loadout configuration (just 2x AIM-9X)
 plane = plane.applyLoadout(clean_loadout);
 
@@ -361,7 +390,7 @@ if legacy_plots
     beta_segment = plane.mid_mission_weight / plane.MTOW;
     W_segment    = beta_segment * W_TO_lbf;
 
-<<<<<<< HEAD
+% <<<<<<< HEAD
     % Key altitudes / Machs
     h_perf   = 35000;                    % [ft] main performance altitude
     M_vec    = linspace(0.5, 2.0, 15);   % baseline Mach sweep
@@ -384,7 +413,7 @@ if legacy_plots
     h_Elmendorf    = 213;
     h_Edwards      = 2311;
     h_TO_sweep     = linspace(0, 5000, 100);
-=======
+% =======
     % ---- Use plane's aero model for drag polar coefficients ----
     % Pick a representative subsonic Mach to sample the polar
     M_ref = 0.8;
@@ -435,7 +464,7 @@ if legacy_plots
 
     % Takeoff thrust loading using true sea-level MIL thrust
     T_W_TO = T_SL_mil / W_TO_lbf;
->>>>>>> 469d1921821ff3d3470f7247b5d4f7ae74cfbbe4
+% >>>>>>> 469d1921821ff3d3470f7247b5d4f7ae74cfbbe4
 
     % ---- Baseline performance vs Mach at h_perf ----
     [T_perf, rho_perf, ~, P0_perf, a_perf, V_perf, q_perf, ~, theta0_perf] = ...

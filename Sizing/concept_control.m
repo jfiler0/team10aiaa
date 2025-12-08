@@ -45,15 +45,15 @@ clear all
     mission_plots = false; % Fuel burn, LD, TSFC over time
     geometry_plot = false; % Outline of the wing geometry (not implemented yet)
     drag_polar = false;
-    print_components = false;
+    print_components = true;
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
         sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
     sensitivities_plot = false; % Can change parameter selection in "Sensitivities Plot"
 
-    skip_max_ranges = false; % This can take a bit of time so if you are exploring other parameters consider just disabling it
+    skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
-    write_to_xlsx = true; % Toggle actual writing to the excel file (for debugging)
+    write_to_xlsx = false; % Toggle actual writing to the excel file (for debugging)
 
 %% Initlization Functions
     build_atmosphere_lookup(-5000, ft2m(100000), 500); % Refresh atmosphere lookup
@@ -235,7 +235,7 @@ clear all
 %% Create Performance Plots
     if performance_plots
         disp("Working On Performance Plots...")
-        buildPerformancePlots(plane, plane.MTOW, 30); % Can increase 50 for more resoultion at a time penalty
+        buildPerformancePlots(plane, plane.mid_mission_weight, 30); % Can increase 50 for more resoultion at a time penalty
     end
 
 %% Drag Polar
@@ -250,6 +250,17 @@ if print_components
 
     disp('Raymer component weights(approximate, N):');
     disp(plane.weights);
+    disp('Max Sustained Turn Rate at 20,000 ft:')
+    disp(plane.getMaxSustainedTurnAtAlt(ft2m(20000), plane.mid_mission_weight, 1, 0.4))
+    [h, M] = plane.findMaxRangeState(plane.mid_mission_weight);
+    disp('Best Cruise Altitude and Mach:')
+    disp(m2ft(h))
+    disp(M)
+    disp('Best Glide Angle at Sea Level:')
+    [M, best_glide_ang] = plane.calcBestGlideAngle(ft2m(0), plane.mid_mission_weight);
+    disp(best_glide_ang)
+    disp('Plane Static Margin:')
+    disp(plane.SM)
 
 end
     

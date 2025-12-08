@@ -175,10 +175,10 @@ function buildPerformancePlots(plane, W, N)
     title('Induced Drag Coefficent')
 
     subplot(3, 3, 4);
-    scatter(CD, trimCL, 'black', 'filled')
-    xlabel('$C_D$')
-    title("Drag Polar")
-    ylabel('$C_L$')
+    surf(M, m2ft(h)/1000, atand(1./(trimCL./CD)), 'EdgeColor', 'none')
+    xlabel('$M$')
+    title("Glide Angle (deg)")
+    ylabel('$h$ [kft]')
 
     subplot(3, 3, 5)
     surf(Mvec, m2ft(h)/1000, D/1000, 'EdgeColor', 'none')
@@ -208,6 +208,13 @@ function buildPerformancePlots(plane, W, N)
     ylabel('$C_{L_\alpha}$')
     title("Lift Slope")
 
+    subplot(3, 3, 9)
+    surf(M, m2ft(h)/1000, trimCL./CD, 'EdgeColor', 'none')
+    xlabel('$M$')
+    ylabel('$h$ [kft]')
+    zlabel('$\frac{L}{D}$')
+    title('Lift over Drag')
+    
     subplot(3, 3, 9)
     surf(M, m2ft(h)/1000, trimCL./CD, 'EdgeColor', 'none')
     xlabel('$M$')

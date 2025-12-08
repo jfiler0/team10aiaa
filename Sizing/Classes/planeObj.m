@@ -415,7 +415,7 @@ classdef planeObj
             
             % Run function
             [x_cg_est,~,~] = CG_Location(S_exposed_PSC,S_wet_PSC,W_engine_PSC,TOGW_PSC,c_PSC,xstart_PSC);
-            obj.x_cg = x_cg_est(1);
+            obj.x_cg = 9.2; %m
             % Final Static Margin Calculations
             obj.x_np = obj.x_MAC_wing + (obj.x_bar_n*obj.MAC_wing);
             obj.X_bar_cg = obj.x_cg/obj.x_MAC_wing;
@@ -922,6 +922,17 @@ classdef planeObj
             catch
                 disp("break")
             end
+        end
+
+        function glide_ang = calcGlideAngle(obj, h, M, W)
+            LD = obj.calcLD(h, M, W);
+            glide_ang = atand(1/LD);
+        end
+
+        function [M, best_glide_ang] = calcBestGlideAngle(obj, h, W)
+            options = optimset('Display', 'off');
+            [M, LD] = fminbnd(@(M) obj.calcGlideAngle(h, M, W), 0.1, 2, options);
+            best_glide_ang = atand(1/LD);
         end
         
     end

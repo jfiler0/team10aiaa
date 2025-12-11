@@ -415,7 +415,7 @@ classdef planeObj
             
             % Run function
             [x_cg_est,~,~] = CG_Location(S_exposed_PSC,S_wet_PSC,W_engine_PSC,TOGW_PSC,c_PSC,xstart_PSC);
-            obj.x_cg = 9.2; %m
+            obj.x_cg = ft2m(30.3045); %m
             % Final Static Margin Calculations
             obj.x_np = obj.x_MAC_wing + (obj.x_bar_n*obj.MAC_wing);
             obj.X_bar_cg = obj.x_cg/obj.x_MAC_wing;

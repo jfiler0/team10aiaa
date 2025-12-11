@@ -259,6 +259,8 @@ if print_components
     disp('Best Glide Angle at Sea Level:')
     [M, best_glide_ang] = plane.calcBestGlideAngle(ft2m(0), plane.mid_mission_weight);
     disp(best_glide_ang)
+    disp('Plane CG Location:')
+    disp(m2ft(plane.x_cg))
     disp('Plane Static Margin:')
     disp(plane.SM)
 

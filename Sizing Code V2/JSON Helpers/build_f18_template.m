@@ -3,6 +3,8 @@ clear;
 
 plane = struct();
 
+plane.id = "f18_superhornet";
+
 plane.fuselage.length = 17.54;
 plane.fuselage.max_area = 2.5;
 
@@ -16,9 +18,8 @@ plane.wing.span = 12.05;
 plane.wing.le_sweep = 29.3;
 plane.wing.root_chord = 5.07;
 plane.wing.tip_chord = 1.686;
+plane.wing.fold_ratio = 0.333;
 
-fullPath = mfilename('fullpath');
-codeFolder = fileparts(fullPath);
-saveFile = fullfile(codeFolder, "..","Aircraft Files", "f18_superhornet.xml");
+plane.type = "Jet fighter"; % for coefficent lookups
 
-writestruct(plane,saveFile);
+writeAircraftFile(plane);

@@ -25,11 +25,7 @@ clear all
 
 % Controls
     % Chose Your Concept
-% <<<<<<< HEAD
-    CN = 11; % COLUMN NUMBER
-% =======
-%     CN = 11; % COLUMN NUMBER
-% >>>>>>> 5f932614bc24142f1b7a15d03487d1f75867d070
+    CN = 1; % COLUMN NUMBER
         % 1 -> F18E
         % 2 -> F18E_Sized (for testing)
         % 3 -> F16

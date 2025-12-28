@@ -1,4 +1,9 @@
-% This builds a stuct to be saved as an XML of a F18. The inputs can be changed for a general aircraft.
+%% build_f18_template
+% - Goal: For testing, we need an aircraft file. This also provides an example file to reference for future aircraft analyisis. While you
+% can build a file like this for each, the XML can be easily edited.
+% - The specific assignments for each of these construct names is important. If any are missing, things will almost certainty break. You can
+% add new things. It is also critical to keep plane files consistent with the same naming conventions.
+
 clear;
 
 plane = struct();

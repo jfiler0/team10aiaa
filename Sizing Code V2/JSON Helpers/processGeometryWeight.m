@@ -1,4 +1,5 @@
 function geom = processGeometryWeight(geom)
+    % apply a weight model to compute the empty weight
 
     geom.weights.empty = geom.weights.mtow * geom.weights.raymer.A * N2lb(geom.weights.mtow)^geom.weights.raymer.C;
 

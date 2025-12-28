@@ -1,4 +1,5 @@
 function [A, C] = getRaymerCoefficents(type)
+    % Different aircraft types have seperate regression variables. This lookups them up
 
     weight_regression_lookup = readtable("weight_regression_lookup.xlsx");
 

@@ -5,6 +5,21 @@ geom = readAircraftFile("f18_superhornet"); % Get a geometry input file from the
 geom = processGeometryInput(geom); % Do basic calculations to get useful variables
 geom = processGeometryWeight(geom); % Use a model to predict WE and other required weight variables
 
-models = models(geom, NaN, @CD0_basic); % Assign the models to use for each key function (later build interpolations)
+% CD0_model = model_def( "CD0", @CD0_basic, [model_input("geometry.weights.empty")] );
+% COST_model = model_def( "cost", @unitcost_wrapper, [model_input("geometry.weights.empty", 50, [1E2 1E6]), model_input("geometry.input.kloc", 25, [100 20000])] );
+% % COST_model = model_def( "cost", @unitcost_wrapper, [model_input("geometry.weights.empty"), model_input("geometry.input.kloc")] );
+% % CD0_model = model_def( "CD0", @CD0_basic, [model_input("geometry.weights.mtow", 10, [1E2 1E6]) model_input("geometry.wing.span")] );
+% 
+% models = models(NaN, [CD0_model COST_model]);
+% models = models.loadInterps(geom, NaN);
+% 
+% build_models_file(models, "primary_models")
+% 
+% clear models
 
-models.fetch_CD0(NaN) % example call to CD0
+models = read_models_file("primary_models");
+
+models.call("cost", geom)
+models.call("CD0", geom)
+
+disp("END")

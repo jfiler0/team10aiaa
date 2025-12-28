@@ -1,5 +1,5 @@
 function writeAircraftFile(geom)
-    % Input the structure object + the name of the aircraft file (without the file extension!)
+    % Input the structure object. The name will be generated from the id
     % Writes to the "Aircraft Files" folder
 
     fullPath = mfilename('fullpath');

@@ -14,10 +14,8 @@ function input = model_input(structChain, res, limits)
     if nargin < 3 || res <= 1
         input.ub = NaN;
         input.lb = NaN;
-        input.do_interp = false;
     else
         input.ub = max(limits);
         input.lb = min(limits);
-        input.do_interp = true;
     end
 end

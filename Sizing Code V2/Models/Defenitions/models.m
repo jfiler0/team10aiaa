@@ -8,13 +8,14 @@ classdef models < handle % <--- Inheriting from handle allows in-place updates
 
     methods
         function obj = models(settings, model_list)
-
             obj.model_list = model_list;
             obj.num_models = numel(obj.model_list);
+            for i = 1:obj.num_models
+                obj.model_list(i).idx = i;
+            end
 
             obj.input_temp = struct();
             obj.input_temp.settings = settings;
-            
         end
         function out = call(obj, id, geometry, condition)
             if nargin < 4
@@ -48,8 +49,7 @@ classdef models < handle % <--- Inheriting from handle allows in-place updates
             end
         end
         function out = internal_call(obj, id, input)
-            [~, idx] = find(strcmp(id, [obj.model_list.id]) );
-            model = obj.model_list(idx);
+            model = obj.findModel(id);
 
             if model.has_interp
                 % need to check history of inputs with res = 1
@@ -67,14 +67,20 @@ classdef models < handle % <--- Inheriting from handle allows in-place updates
                     model.interp = buildInterpolationModel(model,  input);
                     model.interp_loaded = true;
                 end
-                obj.model_list(idx) = model;
+                obj.model_list(model.idx) = model;
                 out = model.interp(input);
             else
                 % Call without interpolation
                 out = model.handle(input);
             end
         end
-        
+        function model = findModel(obj, id)
+            [~, idx] = find(strcmp(id, [obj.model_list.id]) );
+            model = obj.model_list(idx);
+            if(isempty(idx))
+                error(sprintf("Do not see a model '%s' in the list.", id))
+            end
+        end
         function loadInterps(obj, geometry, condition)
             obj.input_temp.geometry = geometry;
             obj.input_temp.condition = condition;

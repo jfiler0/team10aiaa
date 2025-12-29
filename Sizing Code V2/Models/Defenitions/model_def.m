@@ -7,6 +7,7 @@ function model = model_def(id, handle, vectorized, inputs)
     
     model = struct();
     model.id = id;
+    model.idx = NaN; % the associated location of the model within the models class
     model.handle = handle;
     model.inputs = inputs([inputs.res] ~= 0); % filter out any with an input of 0 ( method of disabling)
     model.num_inputs = length(model.inputs);

@@ -1,0 +1,9 @@
+function CDW = CDW_basic(in)
+    E_WD = 2.2;
+    M_CD0_max = 1/(cosd(in.geometry.wing.le_sweep))^0.2;
+
+    CDW = transonicMerge(@(in) 0, ... 
+        @(in) (4.5 * pi / in.geometry.ref_area) * ( in.geometry.fuselage.max_area / in.geometry.fuselage.length ) ^ 2 * ...
+            E_WD * ( 0.74 + 0.37 * cosd(in.geometry.wing.le_sweep) ) * ( 1 - 0.3 * sqrt( in.condition.mach - M_CD0_max )) , ...
+            in );
+end

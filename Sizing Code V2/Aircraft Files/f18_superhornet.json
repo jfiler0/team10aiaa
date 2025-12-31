@@ -1,0 +1,23 @@
+{
+  "id": "f18_superhornet",
+  "fuselage": {
+    "length": 17.54,
+    "max_area": 2.5
+  },
+  "input": {
+    "g_limit": 7.5,
+    "kloc": 5000
+  },
+  "weights": {
+    "mtow": 264615.8075659828,
+    "w_fixed": 8896.4432344668767
+  },
+  "wing": {
+    "span": 12.05,
+    "le_sweep": 29.3,
+    "root_chord": 5.07,
+    "tip_chord": 1.686,
+    "fold_ratio": 0.333
+  },
+  "type": "Jet fighter"
+}

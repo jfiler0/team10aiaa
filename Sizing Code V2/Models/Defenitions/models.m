@@ -7,7 +7,7 @@ classdef models < handle % <--- Inheriting from handle allows in-place updates
     end
 
     methods
-        function obj = models(settings, model_list)
+        function obj = models(model_list)
             obj.model_list = model_list;
             obj.num_models = numel(obj.model_list);
             for i = 1:obj.num_models
@@ -15,6 +15,10 @@ classdef models < handle % <--- Inheriting from handle allows in-place updates
             end
 
             obj.input_temp = struct();
+            obj.updateSettings(readSettings()); % read settings from current file
+        end
+        % recommended to run this again after settings are loaded to make sure it is up to date
+        function updateSettings(obj, settings)
             obj.input_temp.settings = settings;
         end
         function out = call(obj, id, geometry, condition)
@@ -28,7 +32,7 @@ classdef models < handle % <--- Inheriting from handle allows in-place updates
             out = obj.internal_call(id, obj.input_temp);
         end
         function out = vector_call(obj, id, geometry, condition, structChain, numVec)
-            
+            % BE CAREFUL ABOUT ENSUING structChain IS A REAL VAR. It will fail silently
             % will generate an assocaited output vector as if the call function is looped
             % if the model handle can be vectorized, it will generate a input struct array and pass it in. Otherwise, it will just loop
             

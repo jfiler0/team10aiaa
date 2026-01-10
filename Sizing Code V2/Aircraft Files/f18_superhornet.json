@@ -1,23 +1,103 @@
 {
   "id": "f18_superhornet",
   "fuselage": {
-    "length": 17.54,
-    "max_area": 2.5
+    "length": {
+      "n": "Fuselage Length",
+      "v": 17.54,
+      "d": false,
+      "u": "m"
+    },
+    "max_area": {
+      "n": "Fuselage Max Area",
+      "v": 2.5,
+      "d": false,
+      "u": "m2"
+    },
+    "E_WD": {
+      "n": "Fuselage Wave Drag Efficency",
+      "v": 2.2,
+      "d": false,
+      "u": ""
+    }
   },
   "input": {
-    "g_limit": 7.5,
-    "kloc": 5000
+    "g_limit": {
+      "n": "Structural G-Limit",
+      "v": 7.5,
+      "d": false,
+      "u": ""
+    },
+    "kloc": {
+      "n": "KLOC",
+      "v": 5000,
+      "d": false,
+      "u": ""
+    }
   },
   "weights": {
-    "mtow": 264615.8075659828,
-    "w_fixed": 8896.4432344668767
+    "mtow": {
+      "n": "Max Takeoff Weight",
+      "v": 264615.8075659828,
+      "d": false,
+      "u": "N"
+    },
+    "w_fixed": {
+      "n": "Fixed Weight",
+      "v": 8896.4432344668767,
+      "d": false,
+      "u": "N"
+    }
   },
   "wing": {
-    "span": 12.05,
-    "le_sweep": 29.3,
-    "root_chord": 5.07,
-    "tip_chord": 1.686,
-    "fold_ratio": 0.333
+    "span": {
+      "n": "Wing Span",
+      "v": 12.05,
+      "d": false,
+      "u": "m"
+    },
+    "le_sweep": {
+      "n": "Wing Leading Edge Sweep",
+      "v": 29.3,
+      "d": false,
+      "u": "deg"
+    },
+    "root_chord": {
+      "n": "Wing Root Chord",
+      "v": 5.07,
+      "d": false,
+      "u": "m"
+    },
+    "tip_chord": {
+      "n": "Wing Tip Chord",
+      "v": 1.686,
+      "d": false,
+      "u": "m"
+    },
+    "fold_ratio": {
+      "n": "Wing Fold Ratio",
+      "v": 0.333,
+      "d": false,
+      "u": ""
+    }
   },
-  "type": "Jet fighter"
+  "type": {
+    "n": "Raymer Aircraft Type",
+    "v": "Jet fighter",
+    "d": false,
+    "u": "s"
+  },
+  "prop": {
+    "num_engine": {
+      "n": "Number of Engines",
+      "v": 2,
+      "d": false,
+      "u": ""
+    },
+    "engine": {
+      "n": "Engine Name",
+      "v": "F414",
+      "d": false,
+      "u": "s"
+    }
+  }
 }

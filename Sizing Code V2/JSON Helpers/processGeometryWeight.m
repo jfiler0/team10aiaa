@@ -1,7 +1,7 @@
 function geom = processGeometryWeight(geom)
     % apply a weight model to compute the empty weight
 
-    geom.weights.empty = geom.weights.mtow * geom.weights.raymer.A * N2lb(geom.weights.mtow)^geom.weights.raymer.C;
+    geom.weights.empty = json_entry("Empty Weight", geom.weights.mtow.v * geom.weights.raymer.A.v * N2lb(geom.weights.mtow.v)^geom.weights.raymer.C.v, true, "m");
 
     % geom.weights.components = calcRaymerWeights(getPlaneRaymerWeightInput(geom));
     % fn = fieldnames(geom.weights.components);  % get all field names

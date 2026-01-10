@@ -105,32 +105,60 @@ classdef models < handle % <--- Inheriting from handle allows in-place updates
 end
 
 function interp = buildInterpolationModel(model, in)
-
     nDim = model.num_interp_inputs;
-    def_vecs = {};
+    def_vecs = cell(1, nDim);
+    res_vec = zeros(1, nDim);
+    
     for i = 1:nDim
         input = model.interp_inputs(i);
         def_vecs{i} = linspace(input.lb, input.ub, input.res);
+        res_vec(i) = input.res;
     end
-
-    % zeros([model.inputs.res])
 
     G = cell(1, nDim);
     [G{:}] = ndgrid(def_vecs{:});
 
-    values = zeros([1 model.interp_inputs.res]);
+    % Determine Output Length
+    % Run the model once with the base 'in' to see how long the output is
+    sample_out = model.handle(in);
+    outLen = numel(sample_out);
 
-    for i = 1:numel(values)
-        for j = 1:nDim
-            in = assignNestedField(in, model.interp_inputs(j).structChain, G{j}(i));
-        end
-        values(i) = model.handle(in);
+    % Initialize values matrix
+    % For a 2D grid [10, 10] and 5 outputs, size is [10, 10, 5]
+    if nDim == 1
+        values = zeros(res_vec, 1, outLen); 
+    else
+        values = zeros([res_vec, outLen]);
     end
 
-    % loop through values using G values and getNestedField with handle
+    % Fill the values matrix
+    for i = 1:numel(G{1}) % Loop through the input grid points
+        temp_in = in; 
+        for j = 1:nDim
+            temp_in = assignNestedField(temp_in, model.interp_inputs(j).structChain, G{j}(i));
+        end
+        
+        % Get the vector result
+        res = model.handle(temp_in);
+        
+        % Assign the vector into the (N+1) dimension of the matrix
+        % We use linear indexing for the grid dims, and ':' for the output dim
+        if nDim == 1
+            values(i, 1, :) = res;
+        else
+            % This syntax handles N-dimensions and maps 'i' to the grid location
+            % while filling the final vector dimension
+            idx = cell(1, nDim + 1);
+            [idx{1:nDim}] = ind2sub(res_vec, i);
+            idx{end} = ':';
+            values(idx{:}) = res;
+        end
+    end
 
     F = griddedInterpolant(def_vecs, values, 'linear', 'none');
-    interp = @(in) F(expandInputs(in, model));
+    % interp = @(in) F(expandInputs(in, model));
+    % This ensures that if you ask for 1 point, you get a 1xL row vector
+    interp = @(in) reshape(F(expandInputs(in, model)), [], outLen);
 end
 
 function s = assignNestedField(s, fields, val)
@@ -138,14 +166,33 @@ function s = assignNestedField(s, fields, val)
     % fields: A string array or cell array of field names, e.g., ["a", "b", "c"]
     % val: The value to assign at the end of the chain
 
+    if(fields(1) == "geometry") % need to append .v
+        fields = [fields "v"];
+    end
+    if(fields(1)=="condition")
+        % disp("hol up")
+    end
+
+    % fields % THIS SHOULD NOT ALWAYS BE WE
+
+    % need to update conditions
+
+    s = assignNestedFieldRecrusive(s, fields, val);
+end
+function s = assignNestedFieldRecrusive(s, fields,val)
+    % take this out so you dont run checks every time
     if isscalar(fields)
         s.(fields(1)) = val;
     else
-        s.(fields(1)) = assignNestedField(s.(fields(1)), fields(2:end), val);
+        s.(fields(1)) = assignNestedFieldRecrusive(s.(fields(1)), fields(2:end), val);
     end
 end
 
 function out = readNestedField(s, fields)
+    if(fields(1) == "geometry") % need to append .v
+            fields = [fields "v"];
+    end
+
     for k = 1:numel(fields)
         s = s.(fields(k));
     end

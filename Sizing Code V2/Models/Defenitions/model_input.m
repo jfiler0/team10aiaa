@@ -1,17 +1,25 @@
-function input = model_input(structChain, res, limits)
+function input = model_input(structChain, vectorized, res, limits)
     % structChain = should be a string with periods to define different levels
     % res = the number of interpolation points
     % limits = [lower bound, upper bound]
 
     input = struct();
     input.structChain = strsplit(structChain, '.');
-    
+
     if nargin < 2
-        res = 0;
+        error("Must define if this input: " + structChain + " is vectorized in associated model call.");
+    end
+    input.vectorized = vectorized;
+    
+    if nargin < 3
+        res = 1; % 0 means disabled. 1 is just on but no interpolation. Above 1 triggers interpolation
     end
     input.res = res;
     
-    if nargin < 3 || res <= 1
+    if nargin < 4
+        if res > 1
+            error("If interpolation is enabled, limits argument must be included")
+        end
         input.ub = NaN;
         input.lb = NaN;
     else

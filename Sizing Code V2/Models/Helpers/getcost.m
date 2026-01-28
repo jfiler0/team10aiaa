@@ -12,7 +12,7 @@ function PROG_500_2025 = getcost(empty_weight, KLOC)
 AUW=empty_weight*0.62;
 % aircraft unit weight is approx 62% of the empty weight according to Nicolai Chap 24.2
 
-PROG_100_1977 = 550*AUW^(0.812);
+PROG_100_1977 = 550*AUW.^(0.812);
 % CER from RAND N2283-2 Table 25. Cost in thousands of 1977 dollars. AUW in
 % lbs.
 
@@ -35,7 +35,7 @@ PROG_500_2025 = PROG_500_2025 +  0.3 * PROG_500_2025 * 0.75;
 a=3.6;
 b=1.2; % fighters typically use embedded systems
 
-E = a*KLOC^b; % in person months
+E = a*KLOC.^b; % in person months
 cost_software=E*16000; 
 % 16,000 per person per month from COCOMO II (2013)
 cost_software=cost_software*1.3907; % inflation

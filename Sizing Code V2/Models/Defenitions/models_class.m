@@ -34,7 +34,7 @@ classdef models_class < handle % <--- Inheriting from handle allows in-place upd
         end
         function out = vector_call(obj, id, geometry, condition, structChain, numVec)
             % BE CAREFUL ABOUT ENSUING structChain IS A REAL VAR. It will fail silently
-            % will generate an assocaited output vector as if the call function is looped
+            % will generate an assocaitefd output vector as if the call function is looped
             % if the model handle can be vectorized, it will generate a input struct array and pass it in. Otherwise, it will just loop
             
             if nargin < 4

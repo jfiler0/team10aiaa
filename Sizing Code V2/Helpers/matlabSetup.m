@@ -1,7 +1,12 @@
 function matlabSetup()
     
     clear;clc;close all;
-    set(0,'defaultfigureposition',[70 150 1800 950]')
+
+    set(groot, 'DefaultFigureUnits', 'normalized');
+    set(groot, 'DefaultFigurePosition', [0.1 0.1 0.8 0.8]);
+    set(groot, 'DefaultFigureCreateFcn', @(fig, ~) set(fig, 'Position', [0.1 0.1 0.8 0.8], 'WindowStyle', 'docked'));
+
+    % set(0, 'DefaultFigureWindowStyle', 'docked');
     
     set(groot, 'defaultAxesFontName', 'Times New Roman');
     set(groot, 'defaultTextFontName', 'Times New Roman');

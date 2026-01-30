@@ -7,7 +7,7 @@ function input = model_input(structChain, vectorized, res, limits)
     input.structChain = strsplit(structChain, '.');
 
     if nargin < 2
-        error("Must define if this input: " + structChain + " is vectorized in associated model call.");
+        vectorized = false;
     end
     input.vectorized = vectorized;
     

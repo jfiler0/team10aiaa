@@ -3,7 +3,7 @@ function build_models_file(model, file_name)
 
     fullPath = mfilename('fullpath');
     codeFolder = fileparts(fullPath);
-    saveFile = fullfile(codeFolder, "..", file_name+".mat");
+    saveFile = fullfile(codeFolder, "../Saved_Models/", file_name+".mat");
     
     save(saveFile, 'model')
 

@@ -3,7 +3,7 @@ function models = read_models_file(name)
 
     fullPath = mfilename('fullpath');
     codeFolder = fileparts(fullPath);
-    readFile = fullfile(codeFolder, "..", name+".mat");
+    readFile = fullfile(codeFolder, "../Saved_Models/", name+".mat");
 
     models = load(readFile);
     models = models.model;

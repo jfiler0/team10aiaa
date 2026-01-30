@@ -19,7 +19,7 @@ set.CDW_scaler = 1; % general scaler to wave drag
 
 fullPath = mfilename('fullpath');
 codeFolder = fileparts(fullPath);
-saveFile = fullfile(codeFolder, "..","settings.json");
+saveFile = fullfile(codeFolder, "../..","settings.json");
 
 jsonText = jsonencode(set, 'PrettyPrint', true);
 

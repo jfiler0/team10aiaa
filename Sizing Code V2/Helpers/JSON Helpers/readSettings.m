@@ -4,7 +4,7 @@ function read_struct = readSettings()
 
     fullPath = mfilename('fullpath');
     codeFolder = fileparts(fullPath);
-    readFile = fullfile(codeFolder, "..","settings.json");
+    readFile = fullfile(codeFolder, "../..","settings.json");
     
     read_struct = readstruct(readFile);
 

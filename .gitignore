@@ -1,3 +1,7 @@
 *.asv
 Sizing/concepts_tabulations.xlsx
 /Sizing/Lookups/atmosphere_lookup.mat
+
+*.json
+
+*.mat

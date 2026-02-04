@@ -1,21 +1,34 @@
-function struct = json_entry(name, value, units)
+function struct = json_entry(name, value, units, geom)
     % name = some string to call this entry. Can have spaces but avoid special characters. This is the selection for gui
     % value = whatever the value is. Can be NaN or [] if it should not be assigned yet
     % is_derived = a boolean. If false, it is a primary variable that can be changed/optimized. If not, it is for calculation and export
     % units = HOW TO HANDLE
+    % geom -> needed to evaluate derived parms. Does work if not passed in on primary calls
+
+    if nargin < 4
+        geom = NaN;
+    end
 
     struct.n = name;
-    struct.v = value;
     struct.u = units;
+    struct.c = []; 
+    % placeholder for a list of connected structures inside geometry that must be updated if this variable is changed
+    % bit of a danger for loops. Oh well. I am sure they won't become an issue
 
-    disp(struct.n)
-
-    % check if this is a derived variable (input is a string)
+    %  would love to not call this repeadtly
     type = class(value);
-    if any( [ strcmp(type, 'double'), strcmp(type, 'int') ] )
+    % check if the unit is 's' which designates a string input. This can only be a primary variable
+    if struct.u == 's' || any( [ strcmp(type, 'double'), strcmp(type, 'int') ] ) % this is a primary var and can take value
         struct.d = false;
+        struct.eval = 0;
+        struct.v = value;
     elseif strcmp(type, 'string')
+        if ~isstruct(geom)
+            error('json_entry was called with no defined geom (not enough arguments)')
+        end
         struct.d = true;
+        struct.eval = value;
+        struct.v = eval(value);
     else
         error("Invalid input variable type")
     end

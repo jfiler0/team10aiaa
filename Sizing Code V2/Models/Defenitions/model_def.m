@@ -17,24 +17,17 @@ function model = model_def(id, handle, inputs, interp_method)
     model.interp_inputs = model.inputs([model.inputs.res] > 1);
     model.num_interp_inputs = length(model.interp_inputs);
 
-    model.history_inputs = model.inputs([model.inputs.res] == 1);
-    model.num_history_inputs = length(model.history_inputs);
-
     if model.num_inputs > 0
         model.has_interp = model.num_interp_inputs > 0;
-        model.has_history = model.num_history_inputs > 0;
     else
         model.has_interp = false;
-        model.has_history = false;
     end
     model.interp_loaded = false;
     model.interp = [];
-    model.history = []; % will store previous input set to lookup against
 
     if nargin < 4 % did not define an interpolation scheme (linear/pchip/spline)
         model.interp_method = 'linear';
     else
         model.interp_method = interp_method;
     end
-
 end

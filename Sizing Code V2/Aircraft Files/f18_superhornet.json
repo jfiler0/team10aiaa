@@ -3,101 +3,131 @@
   "fuselage": {
     "length": {
       "n": "Fuselage Length",
-      "v": 17.54,
       "u": "m",
-      "d": false
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 17.54
     },
     "max_area": {
       "n": "Fuselage Max Area",
-      "v": 2.5,
       "u": "m2",
-      "d": false
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 2.5
     },
     "E_WD": {
       "n": "Fuselage Wave Drag Efficency",
-      "v": 2.2,
       "u": "",
-      "d": false
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 2.2
     }
   },
   "input": {
     "g_limit": {
       "n": "Structural G-Limit",
-      "v": 7.5,
       "u": "",
-      "d": false
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 7.5
     },
     "kloc": {
       "n": "KLOC",
-      "v": 5000,
       "u": "",
-      "d": false
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 5000
     }
   },
   "weights": {
     "mtow": {
       "n": "Max Takeoff Weight",
-      "v": 264615.8075659828,
       "u": "N",
-      "d": false
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 264615.8075659828
     },
     "w_fixed": {
       "n": "Fixed Weight",
-      "v": 8896.4432344668767,
       "u": "N",
-      "d": false
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 8896.4432344668767
     }
   },
   "wing": {
     "span": {
       "n": "Wing Span",
-      "v": 12.05,
       "u": "m",
-      "d": false
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 12.05
     },
     "le_sweep": {
       "n": "Wing Leading Edge Sweep",
-      "v": 29.3,
       "u": "deg",
-      "d": false
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 29.3
     },
     "root_chord": {
       "n": "Wing Root Chord",
-      "v": 5.07,
       "u": "m",
-      "d": false
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 5.07
     },
     "tip_chord": {
       "n": "Wing Tip Chord",
-      "v": 1.686,
       "u": "m",
-      "d": false
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 1.686
     },
     "fold_ratio": {
       "n": "Wing Fold Ratio",
-      "v": 0.333,
       "u": "",
-      "d": false
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 0.333
     }
   },
   "type": {
     "n": "Raymer Aircraft Type",
-    "v": "Jet fighter",
     "u": "s",
-    "d": true
+    "c": [],
+    "d": false,
+    "eval": 0,
+    "v": "Jet fighter"
   },
   "prop": {
     "num_engine": {
       "n": "Number of Engines",
-      "v": 2,
       "u": "",
-      "d": false
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 2
     },
     "engine": {
       "n": "Engine Name",
-      "v": "F414",
       "u": "s",
-      "d": true
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": "F414"
     }
   }
 }

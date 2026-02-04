@@ -22,16 +22,18 @@ classdef models_class < handle % <--- Inheriting from handle allows in-place upd
             obj.input_temp.settings = settings;
         end
         function out = call(obj, id, geometry, condition)
-            if nargin < 4
+            if nargin < 4 % this can probably be removed
                 condition = NaN;
             end
 
             obj.input_temp.geometry = geometry;
             obj.input_temp.condition = condition;
 
-            model = obj.findModel(id);
+            model = obj.findModel(id); % may be a bottleneck
             out = obj.internal_call(model, obj.input_temp, 1); % should this be 1
         end
+
+        % ignoring this for a second during V2.2
         function out = vector_call(obj, id, geometry, condition, structChain, numVec)
             % BE CAREFUL ABOUT ENSUING structChain IS A REAL VAR. It will fail silently
             % will generate an assocaitefd output vector as if the call function is looped
@@ -65,16 +67,6 @@ classdef models_class < handle % <--- Inheriting from handle allows in-place upd
         end
         function out = internal_call(obj, model, input, vec_length)
             if model.has_interp
-                % need to check history of inputs with res = 1 , *** this cannot save vector inputs
-                if model.has_history
-                    history = getHistoryInputs(model, obj.input_temp);
-
-                    if history ~= model.history
-                        model.history = history;
-                        model.interp_loaded = false;
-                        disp("update required")
-                    end
-                end
                 if ~model.interp_loaded
                     % somehow build the interp
                     model.interp = buildInterpolationModel(model,  input);
@@ -103,9 +95,6 @@ classdef models_class < handle % <--- Inheriting from handle allows in-place upd
                 if model.has_interp
                     model.interp = buildInterpolationModel(model, obj.input_temp);
                     model.interp_loaded = true;
-                end
-                if model.has_history
-                    model.history = getHistoryInputs(model, obj.input_temp);
                 end
                 obj.model_list(i) = model;
             end
@@ -171,58 +160,12 @@ function interp = buildInterpolationModel(model, in)
     interp = @(in, vec_length) reshape(F(expandInputs(in, model, vec_length)), [], outLen);
 end
 
-function s = assignNestedField(s, fields, val)
-    % s: The original structure
-    % fields: A string array or cell array of field names, e.g., ["a", "b", "c"]
-    % val: The value to assign at the end of the chain
-
-    if(fields(1) == "geometry") % need to append .v
-        fields = [fields "v"];
-    end
-    if(fields(1)=="condition")
-        % disp("hol up")
-    end
-
-    % fields % THIS SHOULD NOT ALWAYS BE WE
-
-    % need to update conditions
-
-    s = assignNestedFieldRecrusive(s, fields, val);
-end
-
-function s = assignNestedFieldRecrusive(s, fields,val)
-    % take this out so you dont run checks every time
-    if isscalar(fields)
-        s.(fields(1)) = val;
-    else
-        s.(fields(1)) = assignNestedFieldRecrusive(s.(fields(1)), fields(2:end), val);
-    end
-end
-
-function out = readNestedField(s, fields)
-    if(fields(1) == "geometry") % need to append .v
-            fields = [fields "v"];
-    end
-
-    for k = 1:numel(fields)
-        s = s.(fields(k));
-    end
-    out = s;
-end
-
 function interpInputs = expandInputs(in, model, vec_length)
     % take the input info and grab the needed inputs from model to pass into interp as an anymous function
     interpInputs = zeros([vec_length, model.num_interp_inputs]);
 
     for i = 1:model.num_interp_inputs
         interpInputs(:, i) = readNestedField(in, model.interp_inputs(i).structChain);
-    end
-end
-
-function history = getHistoryInputs(model, input)
-    history = zeros([1 model.num_history_inputs]);
-    for i = 1:model.num_history_inputs
-        history(i) = readNestedField(input, model.history_inputs(i).structChain);
     end
 end
 

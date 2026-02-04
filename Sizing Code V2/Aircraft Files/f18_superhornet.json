@@ -4,100 +4,100 @@
     "length": {
       "n": "Fuselage Length",
       "v": 17.54,
-      "d": false,
-      "u": "m"
+      "u": "m",
+      "d": false
     },
     "max_area": {
       "n": "Fuselage Max Area",
       "v": 2.5,
-      "d": false,
-      "u": "m2"
+      "u": "m2",
+      "d": false
     },
     "E_WD": {
       "n": "Fuselage Wave Drag Efficency",
       "v": 2.2,
-      "d": false,
-      "u": ""
+      "u": "",
+      "d": false
     }
   },
   "input": {
     "g_limit": {
       "n": "Structural G-Limit",
       "v": 7.5,
-      "d": false,
-      "u": ""
+      "u": "",
+      "d": false
     },
     "kloc": {
       "n": "KLOC",
       "v": 5000,
-      "d": false,
-      "u": ""
+      "u": "",
+      "d": false
     }
   },
   "weights": {
     "mtow": {
       "n": "Max Takeoff Weight",
       "v": 264615.8075659828,
-      "d": false,
-      "u": "N"
+      "u": "N",
+      "d": false
     },
     "w_fixed": {
       "n": "Fixed Weight",
       "v": 8896.4432344668767,
-      "d": false,
-      "u": "N"
+      "u": "N",
+      "d": false
     }
   },
   "wing": {
     "span": {
       "n": "Wing Span",
       "v": 12.05,
-      "d": false,
-      "u": "m"
+      "u": "m",
+      "d": false
     },
     "le_sweep": {
       "n": "Wing Leading Edge Sweep",
       "v": 29.3,
-      "d": false,
-      "u": "deg"
+      "u": "deg",
+      "d": false
     },
     "root_chord": {
       "n": "Wing Root Chord",
       "v": 5.07,
-      "d": false,
-      "u": "m"
+      "u": "m",
+      "d": false
     },
     "tip_chord": {
       "n": "Wing Tip Chord",
       "v": 1.686,
-      "d": false,
-      "u": "m"
+      "u": "m",
+      "d": false
     },
     "fold_ratio": {
       "n": "Wing Fold Ratio",
       "v": 0.333,
-      "d": false,
-      "u": ""
+      "u": "",
+      "d": false
     }
   },
   "type": {
     "n": "Raymer Aircraft Type",
     "v": "Jet fighter",
-    "d": false,
-    "u": "s"
+    "u": "s",
+    "d": true
   },
   "prop": {
     "num_engine": {
       "n": "Number of Engines",
       "v": 2,
-      "d": false,
-      "u": ""
+      "u": "",
+      "d": false
     },
     "engine": {
       "n": "Engine Name",
       "v": "F414",
-      "d": false,
-      "u": "s"
+      "u": "s",
+      "d": true
     }
   }
 }

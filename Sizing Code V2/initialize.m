@@ -1,7 +1,7 @@
-clear; clc; close all;
-addAllPath
+clear; clc; close all; % clean up
+addAllPath % get all files and folders in the working diretory aded to path
 
-matlabSetup
+matlabSetup % settings for nice graphs
 simple_model % does not need to be run everytime - just regenerates lookups/analyisis functions being used
 build_default_settings(); % rebuilds the setting file to a defined default 
 build_f18_template(); % creates a sample JSON file called f18_superhornet

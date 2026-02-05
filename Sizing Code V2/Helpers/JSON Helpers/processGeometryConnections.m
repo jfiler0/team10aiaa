@@ -6,6 +6,8 @@ function geom = processGeometryConnections(geom)
                 % primary variable
             % if no -> just ignore it
 
+    % TODO: This has not been implemented at all lol
+
     warning("Connections not implemented yet")
 
     geom = geom;

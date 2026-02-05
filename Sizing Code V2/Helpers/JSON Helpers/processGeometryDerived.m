@@ -1,5 +1,10 @@
-function geom = processGeometryInput(geom)
+function geom = processGeometryDerived(geom)
     % Take the simplified geometry file, then compute a bunch of important derived variables
+
+    % This file is called anytime a geometry variable is changed right now. Which is very inefficent (especially given the amount of
+    % constructors and strings
+    % This is why each has the actual equation to update them embedded as a callable string. In the future, the code will only update the
+    % variables it needs to
     
     geom.wing.chord_avg = json_entry("Wing Average Chord", "0.5 * ( geom.wing.root_chord.v + geom.wing.tip_chord.v )", "m", geom);
     

@@ -1,8 +1,13 @@
 function out = transonicMerge(sub_fun, sup_fun, in)
+    % Smoothes out the transition between subsonic and supersonic defensitions using splines
+
+    % TODO: This function is a bit computationally bad. May be some improvements for vectorization
+
+    % TODO: Missing coments
+
     % sup_fun and sub_fun must both be a function of in
-    % transonic_range = [0.95 1.3];
-    % M_eps = 0.01;
-    transonic_range = in.settings.transonic_range;
+
+    transonic_range = in.settings.transonic_range; % The range to do this 'merging'
     M_eps = in.settings.transonic_M_eps;
 
     if(in.condition.M <= transonic_range(1))

@@ -1,4 +1,7 @@
 function condition = updateCondition(h, M_vel, CL, throttle)
+
+    % TODO: This may be outdated once aircraft_class is corrected
+
     % specify either altitude and mach or altitude and velocity (tells which it is from magnitude)
     condition = struct();
 

@@ -6,7 +6,7 @@ function read_struct = readAircraftFile(file_name)
     fullPath = mfilename('fullpath');
     codeFolder = fileparts(fullPath);
     readFile = fullfile(codeFolder, "../..","Aircraft Files", file_name+".json");
+        % if this is updated, writeAircraftFile must also be corrected
     
     read_struct = readstruct(readFile);
-
 end

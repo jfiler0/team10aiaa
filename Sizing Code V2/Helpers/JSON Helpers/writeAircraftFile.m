@@ -5,6 +5,7 @@ function writeAircraftFile(geom)
     fullPath = mfilename('fullpath');
     codeFolder = fileparts(fullPath);
     saveFile = fullfile(codeFolder, "../..","Aircraft Files", geom.id+".json");
+        % If this is updated, readAircraftFile must also be corrected
     
     jsonText = jsonencode(geom, 'PrettyPrint', true);
     

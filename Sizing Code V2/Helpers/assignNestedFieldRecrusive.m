@@ -1,5 +1,5 @@
 function s = assignNestedFieldRecrusive(s, fields, val)
-    % take this out so you dont run checks every time
+    % Recurisve call that checks if fields is a single string or an aray. If it is an array WE MUST GO DEEPER
     if isscalar(fields)
         s.(fields(1)) = val;
     else

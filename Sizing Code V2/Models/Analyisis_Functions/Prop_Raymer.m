@@ -1,4 +1,5 @@
 function out = Prop_Raymer(in)
+% Prop model needs to output: [TA, TSFC, alpha]
 
     %% Engine Regression Function
     % Version 2.1.0, 11/30/25

@@ -4,13 +4,14 @@
 % - The specific assignments for each of these construct names is important. If any are missing, things will almost certainty break. You can
 % add new things. It is also critical to keep plane files consistent with the same naming conventions.
 
-clear;
+% These strings are pretty self explanatory in what they assign. Read json_entry for more info on each field
+
+clear; % Start fresh
 
 plane = struct();
 
 plane.id = "f18_superhornet";
 
-% plane.fuselage.length = 17.54;
 plane.fuselage.length = json_entry("Fuselage Length", 17.54, "m");
 plane.fuselage.max_area = json_entry("Fuselage Max Area", 2.5, "m2");
 plane.fuselage.E_WD = json_entry("Fuselage Wave Drag Efficency", 2.2, "");
@@ -33,3 +34,4 @@ plane.prop.num_engine = json_entry("Number of Engines", 2, "");
 plane.prop.engine = json_entry("Engine Name", "F414", "s");
 
 writeAircraftFile(plane);
+    % Writes the actual file generally. This also means the location only needs to be changed in one place

@@ -10,7 +10,8 @@ clear; % Start fresh
 
 plane = struct();
 
-plane.id = "f18_superhornet";
+plane.name = json_entry("Aircraft Name", "F/A-18E Super Hornet", "s");
+plane.id = json_entry("Aircraft ID", "f18_superhornet", "s");
 
 plane.fuselage.length = json_entry("Fuselage Length", 17.54, "m");
 plane.fuselage.max_area = json_entry("Fuselage Max Area", 2.5, "m2");

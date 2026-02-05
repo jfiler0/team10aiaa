@@ -11,7 +11,7 @@ function plot_models(aircraft, N)
     % Parasite Drag
     figure('Name', "CD0")
     WE_vec = linspace(aircraft.geom.weights.empty.v/2, aircraft.geom.weights.empty.v*2, N);
-    CD0_vec = aircraft.vector_call("CD0", "geometry.weights.empty", WE_vec );
+    CD0_vec = aircraft.vector_call("CD0", "geom.weights.empty", WE_vec );
     plot(WE_vec, CD0_vec)
     xlabel("Empty Weight [N]")
     ylabel("CD0")
@@ -21,7 +21,7 @@ function plot_models(aircraft, N)
     % Wave Drag
     figure('Name', "CDW");
     M_vec = linspace(0.5, 2, N);
-    CDW_vec = aircraft.vector_call("CDW", "condition.M", M_vec );
+    CDW_vec = aircraft.vector_call("CDW", "cond.M", M_vec );
     plot(M_vec, CDW_vec)
     xlabel("Mach Number")
     ylabel("CDW")
@@ -30,7 +30,7 @@ function plot_models(aircraft, N)
     
     % Unit Cost
     figure('Name', "Unit Cost");
-    cost_vec = aircraft.vector_call("cost", "geometry.weights.empty", WE_vec );
+    cost_vec = aircraft.vector_call("cost", "geom.weights.empty", WE_vec );
     plot(WE_vec, cost_vec)
     xlabel("Empty Weight [N]")
     ylabel("Cost [millions]")

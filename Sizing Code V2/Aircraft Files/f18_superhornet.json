@@ -1,5 +1,20 @@
 {
-  "id": "f18_superhornet",
+  "name": {
+    "n": "Aircraft Name",
+    "u": "s",
+    "c": [],
+    "d": false,
+    "eval": 0,
+    "v": "F/A-18E Super Hornet"
+  },
+  "id": {
+    "n": "Aircraft ID",
+    "u": "s",
+    "c": [],
+    "d": false,
+    "eval": 0,
+    "v": "f18_superhornet"
+  },
   "fuselage": {
     "length": {
       "n": "Fuselage Length",

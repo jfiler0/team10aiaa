@@ -4,6 +4,8 @@ classdef performance_class < handle % <--- Inheriting from handle allows in-plac
     % The power of this function is robustness to recalculating any expensive analyisis. It saves all the data and recrusively works through
         % them to make use any calculated values. This is different from old code that would recalculate CD over and over
 
+    % WARNING: Be VERY VERY careful about making sure ids are unique
+
     % TODO: Condition needs weight
 
     properties
@@ -57,13 +59,10 @@ classdef performance_class < handle % <--- Inheriting from handle allows in-plac
         function out = Drag(obj)
             out =  obj.simpleUpdateCheck('Drag', @() obj.aircraft.geom.ref_area.v * obj.aircraft.cond.qinf * obj.CD );
         end
-        function out = Lift(obj)
-            out =  obj.simpleUpdateCheck('Lift', @() obj.aircraft.geom.ref_area.v * obj.aircraft.cond.qinf * obj.aircraft.cond.CL );
-        end
 
         % Lift Over Drag
         function out = LD(obj)
-            out =  obj.simpleUpdateCheck('Lift', @() obj.aircraft.cond.CL / obj.CD() );
+            out =  obj.simpleUpdateCheck('LD', @() obj.aircraft.cond.CL.v / obj.CD() );
         end
 
         % Propulsion

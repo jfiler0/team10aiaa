@@ -9,7 +9,7 @@ classdef models_class < handle % <--- Inheriting from handle allows in-place upd
     % For example, simple_model.m in "Mode_Builders" which makes simple_model.mat in "Saved_Models"
 
     properties
-        input_temp % Saves the current geometry, condition, and settings that are being used. Updated when calls are ran
+        input_temp % Saves the current geometry, cond, and settings that are being used. Updated when calls are ran
             % TODO: Don't like the extra copying of the entire struct required to continue using input_temp
         model_list
             % array of models using model_def objects (they all must be there)
@@ -34,24 +34,24 @@ classdef models_class < handle % <--- Inheriting from handle allows in-place upd
         function updateSettings(obj, settings) 
             obj.input_temp.settings = settings;
         end
-        function out = call(obj, id, geometry, condition)
+        function out = call(obj, id, geom, cond)
             % Used to call when there are no vectors.
             
             % TODO: Try removing this now that aircraft_class is being used
             if nargin < 4
-                condition = NaN;
+                cond = NaN;
             end
    
-            obj.input_temp.geometry = geometry;
-            obj.input_temp.condition = condition;
-                % Update geometry and condition with the new ones
+            obj.input_temp.geom = geom;
+            obj.input_temp.cond = cond;
+                % Update geometry and cond with the new ones
 
             model = obj.findModel(id); % may be a bottleneck
                 % Searches through available models for an id that matches like "CDW" or "CDi"
 
             out = obj.internal_call(model, obj.input_temp, 1); % Pass this all into internal_call
         end
-        function out = vector_call(obj, id, geometry, condition, structChain, numVec)
+        function out = vector_call(obj, id, geom, cond, structChain, numVec)
             % Run call but update a variable defined by structChain to be each value in numVec
 
             % BE CAREFUL ABOUT ENSUING structChain IS A REAL VAR. It will fail silently
@@ -61,11 +61,11 @@ classdef models_class < handle % <--- Inheriting from handle allows in-place upd
             % if the model handle can be vectorized, it will generate a input struct array and pass it in. Otherwise, it will just loop
             
             if nargin < 4
-                condition = NaN;
+                cond = NaN;
             end
 
-            obj.input_temp.geometry = geometry;
-            obj.input_temp.condition = condition;
+            obj.input_temp.geom = geom;
+            obj.input_temp.cond = cond;
 
             out = zeros(size(numVec));
 
@@ -118,9 +118,9 @@ classdef models_class < handle % <--- Inheriting from handle allows in-place upd
         end
         
         % TODO: Figure out if this function is needed somewhere since it got put into internal_call
-        % function loadInterps(obj, geometry, condition)
+        % function loadInterps(obj, geometry, cond)
         %     obj.input_temp.geometry = geometry;
-        %     obj.input_temp.condition = condition;
+        %     obj.input_temp.cond = cond;
         % 
         %     for i = 1:obj.num_models
         %         model = obj.model_list(i);

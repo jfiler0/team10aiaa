@@ -5,13 +5,8 @@ function s = assignNestedField(s, fields, val)
 
     % GOAL: Return the struct using a set of field names with the value changed
 
-    if ~verifyNestedStruct(s, fields)
-        error("structure does not have fields: %s", fields)
-    end
-
-    if(fields(1) == "geometry") % need to append .v
-        fields = [fields "v"];
-    end
+    fields = [fields "v"];
+    verifyNestedStruct(s, fields); % throws an error in function if it can't find the field    
 
     % With things processed, we run a recrusive call to run through the struct
 

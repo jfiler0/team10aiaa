@@ -24,4 +24,7 @@ function condition = updateCondition(h, M_vel, CL, throttle)
         condition.AB = 0;
     end
 
+    condition.vel = condition.a * condition.M;
+    condition.qinf = 0.5 * condition.rho * condition.vel * condition.vel;
+
 end

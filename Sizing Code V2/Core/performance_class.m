@@ -1,49 +1,103 @@
 classdef performance_class < handle % <--- Inheriting from handle allows in-place updates (memory based/pointers)
 
+    % This evaluate point performance at a give h, M, Cl, and Weight
+    % The power of this function is robustness to recalculating any expensive analyisis. It saves all the data and recrusively works through
+        % them to make use any calculated values. This is different from old code that would recalculate CD over and over
+
+    % TODO: Condition needs weight
+
     properties
         aircraft % link to the aircraft - curious if this is still as memory or not
         data % struct storing key performance info as it is generated
     end
 
     methods
-        function obj = performance_class(models, geom, cond, settings)
-            % Main function to call and create the aircraft object
-            obj.models = models;
-            obj.geom = geom;
-            obj.cond = cond;
-            obj.settings = settings;
+        function obj = performance_class(aircraft)
+            obj.setAircraft(aircraft);
+        end
+        function obj = setAircraft(obj, aircraft)
+            obj.aircraft = aircraft;
+            obj.clear_data(); % properties are no longer valid and need to be regenerated
+        end
+        function obj = clear_data(obj)
+            obj.data = struct();
+        end
+        function bool = hasData(obj, field)
+            bool = isfield(obj.data, field);
         end
 
-        function setGeomVar(obj, structChain, value) 
-            % TODO: Run a check to see if this a primary variable and throw error otherwise
-            
-            % structChain MUST be a string (not a character list) with . delimiters
-            % Easiest way is to do aircraft.geom and look at the fields
-            
-            fields = [strsplit(structChain, '.'), 'v'];
-
-            % Make sure the field we want to change actually exists. If we don't it will be silent and just create the field
-            if(~verifyNestedStruct(obj.geom, fields))
-                error("Given geom chain: [%s] does not exist.", structChain)
+        function out = simpleUpdateCheck(obj, id, handle)
+            if obj.hasData(id)
+                out = obj.data.(id);
+            else
+                obj.data.(id) = handle();
+                out = obj.data.(id);
             end
-
-            % Update the primary variable
-            obj.geom = assignNestedField(obj.geom, fields, value);
-
-            % Recacluate everything
-            % TODO: This is inefficent and can be streamlined
-            obj.geom = processGeometryDerived(obj.geom);
-            obj.geom = processGeometryWeight(obj.geom);
         end
 
-        function out = call(obj, iden)
-            % Wrapper for the models object
-            % calls given model provided current geom, cond, settings
-            out = obj.models.call(iden, obj.geom, obj.cond);
+        %% ACTUAL MAIN FUNCTIONS
+
+        % Drag components
+        function out = CD0(obj)
+            out = obj.simpleUpdateCheck('CD0', @() obj.aircraft.call("CD0"));
         end
-        function out = vector_call(obj, iden, structChain, numVec)
-            % Wrapper for the models object
-            out = obj.models.vector_call(iden, obj.geom, obj.cond, structChain, numVec);
+        function out = CDi(obj)
+            out = obj.simpleUpdateCheck('CDi', @() obj.aircraft.call("CDi"));
+        end
+        function out = CDW(obj)
+            out = obj.simpleUpdateCheck('CDW', @() obj.aircraft.call("CDW"));
+        end
+
+        % Total CD
+        function out = CD(obj)
+            out = obj.simpleUpdateCheck('CD', @() obj.CD0 + obj.CDi + obj.CDW);
+        end
+
+        % Physical Forces
+        function out = Drag(obj)
+            out =  obj.simpleUpdateCheck('Drag', @() obj.aircraft.geom.ref_area.v * obj.aircraft.cond.qinf * obj.CD );
+        end
+        function out = Lift(obj)
+            out =  obj.simpleUpdateCheck('Lift', @() obj.aircraft.geom.ref_area.v * obj.aircraft.cond.qinf * obj.aircraft.cond.CL );
+        end
+
+        % Lift Over Drag
+        function out = LD(obj)
+            out =  obj.simpleUpdateCheck('Lift', @() obj.aircraft.cond.CL / obj.CD() );
+        end
+
+        % Propulsion
+        function out = TA(obj)
+            if obj.hasData('TA')
+                out = obj.data.('TA');
+            else
+                out = EvaluatePropData(obj);
+                out = out(1);
+            end
+        end
+        function out = TSFC(obj)
+            if obj.hasData('TSFC')
+                out = obj.data.('TSFC');
+            else
+                out = EvaluatePropData(obj);
+                out = out(2);
+            end
+        end
+        function out = alpha(obj)
+            if obj.hasData('alpha')
+                out = obj.data.('alpha');
+            else
+                out = EvaluatePropData(obj);
+                out = out(3);
+            end
+        end
+
+        % Note: This function does NOT check if the values have been calcualted. Use the TA, TSFC, alpha functions instead
+        function out = EvaluatePropData(obj)
+            out = obj.aircraft.call("PROP");
+            obj.data.('TA') = out(1);
+            obj.data.('TSFC') = out(2);
+            obj.data.('alpha') = out(3);
         end
     end
 end

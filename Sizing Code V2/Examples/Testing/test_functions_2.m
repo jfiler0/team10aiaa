@@ -1,3 +1,5 @@
+% NEXT: Need conditions to update properly in a useful way
+
 % NAME: test_functions_2
 % PURPOSE:
 %   Replaces test_functions with the new aircraft class. Demonsrates how to load in all the classes and run basic calls
@@ -36,19 +38,27 @@ aircraft = aircraft_class(models, geom, cond, settings);
     % All edits to those variables are now done through aircraft.
     % aircraft also handles models calls. This is way it can easy handle redundant calls and history
 
-aircraft.setGeomVar("wing.span", 8);
-    % Example call of how a variable would be changed. Note that the write "structChain" (that first part) is critical.
+% aircraft.setGeomVar("wing.span", 8);
+%     % Example call of how a variable would be changed. Note that the write "structChain" (that first part) is critical.
+% 
+% % Actually calling the big 4 analyisis functions:
+% fprintf("cost = %.6f mil\n", aircraft.call("cost") )
+% fprintf("CDW = %.6f\n", aircraft.call("CDW") )
+% fprintf("CLa = %.6f\n", aircraft.call("CLa") )
+% fprintf("CDi = %.6f\n", aircraft.call("CDi") )
+% 
+% % The propulsion function is a bit more complicated beacuse it outputs a vector [Thrust Available, TSFC, alpha] instead of a scaler
+% prop_out = aircraft.call("PROP");
+% fprintf("For h = %.0f m + M = %.3f. TA = %.3f N, TSFC = %.3g kg/(Ns), alpha = %.4f\n", aircraft.cond.h, aircraft.cond.M, prop_out(1), prop_out(2), prop_out(3))
+% 
+% % PLOTTING
+% plot_models(aircraft, 80)
+%     % Runs the main models with vector calls instead and plots them
 
-% Actually calling the big 4 analyisis functions:
-fprintf("cost = %.6f mil\n", aircraft.call("cost") )
-fprintf("CDW = %.6f\n", aircraft.call("CDW") )
-fprintf("CLa = %.6f\n", aircraft.call("CLa") )
-fprintf("CDi = %.6f\n", aircraft.call("CDi") )
+%% TESTING PERFORMANCE
 
-% The propulsion function is a bit more complicated beacuse it outputs a vector [Thrust Available, TSFC, alpha] instead of a scaler
-prop_out = aircraft.call("PROP");
-fprintf("For h = %.0f m + M = %.3f. TA = %.3f N, TSFC = %.3g kg/(Ns), alpha = %.4f\n", aircraft.cond.h, aircraft.cond.M, prop_out(1), prop_out(2), prop_out(3))
+perf = performance_class(aircraft);
 
-% PLOTTING
-plot_models(aircraft, 80)
-    % Runs the main models with vector calls instead and plots them
+perf.TSFC()
+
+perf.alpha

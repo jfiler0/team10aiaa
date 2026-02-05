@@ -21,14 +21,19 @@ classdef aircraft_class < handle % <--- Inheriting from handle allows in-place u
         end
 
         function setGeomVar(obj, structChain, value) 
-            % TODO: Run a check to see if this a primary variable and throw error otherwise
             % TODO: How to make sure models knows to reset
             
             % structChain MUST be a string (not a character list) with . delimiters. Don't include the .v
             % Easiest way is to do aircraft.geom and look at the fields
 
+            fields = strsplit(structChain, '.');
+
+            if readNestedField(obj.geom, fields, "d")
+                error("Cannot use derived value: %s. Use a primay variable instead.", structChain)
+            end
+
             % Update the primary variable
-            obj.geom = assignNestedField(obj.geom, strsplit(structChain, '.'), value); % this checks if the field exists
+            obj.geom = assignNestedField(obj.geom, fields, value); % this checks if the field exists
 
             % Recacluate everything
             % TODO: This is inefficent and can be streamlined
@@ -60,7 +65,6 @@ classdef aircraft_class < handle % <--- Inheriting from handle allows in-place u
         
             obj.cond.qinf.v = 0.5 * obj.cond.rho.v * obj.cond.vel.v * obj.cond.vel.v;
 
-            % TODO: Need to conditions using json_entry
             obj.cond.Lift.v = obj.geom.ref_area.v * obj.cond.qinf.v * obj.cond.CL.v;
 
             % If W is less than 1 it must be a 0-1 scaler instead of actual weight. So use linear scale between WE and W0

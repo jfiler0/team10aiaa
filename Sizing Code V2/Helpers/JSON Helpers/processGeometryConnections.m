@@ -8,8 +8,6 @@ function geom = processGeometryConnections(geom)
 
     % TODO: This has not been implemented at all lol
 
-    warning("Connections not implemented yet")
-
     geom = geom;
 
 end

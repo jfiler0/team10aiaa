@@ -37,11 +37,6 @@ classdef models_class < handle % <--- Inheriting from handle allows in-place upd
         function out = call(obj, id, geom, cond)
             % Used to call when there are no vectors.
             
-            % TODO: Try removing this now that aircraft_class is being used
-            if nargin < 4
-                cond = NaN;
-            end
-   
             obj.input_temp.geom = geom;
             obj.input_temp.cond = cond;
                 % Update geometry and cond with the new ones
@@ -53,10 +48,6 @@ classdef models_class < handle % <--- Inheriting from handle allows in-place upd
         end
         function out = vector_call(obj, id, geom, cond, structChain, numVec)
             % Run call but update a variable defined by structChain to be each value in numVec
-
-            % BE CAREFUL ABOUT ENSUING structChain IS A REAL VAR. It will fail silently
-                % TODO: Add a check to make sure the structChain is real
-
             % Will generate an assocaited output vector as if the call function is looped (of equal length to numVec)
             % if the model handle can be vectorized, it will generate a input struct array and pass it in. Otherwise, it will just loop
             
@@ -206,8 +197,8 @@ function interpInputs = expandInputs(in, model, vec_length)
 end
 
 function boolRes = checkForMatchingChain(model, structChain)
-    % TODO: Is this duplicated by verifyNestedStruct now?
     % Given some input structChain, see if the given model has it defiend as an input. Returns true/false
+    % Bit more complex than a standard check to see if a field exists could it be under any input struct so it has to loop
 
     boolRes = false;
     i = 1;

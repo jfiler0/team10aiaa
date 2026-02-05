@@ -6,8 +6,6 @@ classdef performance_class < handle % <--- Inheriting from handle allows in-plac
 
     % WARNING: Be VERY VERY careful about making sure ids are unique
 
-    % TODO: Condition needs weight
-
     properties
         aircraft % link to the aircraft - curious if this is still as memory or not
         data % struct storing key performance info as it is generated

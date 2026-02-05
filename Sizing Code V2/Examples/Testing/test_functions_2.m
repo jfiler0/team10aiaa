@@ -37,6 +37,7 @@ aircraft = aircraft_class(models, geom, settings);
     % aircraft also handles models calls. This is way it can easy handle redundant calls and history
 
 aircraft.setGeomVar("wing.span", 8);
+% aircraft.setGeomVar("weights.empty", 1E5) -> this throws an error (as it should)
     % Example call of how a variable would be changed. Note that the write "structChain" (that first part) is critical.
 
 % Actually calling the big 4 analyisis functions:

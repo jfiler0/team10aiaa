@@ -51,7 +51,7 @@ prop_out = aircraft.call("PROP");
 fprintf("For h = %.0f m + M = %.3f. TA = %.3f N, TSFC = %.3g kg/(Ns), alpha = %.4f\n", aircraft.cond.h.v, aircraft.cond.M.v, prop_out(1), prop_out(2), prop_out(3))
 
 % PLOTTING
-plot_models(aircraft, 80)
+% plot_models(aircraft, 80)
     % Runs the main models with vector calls instead and plots them
 
 %% TESTING PERFORMANCE
@@ -61,3 +61,7 @@ aircraft.updateCondition(0, 0.6, 0.1, 1, 0.9)
 perf = performance_class(aircraft);
 
 fprintf("\nCD = %.4g, CDi = %.4g, CDW = %.4g, CD0 = %.4g, TSFC = %4g, TA = %.4g", perf.CD, perf.CDi, perf.CDW, perf.CD0, perf.TSFC, perf.TA)
+
+%% Weight Calculation
+
+getRaymerWeightStruct(aircraft.geom)

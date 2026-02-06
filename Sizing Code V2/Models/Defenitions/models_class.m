@@ -71,6 +71,8 @@ classdef models_class < handle % <--- Inheriting from handle allows in-place upd
                 obj.input_temp = assignNestedField(obj.input_temp, structChain, numVec(end)); % don't want to accicently save vectors
             else
                 % need to for loop through (function is not vectorized for the given input)
+
+                % TODO: May be worth making this parfor
                 for i = 1:length(numVec)
                     obj.input_temp = assignNestedField(obj.input_temp, structChain, numVec(i));
                     out(i) = obj.internal_call(model, obj.input_temp, 1);

@@ -38,7 +38,7 @@ function out = Prop_Raymer(in)
     TSFC_AB = (1.6 + 0.27 * in.cond.M.v) * sqrt(theta); %hour^-1; Mattingly Eq.3.55b (No, these are lbm/lbf*hr)
 
     TA = F_th_mil * in.cond.mil_throttle.v + in.cond.ab_throttle.v * ( F_th_AB - F_th_mil );
-    TSFC = TSFC_mil + in.cond.ab_throttle.v * ( TSFC_AB - TSFC_mil );
+    TSFC = TSFC_mil * in.cond.mil_throttle.v + in.cond.ab_throttle.v * ( TSFC_AB - TSFC_mil );
         % TODO: Need to actually use cond.mil_throttle to get TSFC change with throttle
     TSFC = lbmlbfhr_2_kgNs(TSFC); % Since the regression was not in metric units
 

@@ -1,4 +1,5 @@
 function matlabSetup()
+    % My master matlab setup script that gets plots looking nice
     
     clear;clc;close all;
 
@@ -23,5 +24,4 @@ function matlabSetup()
 
     % Line width
     set(groot, 'defaultLineLineWidth', 2);
-
 end

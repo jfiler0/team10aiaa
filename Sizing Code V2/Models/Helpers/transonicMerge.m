@@ -1,13 +1,18 @@
 function out = transonicMerge(sub_fun, sup_fun, in)
+    % Smoothes out the transition between subsonic and supersonic defensitions using splines
+
+    % TODO: This function is a bit computationally bad. May be some improvements for vectorization
+
+    % TODO: Missing coments
+
     % sup_fun and sub_fun must both be a function of in
-    % transonic_range = [0.95 1.3];
-    % M_eps = 0.01;
-    transonic_range = in.settings.transonic_range;
+
+    transonic_range = in.settings.transonic_range; % The range to do this 'merging'
     M_eps = in.settings.transonic_M_eps;
 
-    if(in.condition.M <= transonic_range(1))
+    if(in.cond.M.v <= transonic_range(1))
         out = sub_fun(in);
-    elseif(in.condition.M >= transonic_range(2))
+    elseif(in.cond.M.v >= transonic_range(2))
         out = sup_fun(in);
     else
         M_vec = [transonic_range(1) transonic_range(1)-M_eps transonic_range(2) transonic_range(2)+M_eps];
@@ -15,15 +20,15 @@ function out = transonicMerge(sub_fun, sup_fun, in)
 
         in_i = in;
         
-        in_i.condition.mach = M_vec(1);
+        in_i.cond.M.v = M_vec(1);
         out_vec(1) = sub_fun(in_i);
-        in_i.condition.mach = M_vec(2);
+        in_i.cond.M.v = M_vec(2);
         out_vec(2) = sub_fun(in_i);
-        in_i.condition.mach = M_vec(3);
+        in_i.cond.M.v = M_vec(3);
         out_vec(3) = sup_fun(in_i);
-        in_i.condition.mach = M_vec(4);
+        in_i.cond.M.v = M_vec(4);
         out_vec(4) = sup_fun(in_i);
         
-        out = spline(M_vec, out_vec, in.condition.M);
+        out = spline(M_vec, out_vec, in.cond.M.v);
     end
 end

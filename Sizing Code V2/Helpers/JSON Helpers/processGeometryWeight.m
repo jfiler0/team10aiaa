@@ -1,8 +1,12 @@
 function geom = processGeometryWeight(geom)
     % apply a weight model to compute the empty weight
 
-    geom.weights.empty = json_entry("Empty Weight", geom.weights.mtow.v * geom.weights.raymer.A.v * N2lb(geom.weights.mtow.v)^geom.weights.raymer.C.v, true, "m");
+    geom.weights.empty = json_entry("Empty Weight", "geom.weights.mtow.v * geom.weights.raymer.A.v * N2lb(geom.weights.mtow.v)^geom.weights.raymer.C.v", "m", geom);
 
+    % TODO: Make a way to transition between basic and advanced WE estimates
+
+    % Some old code that may become useful
+    
     % geom.weights.components = calcRaymerWeights(getPlaneRaymerWeightInput(geom));
     % fn = fieldnames(geom.weights.components);  % get all field names
     % total = 0;

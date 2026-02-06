@@ -64,4 +64,4 @@ fprintf("\nCD = %.4g, CDi = %.4g, CDW = %.4g, CD0 = %.4g, TSFC = %4g, TA = %.4g"
 
 %% Weight Calculation
 
-getRaymerWeightStruct(aircraft.geom)
+weight_comps = getRaymerWeightStruct(aircraft.geom)

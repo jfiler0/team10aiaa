@@ -117,6 +117,22 @@
       "d": false,
       "eval": 0,
       "v": 0.333
+    },
+    "dihedral": {
+      "n": "Dihedral",
+      "u": "deg",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": -2
+    },
+    "le_x": {
+      "n": "Wing Leading Edge X Position",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 8
     }
   },
   "type": {

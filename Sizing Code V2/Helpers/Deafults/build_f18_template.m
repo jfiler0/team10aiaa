@@ -28,6 +28,8 @@ plane.wing.le_sweep = json_entry("Wing Leading Edge Sweep", 29.3, "deg");
 plane.wing.root_chord = json_entry("Wing Root Chord", 5.07, "m");
 plane.wing.tip_chord = json_entry("Wing Tip Chord", 1.686, "m");
 plane.wing.fold_ratio = json_entry("Wing Fold Ratio", 0.333, "");
+plane.wing.dihedral = json_entry("Dihedral", -2, "deg");
+plane.wing.le_x = json_entry("Wing Leading Edge X Position", 8, "m");
 
 plane.type = json_entry("Raymer Aircraft Type", "Jet fighter", "s"); % for coefficent lookups
 

@@ -231,7 +231,8 @@ classdef planeObj
             % Storing the raymer coefficents is much faster than reading the table every loop
             obj.type = fixed_input.type; % For regression lookup
             obj.raymer = struct(); % Raymer coefficents
-            [obj.raymer.A, obj.raymer.C] = getRaymerCoefficents(obj.type);
+            obj.raymer.A = getRaymerCoefficents(obj.type, 1);
+            obj.raymer.C = getRaymerCoefficents(obj.type, 2);
             obj.KLOC = fixed_input.KLOC;
 
             % Parameters depending on loadout
@@ -444,7 +445,7 @@ classdef planeObj
 
         function obj = updateWeights(obj)
 
-            obj.weights = calcRaymerWeights(getPlaneRaymerWeightInput(obj));
+            obj.weights = calcRaymerWeightsOld(getPlaneRaymerWeightInputOld(obj));
             fn = fieldnames(obj.weights);  % get all field names
             total = 0;
             for i = 1:numel(fn)

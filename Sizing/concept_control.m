@@ -39,13 +39,12 @@ clear all
 
     performance_plots = false; % Aerodynamics, Propulsion, Atmospere, Performance grids
     mission_plots = false; % Fuel burn, LD, TSFC over time
-    geometry_plot = false; % Outline of the wing geometry (not implemented yet)
     drag_polar = false;
-    print_components = true;
+    print_components = false;
     
     run_sizing = false; % WARNING: This will overwrite xlsx data (takes about ~15 seconds)
-        sizing_plot = false; % Shows constraint boundaries (this does take a min. Only actually samples 15 x 15)
-    sensitivities_plot = false; % Can change parameter selection in "Sensitivities Plot"
+    build_carpet_plot = false;
+    sensitivities_plot = true; % Can change parameter selection in "Sensitivities Plot"
 
     skip_max_ranges = true; % This can take a bit of time so if you are exploring other parameters consider just disabling it
 
@@ -108,16 +107,6 @@ clear all
     [currentFolder, ~, ~] = fileparts(mfilename('fullpath'));
     excelPath = fullfile(currentFolder, "concepts_tabulations.xlsx");
     T = readcell(excelPath);
-
-%% Trying a different way to read file cause broken? idk
-
-% disp("Reading Input Geometry...")
-% 
-% thisFile = matlab.desktop.editor.getActiveFilename; % Pulls local file path
-% [currentFolder, ~, ~] = fileparts(thisFile);
-% 
-% excelPath = fullfile(currentFolder, "concepts_tabulations.xlsx");
-% T = readcell(excelPath);
 
 %% Gather Inputs
     name = readVar('Deliverable', CN, T);
@@ -186,7 +175,7 @@ clear all
     if run_sizing
         disp("Running Sizing...")
 
-        plane = sizeAircraft(plane, missionList, @constraints_rfp, sizing_plot, 1.5);
+        plane = sizeAircraft2D(plane, missionList, @constraints_rfp);
         plane = plane.updateDerivedVariables();
 
         T = assignVar(N2lb(plane.MTOW), 'MTOW [lb]', CN, T);
@@ -200,6 +189,13 @@ clear all
             warning("Sized aircraft does not satisfy all RFP constraints and is instead the least infeasible (weighted) option.")
         end
 
+    end
+
+%% Carpet Plot
+
+    if(build_carpet_plot)
+        disp("Building carpet plot...")
+        carpetPlot(plane, missionList, @constraints_rfp, 1.5)
     end
 %% Sensitivities Plot
 
@@ -221,17 +217,10 @@ clear all
         sensitivitesPlot(plane, values_to_change, 1.5, missionList, @constraints_rfp, 15);
     end
 
-%% Display Plane Geometry
-    % Build 3D plot to show wing geometry and fuselage size
-    if geometry_plot
-        disp("Working On Geometry Plot...")
-        error("Geometry plot not implemented yet");
-    end
-
 %% Create Performance Plots
     if performance_plots
         disp("Working On Performance Plots...")
-        buildPerformancePlots(plane, plane.mid_mission_weight, 30); % Can increase 50 for more resoultion at a time penalty
+        buildPerformancePlots(plane, plane.mid_mission_weight, 10); % Can increase 50 for more resoultion at a time penalty
     end
 
 %% Drag Polar

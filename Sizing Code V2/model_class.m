@@ -3,6 +3,7 @@ classdef model_class < handle
         settings
         geom
         cond
+        
         mem
     end
     
@@ -12,6 +13,7 @@ classdef model_class < handle
             obj.settings = settings;
             obj.geom = geom;
             obj.cond = cond;
+
             obj.clear_mem
         end
 

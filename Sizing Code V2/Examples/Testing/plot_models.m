@@ -14,11 +14,11 @@ function plot_models(geom, model, N)
     % Parasite Drag
     figure('Name', "CD0")
 
-    WE_vec = linspace(geom.weights.empty.v/2, geom.weights.empty.v*2, 50);
-    CD0_vec = geom_vector_call(geom, model, 'CD0', "weights.empty", WE_vec);
+    MTOW_vec = linspace(geom.weights.mtow.v/2, geom.weights.mtow.v*2, 50);
+    CD0_vec = geom_vector_call(geom, model, @model.CD0, "weights.mtow", MTOW_vec);
 
-    plot(WE_vec, CD0_vec)
-    xlabel("Empty Weight [N]")
+    plot(MTOW_vec, CD0_vec)
+    xlabel("MTOW [N]")
     ylabel("CD0")
     axis tight; grid on;
     title("Parasite Drag")
@@ -26,10 +26,10 @@ function plot_models(geom, model, N)
     % Unit Cost
     figure('Name', "Unit Cost");
 
-    cost_vec = geom_vector_call(geom, model, 'COST', "weights.empty", WE_vec);
+    cost_vec = geom_vector_call(geom, model, @model.COST, "weights.mtow", MTOW_vec);
 
-    plot(WE_vec, cost_vec)
-    xlabel("Empty Weight [N]")
+    plot(MTOW_vec, cost_vec)
+    xlabel("MTOW [N]")
     ylabel("Cost [millions]")
     axis tight; grid on;
     title("Unit Cost")

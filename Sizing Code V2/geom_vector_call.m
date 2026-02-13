@@ -1,20 +1,12 @@
-function out = geom_vector_call(geom, model, fun_name, structPath, num_vec)
-
-% out = geom_vector_call(@model.CD0
-
+function out = geom_vector_call(geom, model, fun_handle, structPath, num_vec)
     model.clear_mem
-
-    structChain = strsplit(structPath, '.');
 
     out = zeros(size(num_vec));
 
     for i = 1:length(num_vec)
-        geom = assignNestedField( geom, structChain, num_vec(i) );
+        geom = editGeom(geom, structPath, num_vec(i)); % does update internally
         model.geom = geom;
 
-        geom = processGeometryDerived(geom); 
-        geom = processGeometryWeight(geom);
-
-        out(i) = model.(fun_name)(model.settings.codes.OVER_NO_READ_NO_WRITE);
+        out(i) = fun_handle(model.settings.codes.OVER_NO_READ_NO_WRITE);
     end
 end

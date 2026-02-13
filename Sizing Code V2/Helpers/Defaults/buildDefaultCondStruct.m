@@ -18,6 +18,7 @@ function cond = buildDefaultCondStruct()
 
     cond.qinf = json_entry("Dynamic Pressure", 0, "Pa");
 
+    cond.n = json_entry("Load Factor", 0, "");
     cond.Lift = json_entry("Lift", 0, "N");
 
     cond.W = json_entry("Weight", 0, "N");

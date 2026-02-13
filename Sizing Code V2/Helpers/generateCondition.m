@@ -1,5 +1,7 @@
-function cond = generateCondition(geom, h, M_vel, CL, W, throttle)
+function cond = generateCondition(geom, h, M_vel, n, W, throttle)
     % specify either altitude and mach or altitude and velocity (tells which it is from magnitude)
+
+    % n -> load factor for Cl calculation. 1 is level flight.
 
     % THROTTLE - There is both AB throttle and normal throttle. 
     %   Max military power when throttle = 0.9
@@ -10,7 +12,7 @@ function cond = generateCondition(geom, h, M_vel, CL, W, throttle)
 
     % Keeping things as .v so that units / names can be added later if needed
 
-    cond = struct();
+    cond = buildDefaultCondStruct();
 
     cond.h.v = h;
     [cond.T.v, cond.a.v, cond.P.v, cond.rho.v, cond.mu.v] = queryAtmosphere(h, [1 1 1 1 1]);
@@ -27,18 +29,14 @@ function cond = generateCondition(geom, h, M_vel, CL, W, throttle)
         cond.vel.v = M_vel .* cond.a.v;
     end
 
+    cond.qinf.v = 0.5 * cond.rho.v .* cond.vel.v .* cond.vel.v;
+
     if(max(throttle) > 1)
         error("Throttle cannot be above 1.")
     end
-
-    cond.CL.v = CL;
     cond.throttle.v = throttle;
     cond.mil_throttle.v = min(throttle, 0.9)/0.9; % Goes from 0-1 from output between throttle=0-0.9
     cond.ab_throttle.v = (max(throttle, 0.9) - 0.9)/0.1; % Stays 0 unitl throttle = 0.9 and grows to 1between 0.9-1
-
-    cond.qinf.v = 0.5 * cond.rho.v .* cond.vel.v .* cond.vel.v;
-
-    cond.Lift.v = geom.ref_area.v * cond.qinf.v .* cond.CL.v;
 
     if( min(W) > 1)
         % Weight was passed in normally
@@ -52,4 +50,8 @@ function cond = generateCondition(geom, h, M_vel, CL, W, throttle)
         % The user wants a linear scale between WE and MTOW
         cond.W.v = weightRatio(W, geom);
     end
+
+    cond.n.v = n;
+    cond.Lift.v = cond.W.v .* cond.n.v;
+    cond.CL.v = cond.Lift.v ./ (geom.ref_area.v * cond.qinf.v);
 end

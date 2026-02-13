@@ -10,7 +10,7 @@ matlabSetup
 
 settings = readSettings();
 geom = loadAircraft("f18_superhornet");
-cond = generateCondition(geom, 1000, 1.2, 0.1, 0.5, 1.0);
+cond = generateCondition(geom, 1000, 1.2, 1, 0.5, 1.0);
 
 model = model_class(settings, geom, cond);
 perf = performance_class(model);
@@ -27,25 +27,10 @@ fprintf("For h = %.0f m + M = %.3f. TA = %.3f kN, TSFC = %.3g kg/(Ns), alpha = %
 
 % PLOTTING
 %     Runs the main models with vector calls instead and plots them
-plot_models(geom, model, 80)
+plot_models(geom, model, 200)
+plot_performance(geom, perf, 200);
 
 % geom = editGeom(geom, "wing.AR", 2);
-
-%% TESTING PERFORMANCE
-
-model.clear_mem
-M_vec = linspace(0.5, 2, 50);
-model.cond = generateCondition(geom, model.cond.h.v, M_vec, model.cond.CL.v, model.cond.W.v, model.cond.throttle.v);
-% model.cond = generateCondition(geom, 0, 1.3, 0.1, 1, 0.9);
-
-perf.CD
-
-%                        h  M    CL   W  throt
-% aircraft.updateCondition(0, 0.6, 0.1, 1, 0.9)
-% 
-% perf = performance_class(aircraft);
-% 
-% fprintf("\nCD = %.4g, CDi = %.4g, CDW = %.4g, CD0 = %.4g, TSFC = %4g, TA = %.4g", perf.CD, perf.CDi, perf.CDW, perf.CD0, perf.TSFC, perf.TA)
 
 %% Weight Calculation
 

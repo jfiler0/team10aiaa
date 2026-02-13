@@ -12,7 +12,7 @@ set.program_name = "Sizing Code V2.1";
 
 % settings for the transonic merge function (First value MUST be less than 1 and second MUST be greater than 1)
 set.transonic_range = [0.95 1.3];
-set.transonic_M_eps = 0.01;
+set.transonic_M_eps = 0.005;
 
 set.CD0_scaler = 1; % general scaler to parasite drag
 set.CDi_scaler = 1;
@@ -30,7 +30,6 @@ set.CDw_model = set.codes.CDw_BASIC;
 set.CLa_model = set.codes.CLa_BASIC;
 set.COST_model = set.codes.COST_BASIC;
 set.PROP_model = set.codes.PROP_BASIC;
-
 
 fullPath = mfilename('fullpath');
 codeFolder = fileparts(fullPath);

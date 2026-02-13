@@ -90,21 +90,21 @@ classdef model_class < handle
             value(index_tran) = value_trans;
         end
 
-        function value = safe_cond_call(obj, name, indices)
-            % Sometimes we need to call conditions and don't know if things have active indices or not
-            % So, we want to check the length and then pass it back either as an array or as the scaler
-
-            cond_vec = obj.cond.(name).v;
-            len = length(cond_vec);
-            
-            if(len == 1) % Is a scaler. Just return it
-                value = cond_vec;
-            elseif(len ~= length(indices))
-                error("Indices and condtion vector do not match.")
-            else
-                value = cond_vec(indices);
-            end
-        end
+        % function value = safe_cond_call(obj, name, indices)
+        %     % Sometimes we need to call conditions and don't know if things have active indices or not
+        %     % So, we want to check the length and then pass it back either as an array or as the scaler
+        % 
+        %     cond_vec = obj.cond.(name).v;
+        %     len = length(cond_vec);
+        % 
+        %     if(len == 1) % Is a scaler. Just return it
+        %         value = cond_vec;
+        %     elseif(len ~= length(indices))
+        %         error("Indices and condtion vector do not match.")
+        %     else
+        %         value = cond_vec(indices);
+        %     end
+        % end
 
         function clear_mem(obj)
             obj.mem = struct('CD0', [], 'CDi', [], 'CDw', [], 'CLa', [], 'COST', [], 'PROP', []);
@@ -160,12 +160,19 @@ classdef model_class < handle
                     case obj.settings.codes.CDi_BASIC_SUBSONIC
                         e_osw = 0.85;
                         k1_sub = 1 / (pi * e_osw * obj.geom.wing.AR.v);
-                        % value = k1_sub * obj.cond.CL.v .^ 2;
 
-                        sub_fun = @(M, I) M*0 + k1_sub * obj.safe_cond_call('CL', I) .^ 2;
-                        sup_fun = @(M, I) obj.geom.wing.AR.v * (M.^2 - 1) ./ (4*obj.geom.wing.AR.v * sqrt(M.^2 - 1) -2) * cosd(obj.geom.wing.le_sweep.v);
+                        % Could take CL out but is example of safe_cond_call
+                        % sub_fun = @(M, I) M*0 + k1_sub * obj.safe_cond_call('CL', I) .^ 2;
+                        % sup_fun = @(M, I) obj.safe_cond_call('CL', I) .^ 2 .* obj.geom.wing.AR.v .* (M.^2 - 1) ./ (4*obj.geom.wing.AR.v * sqrt(M.^2 - 1) -2) * cosd(obj.geom.wing.le_sweep.v);
+                        % 
+                        % value = obj.transonicMerge(sub_fun, sup_fun);
+
+                        sub_fun = @(M, I) M*0 + k1_sub;
+                        sup_fun = @(M, I) obj.geom.wing.AR.v .* (M.^2 - 1) ./ (4*obj.geom.wing.AR.v * sqrt(M.^2 - 1) -2) * cosd(obj.geom.wing.le_sweep.v);
     
-                        value = obj.transonicMerge(sub_fun, sup_fun);
+                        k1 = obj.transonicMerge(sub_fun, sup_fun);
+
+                        value = k1 .* obj.cond.CL.v .^2;
                                     
                     case obj.settings.codes.CDi_IGNORE
                         value = 0;
@@ -289,18 +296,19 @@ classdef model_class < handle
                         delta_0 = delta .* (1 + (gamma-1)/2 * obj.cond.M.v.^2).^(gamma/(gamma-1));
                         
                         % Lapse Ratios for Low-bypass Turbofans (See Mattingly, Aircraft Engine Design, 2e)
-                        % TODO: This is not vectorized
-                        if theta_0 > TR
-                            alpha_dry = 0.6 * delta_0 .* (1 - 3.8 * (theta_0 - TR) ./ theta_0); %Eqn. 2.45b
-                        else
-                            alpha_dry = delta_0 * (0.6); %Eqn. 2.45b
-                        end
+                        % Vectorized version using logical indexing - Thanks Claude
+                        alpha_dry = zeros(size(theta_0));
+                        alpha_AB = zeros(size(theta_0));
                         
-                        if theta_0 > TR
-                            alpha_AB = delta_0 .* (1 - 3.5* (theta_0 - TR) ./ theta_0); %Eqn. 2.45a
-                        else
-                            alpha_AB = delta_0 * (1); % Eqn. 2.45a
-                        end
+                        % For theta_0 <= TR
+                        idx_low = theta_0 <= TR;
+                        alpha_dry(idx_low) = delta_0(idx_low) * 0.6; %Eqn. 2.45b
+                        alpha_AB(idx_low) = delta_0(idx_low) * 1.0; % Eqn. 2.45a
+                        
+                        % For theta_0 > TR
+                        idx_high = theta_0 > TR;
+                        alpha_dry(idx_high) = 0.6 * delta_0(idx_high) .* (1 - 3.8 * (theta_0(idx_high) - TR) ./ theta_0(idx_high)); %Eqn. 2.45b
+                        alpha_AB(idx_high) = delta_0(idx_high) .* (1 - 3.5 * (theta_0(idx_high) - TR) ./ theta_0(idx_high)); %Eqn. 2.45a
                         
                         % Thrusts (by definition of lapse rate)
                         F_th_mil = obj.geom.prop.T0_NoAB.v * alpha_dry; % (whatever unit thrust was passed with)

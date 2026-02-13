@@ -8,7 +8,7 @@ function plot_models(geom, model, N)
 
     % Note that the geometry and condition run is inherited from the aircraft call
 
-    model.cond = generateCondition(geom, 0, 0.3, 0.03, 0.5, 0.75);
+    model.cond = generateCondition(geom, 0, 0.3, 1, 0.5, 0.75);
     model.clear_mem;
 
     % Parasite Drag
@@ -38,8 +38,8 @@ function plot_models(geom, model, N)
     figure('Name', "CDW");
     
     model.clear_mem
-    M_vec = linspace(0.5, 2, N);
-    model.cond = generateCondition(geom, model.cond.h.v, M_vec, model.cond.CL.v, model.cond.W.v, model.cond.throttle.v);
+    M_vec = linspace(0.3, 2, N);
+    model.cond = generateCondition(geom, model.cond.h.v, M_vec, model.cond.n.v, model.cond.W.v, model.cond.throttle.v);
 
     CDW_vec = model.CDw;
     plot(M_vec, CDW_vec)
@@ -47,6 +47,14 @@ function plot_models(geom, model, N)
     ylabel("CDW")
     axis tight; grid on;
     title("Wave Drag")
+
+    % CDi
+    figure('Name', "CDi")
+    plot(M_vec, model.CDi)
+    xlabel("Mach Number")
+    ylabel("CDa")
+    axis tight; grid on;
+    title("Induced Drag")
 
     % CLa
     figure('Name', "CLa")

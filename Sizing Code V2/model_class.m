@@ -7,12 +7,15 @@ classdef model_class < handle
     end
     
     methods
+        % INITIALIZATION
         function obj = model_class(settings, geom, cond)
             obj.settings = settings;
             obj.geom = geom;
             obj.cond = cond;
             obj.mem = struct('CD0', [], 'CDi', [], 'CDw', []);
         end
+
+        %% HELPERS
         
         % Generic method that handles all caching/override logic
         function result = compute_with_cache(obj, property_name, override, compute_func, scaler)
@@ -46,7 +49,63 @@ classdef model_class < handle
             end
         end
         
-        % Now CD0 becomes much simpler
+        function value = transonicMerge(obj, sub_fun, sup_fun)
+            % For functions that are ONLY a function mach number
+            % Smoothes out the transition between subsonic and supersonic defensitions using splines
+
+            % sup_fun and sub_fun must both be a function of a mach number and index vector. 
+            % The mach number is run directly. The index allows the functions to work more generally with a vector of cases
+            % to actually run through their respective functions
+        
+            transonic_range = obj.settings.transonic_range; % The range to do this 'merging'
+            
+            index_sub = obj.cond.M.v <= transonic_range(1);
+            index_sup = obj.cond.M.v >= transonic_range(2);
+            index_tran = logical( ~index_sub .* ~index_sup );
+                I_tran_start = find(index_tran, 2, "first");
+                I_tran_end = find(index_tran, 2, "last");
+
+                index_tran_start = zeros(size(index_tran)); index_tran_end = index_tran_start;
+                index_tran_start(I_tran_start) = 1; index_tran_end(I_tran_end) = 1;
+
+            M_in_sub = obj.cond.M.v(index_sub);
+            M_in_sup = obj.cond.M.v(index_sup);
+            M_in_tran = obj.cond.M.v(index_tran);
+        
+            value_sub = sub_fun(M_in_sub, index_sub);
+            value_sup = sup_fun(M_in_sup, index_sup);
+
+            M_eps = obj.settings.transonic_M_eps;
+            M_vec = [transonic_range(1)-M_eps transonic_range(1) transonic_range(2) transonic_range(2)+M_eps];
+            
+            value_spline_input = [ sub_fun(M_vec( 1:2), logical(index_tran_start) ), sup_fun( M_vec(3:4), logical(index_tran_end) ) ];
+
+            value_trans = spline(M_vec, value_spline_input, M_in_tran);
+
+            value = zeros(size(obj.cond.M.v));
+            value(index_sub) = value_sub;
+            value(index_sup) = value_sup;
+            value(index_tran) = value_trans;
+        end
+
+        function value = safe_cond_call(obj, name, indices)
+            % Sometimes we need to call conditions and don't know if things have active indices or not
+            % So, we want to check the length and then pass it back either as an array or as the scaler
+
+            cond_vec = obj.cond.(name).v;
+            len = length(cond_vec);
+            
+            if(len == 1) % Is a scaler. Just return it
+                value = cond_vec;
+            elseif(len ~= length(indices))
+                error("Indices and condtion vector do not match.")
+            else
+                value = cond_vec(indices);
+            end
+        end
+
+        %% ACUTUAL MODELS
+
         function CD0 = CD0(obj, override, code)
             if nargin < 2
                 override = obj.settings.codes.OVER_NONE;
@@ -61,7 +120,6 @@ classdef model_class < handle
             CD0 = obj.compute_with_cache('CD0', override, compute_CD0, obj.settings.CD0_scaler);
         end
         
-            % Separated computation logic
             function value = compute_CD0_value(obj, code)
                 switch code
                     case obj.settings.codes.CD0_BASIC
@@ -78,7 +136,6 @@ classdef model_class < handle
                 end
             end
         
-        % CDi becomes equally simple
         function CDi = CDi(obj, override, code)
             if nargin < 2
                 override = obj.settings.codes.OVER_NONE;
@@ -97,11 +154,12 @@ classdef model_class < handle
                     case obj.settings.codes.CDi_BASIC_SUBSONIC
                         e_osw = 0.85;
                         k1_sub = 1 / (pi * e_osw * obj.geom.wing.AR.v);
-                        value = k1_sub * obj.cond.CL.v ^ 2;
+                        % value = k1_sub * obj.cond.CL.v .^ 2;
+
+                        sub_fun = @(M, I) M*0 + k1_sub * obj.safe_cond_call('CL', I) .^ 2;
+                        sup_fun = @(M, I) obj.geom.wing.AR.v * (M.^2 - 1) ./ (4*obj.geom.wing.AR.v * sqrt(M.^2 - 1) -2) * cosd(obj.geom.wing.le_sweep.v);
     
-                        % K1 = transonicMerge(@(in) k1_sub, ... 
-                        %     @(in) in.geom.wing.AR.v * (in.cond.M.v.^2 - 1) ./ (4*in.geom.wing.AR.v * sqrt(in.cond.M.v.^2 - 1) -2) * cosd(in.geom.wing.le_sweep.v) , ...
-                        %         in );
+                        value = obj.transonicMerge(sub_fun, sup_fun);
                                     
                     case obj.settings.codes.CDi_IGNORE
                         value = 0;
@@ -127,15 +185,15 @@ classdef model_class < handle
             function value = compute_CDw_value(obj, code)
                 switch code
                     case obj.settings.codes.CDw_BASIC
-                        value = 0.02;
-                        % E_WD = in.geom.fuselage.E_WD.v;
-                        % M_CD0_max = 1/(cosd(in.geom.wing.le_sweep.v))^0.2;
-                        % 
-                        % % some imaginary values pop out sometimes
-                        % CDW = real( transonicMerge(@(in) 0, ... 
-                        %     @(in) (4.5 * pi / in.geom.ref_area.v) * ( in.geom.fuselage.max_area.v / in.geom.fuselage.length.v ) ^ 2 * ...
-                        %         E_WD * ( 0.74 + 0.37 * cosd(in.geom.wing.le_sweep.v) ) * ( 1 - 0.3 * sqrt( in.cond.M.v - M_CD0_max )) , ...
-                        %         in ) );
+
+                        sub_fun = @(M, I) M*0 + 0; % Adding M*0 to the front forces it to form a vector
+
+                        E_WD = obj.geom.fuselage.E_WD.v;
+                        M_CD0_max = 1/(cosd(obj.geom.wing.le_sweep.v))^0.2;
+                        sup_fun = @(M, I) (4.5 * pi / obj.geom.ref_area.v) * ( obj.geom.fuselage.max_area.v / obj.geom.fuselage.length.v ) ^ 2 * ...
+                                E_WD * ( 0.74 + 0.37 * cosd(obj.geom.wing.le_sweep.v) ) * ( 1 - 0.3 * sqrt( M - M_CD0_max ));
+
+                        value = obj.transonicMerge(sub_fun, sup_fun);
                                                     
                     case obj.settings.codes.CDw_IGNORE
                         value = 0;

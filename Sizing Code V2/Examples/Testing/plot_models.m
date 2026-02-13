@@ -1,4 +1,4 @@
-function plot_models(aircraft, N)
+function plot_models(geom, model, N)
     % NAME: plot_models
     % INPUTS:
     %   aircraft == the primary aicraft class taken from aircraft_class with all model information
@@ -8,32 +8,70 @@ function plot_models(aircraft, N)
 
     % Note that the geometry and condition run is inherited from the aircraft call
 
+    model.cond = generateCondition(geom, 0, 0.3, 0.03, 0.5, 0.75);
+    model.clear_mem;
+
     % Parasite Drag
     figure('Name', "CD0")
-    WE_vec = linspace(aircraft.geom.weights.empty.v/2, aircraft.geom.weights.empty.v*2, N);
-    CD0_vec = aircraft.vector_call("CD0", "geom.weights.empty", WE_vec );
+
+    WE_vec = linspace(geom.weights.empty.v/2, geom.weights.empty.v*2, 50);
+    CD0_vec = geom_vector_call(geom, model, 'CD0', "weights.empty", WE_vec);
+
     plot(WE_vec, CD0_vec)
     xlabel("Empty Weight [N]")
     ylabel("CD0")
-    axis tight
+    axis tight; grid on;
     title("Parasite Drag")
 
-    % Wave Drag
-    figure('Name', "CDW");
-    M_vec = linspace(0.5, 2, N);
-    CDW_vec = aircraft.vector_call("CDW", "cond.M", M_vec );
-    plot(M_vec, CDW_vec)
-    xlabel("Mach Number")
-    ylabel("CDW")
-    axis tight
-    title("Wave Drag")
-    
     % Unit Cost
     figure('Name', "Unit Cost");
-    cost_vec = aircraft.vector_call("cost", "geom.weights.empty", WE_vec );
+
+    cost_vec = geom_vector_call(geom, model, 'COST', "weights.empty", WE_vec);
+
     plot(WE_vec, cost_vec)
     xlabel("Empty Weight [N]")
     ylabel("Cost [millions]")
-    axis tight
+    axis tight; grid on;
     title("Unit Cost")
+
+    % Wave Drag
+    figure('Name', "CDW");
+    
+    model.clear_mem
+    M_vec = linspace(0.5, 2, N);
+    model.cond = generateCondition(geom, model.cond.h.v, M_vec, model.cond.CL.v, model.cond.W.v, model.cond.throttle.v);
+
+    CDW_vec = model.CDw;
+    plot(M_vec, CDW_vec)
+    xlabel("Mach Number")
+    ylabel("CDW")
+    axis tight; grid on;
+    title("Wave Drag")
+
+    % CLa
+    figure('Name', "CLa")
+    CLa_vec = model.CLa;
+    plot(M_vec, CLa_vec)
+    xlabel("Mach Number")
+    ylabel("CLa")
+    axis tight; grid on;
+    title("CLa")
+
+    % Propulsion
+    figure('Name',"Propulsion")
+
+    PROP = model.PROP;
+    TA = PROP(:, 1);
+    TSFC = PROP(:, 2);
+    alpha = PROP(:, 3);
+
+    plot(M_vec, TA);
+    xlabel("Mach Number")
+    ylabel("Thrust Available [N]")
+    yyaxis right
+    plot(M_vec, TSFC);
+    ylabel("TSFC [s]")
+
+    axis tight; grid on;
+    title("Propulsion TA and TSFC")
 end

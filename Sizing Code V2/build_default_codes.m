@@ -15,6 +15,12 @@ function codes = build_default_codes()
     codes.CDi_BASIC_SUBSONIC = 401;
     codes.CDi_IGNORE = 402;
 
+    codes.CLa_BASIC = 501;
+
+    codes.COST_BASIC = 601;
+
+    codes.PROP_BASIC = 701;
+
     % Override codes for the model class
     codes.OVER_NONE = 900; % just kidding don't override anything
     codes.OVER_NO_WRITE = 901; % 1 = don't bother writing this to memory (ignored if there is already a value in memory)

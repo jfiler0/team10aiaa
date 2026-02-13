@@ -32,6 +32,8 @@ plane.wing.dihedral = json_entry("Dihedral", -2, "deg");
 plane.wing.le_x = json_entry("Wing Leading Edge X Position", 8, "m");
 
 plane.type = json_entry("Raymer Aircraft Type", "Jet fighter", "s"); % for coefficent lookups
+plane.weights.raymer.A = json_entry("Raymer A Coeff", getRaymerCoefficents(plane.type.v, 1), "");
+plane.weights.raymer.C = json_entry("Raymer C Coeff", getRaymerCoefficents(plane.type.v, 2), "");
 
 plane.prop.num_engine = json_entry("Number of Engines", 2, "");
 plane.prop.engine = json_entry("Engine Name", "F414", "s");

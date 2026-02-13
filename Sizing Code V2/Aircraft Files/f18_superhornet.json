@@ -75,6 +75,24 @@
       "d": false,
       "eval": 0,
       "v": 8896.4432344668767
+    },
+    "raymer": {
+      "A": {
+        "n": "Raymer A Coeff",
+        "u": "",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 2.34
+      },
+      "C": {
+        "n": "Raymer C Coeff",
+        "u": "",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": -0.13
+      }
     }
   },
   "wing": {

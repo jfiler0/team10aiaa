@@ -12,7 +12,7 @@ classdef model_class < handle
             obj.settings = settings;
             obj.geom = geom;
             obj.cond = cond;
-            obj.mem = struct('CD0', [], 'CDi', [], 'CDw', []);
+            obj.clear_mem
         end
 
         %% HELPERS
@@ -102,6 +102,10 @@ classdef model_class < handle
             else
                 value = cond_vec(indices);
             end
+        end
+
+        function clear_mem(obj)
+            obj.mem = struct('CD0', [], 'CDi', [], 'CDw', [], 'CLa', [], 'COST', [], 'PROP', []);
         end
 
         %% ACUTUAL MODELS
@@ -202,5 +206,131 @@ classdef model_class < handle
                         error("Code '%i' has no recognized definition for the CDi model.", code)
                 end
             end
+
+        function CLa = CLa(obj, override, code)
+            if nargin < 2
+                override = obj.settings.codes.OVER_NONE;
+            end
+            if nargin < 3
+                code = obj.settings.CLa_model;
+            end
+            
+            compute_CLa = @() obj.compute_CLa_value(code);
+            
+            CLa = obj.compute_with_cache('CLa', override, compute_CLa, obj.settings.CLa_scaler);
+        end
+
+            function value = compute_CLa_value(obj, code)
+                switch code
+                    case obj.settings.codes.CLa_BASIC
+
+                        sub_fun = @(M, I) deg2rad( 2*pi./sqrt(1-M.^2) );
+                        sup_fun = @(M, I) deg2rad( 4./sqrt(M.^2-1) );
+
+                        value = obj.transonicMerge(sub_fun, sup_fun);
+                        
+                    otherwise
+                        error("Code '%i' has no recognized definition for the CLa model.", code)
+                end
+            end
+
+        function COST = COST(obj, override, code)
+            if nargin < 2
+                override = obj.settings.codes.OVER_NONE;
+            end
+            if nargin < 3
+                code = obj.settings.COST_model;
+            end
+            
+            compute_COST = @() obj.compute_COST_value(code);
+            
+            COST = obj.compute_with_cache('COST', override, compute_COST, obj.settings.COST_scaler);
+        end
+
+            function value = compute_COST_value(obj, code)
+                switch code
+                    case obj.settings.codes.COST_BASIC
+                        value = ( getcost(N2lb(obj.geom.weights.empty.v), obj.geom.input.kloc.v) / 500 )  / 1000000;
+                        
+                    otherwise
+                        error("Code '%i' has no recognized definition for the COST model.", code)
+                end
+            end
+        
+        function PROP = PROP(obj, override, code)
+            if nargin < 2
+                override = obj.settings.codes.OVER_NONE;
+            end
+            if nargin < 3
+                code = obj.settings.PROP_model;
+            end
+            
+            compute_PROP = @() obj.compute_PROP_value(code);
+            
+            % The scalers are embeded in the equations now
+            % [TA, TSFC, alpha]
+            PROP = obj.compute_with_cache('PROP', override, compute_PROP, 1);
+        end
+
+            function PROP = compute_PROP_value(obj, code)
+                switch code
+                    case obj.settings.codes.PROP_BASIC
+                        T_SL  = 288.15; %deg K
+                        P_SL = 101330; % Pa
+                        gamma = 1.4; 
+                        TR = 1; % Note: Throttle Ratio ~1 for Fighter Aircraft (Sarojini + Mattingly)
+                        
+                        % Static and stagnation correction ratios
+                        theta = obj.cond.T.v/T_SL; delta = obj.cond.P.v/P_SL; 
+                        
+                        theta_0 = theta .* (1 + (gamma-1)/2 * obj.cond.M.v.^2);
+                        delta_0 = delta .* (1 + (gamma-1)/2 * obj.cond.M.v.^2).^(gamma/(gamma-1));
+                        
+                        % Lapse Ratios for Low-bypass Turbofans (See Mattingly, Aircraft Engine Design, 2e)
+                        % TODO: This is not vectorized
+                        if theta_0 > TR
+                            alpha_dry = 0.6 * delta_0 .* (1 - 3.8 * (theta_0 - TR) ./ theta_0); %Eqn. 2.45b
+                        else
+                            alpha_dry = delta_0 * (0.6); %Eqn. 2.45b
+                        end
+                        
+                        if theta_0 > TR
+                            alpha_AB = delta_0 .* (1 - 3.5* (theta_0 - TR) ./ theta_0); %Eqn. 2.45a
+                        else
+                            alpha_AB = delta_0 * (1); % Eqn. 2.45a
+                        end
+                        
+                        % Thrusts (by definition of lapse rate)
+                        F_th_mil = obj.geom.prop.T0_NoAB.v * alpha_dry; % (whatever unit thrust was passed with)
+                        F_th_AB = obj.geom.prop.T0_AB.v * alpha_AB; % (whatever unit thrust was passed with)
+                        
+                        TSFC_mil = (0.9 + 0.30 * obj.cond.M.v) .* sqrt(theta); %hour^-1; Mattingly Eq.3.55a (No, these are lbm/lbf*hr)
+                        TSFC_AB = (1.6 + 0.27 * obj.cond.M.v) .* sqrt(theta); %hour^-1; Mattingly Eq.3.55b (No, these are lbm/lbf*hr)
+                    
+                        TA = F_th_mil .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( F_th_AB - F_th_mil );
+                        TSFC = TSFC_mil .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TSFC_AB - TSFC_mil );
+                            % TODO: Need to actually use cond.mil_throttle to get TSFC change with throttle
+                        TSFC = lbmlbfhr_2_kgNs(TSFC); % Since the regression was not in metric units
+                    
+                        % Added in the max check and zeroing since it got weird for high mach at sea level
+                        alpha = max(alpha_dry + obj.cond.ab_throttle.v .* (alpha_AB - alpha_dry), 0);
+                        if(alpha < 0)
+                            TA = 0;
+                        end
+                    
+                        TA = TA * obj.settings.TA_scaler;
+                        TSFC = TSFC * obj.settings.TSFC_scaler;
+
+                        less_than_0 = TA < 0;
+                        TA(less_than_0) = 0;
+                        alpha(less_than_0) = 0;
+
+                        PROP = [TA', TSFC', alpha'];
+                        
+                    otherwise
+                        error("Code '%i' has no recognized definition for the COST model.", code)
+                end
+            end
+
     end
 end

@@ -25,9 +25,6 @@ function geom = processGeometryDerived(geom)
     geom.wing_height = json_entry("Wing Leading Edge Height", "0.1333 * geom.fuselage.length.v", "m", geom);
     
     geom.fold_height = json_entry("Maximum Fold Height", "geom.wing_height.v + (geom.wing.span.v * 0.5) * geom.wing.fold_ratio.v", "m", geom);
-    
-    geom.weights.raymer.A = json_entry("Raymer A Coeff", "getRaymerCoefficents(geom.type.v, 1)", "", geom);
-    geom.weights.raymer.C = json_entry("Raymer C Coeff", "getRaymerCoefficents(geom.type.v, 2)", "", geom);
 
     geom.fuselage.diameter = json_entry("Fuselage Equivalent Diameter", "2*sqrt( geom.fuselage.max_area.v/pi)", "m", geom);
 end

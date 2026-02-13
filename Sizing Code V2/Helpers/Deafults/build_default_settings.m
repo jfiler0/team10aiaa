@@ -15,7 +15,14 @@ set.transonic_range = [0.95 1.3];
 set.transonic_M_eps = 0.01;
 
 set.CD0_scaler = 1; % general scaler to parasite drag
-set.CDW_scaler = 1; % general scaler to wave drag
+set.CDi_scaler = 1;
+set.CDw_scaler = 1; % general scaler to wave drag
+
+set.codes = build_default_codes();
+
+set.CD0_model = set.codes.CD0_BASIC;
+set.CDi_model = set.codes.CDi_BASIC_SUBSONIC;
+set.CDw_model = set.codes.CDw_BASIC;
 
 % *** Lots of room to expand capability.
 % The great thing about a general settings constructor is that it will update everywhere and be available without passing around a new

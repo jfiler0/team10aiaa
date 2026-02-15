@@ -1,0 +1,51 @@
+ WAVDRAG- ZERO-LIFT WAVE DRAG OF COMPLEX AIRCRAFT CONFIGURATIONS
+
+( NASA Langley Research Center )
+
+     WAVDRAG calculates the supersonic zero-lift wave drag of complex air-
+craft configurations. The numerical model of an aircraft is used through-
+out the design process from concept to manufacturing. WAVDRAG incorpo-
+rates extended geometric input capabilities to permit use of a more accu-
+rate mathematical model. With WAVDRAG, the engineer can define aircraft
+components as fusiform or nonfusiform in terms of non-intersecting con-
+tours in any direction or more traditional parallel contours. In addition,
+laterally asymmetric configurations can be simulated.
+
+     The calculations in WAVDRAG are based on Whitcomb's area-rule com-
+putation of equivalent-bodies, with modifications for supersonic speed.
+Instead of using a single equivalent-body, WAVDRAG calculates a series of
+equivalent-bodies, one for each roll angle. The total aircraft configura-
+tion wave drag is the integrated average of the equivalent-body wave drags
+through the full roll range of 360 degrees. WAVDRAG currently accepts up
+to 30 user-defined components containing a maximum of 50 contours as geo-
+metric input. Each contour contains a maximum of 50 points. The Mach num-
+ber, angle-of-attack, and coordinates of angle-of-attack rotation are also
+input. The program warns of any fusiform-body line segments having a slope
+larger than the Mach angle. WAVDRAG calculates total drag and the wave-drag
+coefficient of the specified aircraft configuration.
+
+     WAVDRAG is written in FORTRAN 77 for batch execution and has been im-
+plemented on a CDC CYBER 170 series computer with a central memory require-
+ment of approximately 63K (octal) of 60 bit words. This program was devel-
+oped in 1983.
+
+     COSMIC, and the COSMIC logo are registered trademarks of the National
+Aeronautics and Space Administration. All other brands and product names
+are the trademarks of their respective holders.
+
+
+
+LANGUAGE: FORTRAN 77
+
+MACHINE REQUIREMENTS: CDC CYBER 170 SERIES
+
+PROGRAM SIZE: APPROXIMATELY 1,656 SOURCE STATEMENTS
+
+DISTRIBUTION MEDIA: 9 Track 1600 BPI CDC NOS Internal Format Magnetic Tape
+
+PROGRAM NUMBER: LAR-13223
+
+DOMESTIC - DOCUMENTATION PRICE: $20.00    PROGRAM PRICE: $500.00
+
+INTERNATIONAL - DOCUMENTATION PRICE: $40.00   PROGRAM PRICE: $1000.00
+

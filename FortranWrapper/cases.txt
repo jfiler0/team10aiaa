@@ -1,0 +1,26 @@
+TEST CASES FOR D2500 - ZERO-LIFT WAVE DRAG PROGRAM
+
+Test cases are provided to enable you to confirm the correct
+operation of the program on your computer.
+
+case1.inp  -  This is a simple case of a delta wing on a simple
+   fuselage. The program is instructed to generate a new fuselage
+   shape, subject to constraints at two positions. The original
+   drag coefficient of xxx is reduced to yyy by the body modifications.
+
+
+case2.inp  -  This is a supersonic transport with multiple Mach number
+   runs. The wing has camber and twist, so there are lots of TZORD
+   records. The over-the-wing pods have something to do with sonic
+   boom reduction. There are several Mach number runs for the same
+   configuration and this is controlled by the 1 in col 24 of the
+   CASE record. For the last Mach number of 1.0, it is unnecessary to
+   have NTHETA=16 as all the angles give the same result for M=1.
+
+
+case3.inp  -  This is a supersonic transport configuration that shows 
+   an example of fuselage optimization.
+
+
+case4.inp  -  This is a supersonic transport with a blended non-circular
+   fuselage and wing fins.

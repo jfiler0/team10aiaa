@@ -1,6 +1,4 @@
 function struct = json_entry(name, value, units, geom)
-    % TODO: Double check if this can properly handle [] or NaN
-
     % name = some string to call this entry. Can have spaces but avoid special characters. This is the selection for gui but not used
         % anywhere else in the actual analyisis
     % value = whatever the value is. Can be NaN or [] if it should not be assigned yet

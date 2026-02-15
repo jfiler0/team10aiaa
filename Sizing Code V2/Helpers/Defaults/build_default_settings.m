@@ -18,6 +18,8 @@ set.CD0_scaler = 1; % general scaler to parasite drag
 set.CDi_scaler = 1;
 set.CDw_scaler = 1; % general scaler to wave drag
 set.CLa_scaler = 1;
+set.CDp_scaler = 1;
+
 set.COST_scaler = 1;
 set.TA_scaler = 1;
 set.TSFC_scaler = 1;
@@ -30,6 +32,9 @@ set.CDw_model = set.codes.CDw_BASIC;
 set.CLa_model = set.codes.CLa_BASIC;
 set.COST_model = set.codes.COST_BASIC;
 set.PROP_model = set.codes.PROP_BASIC;
+set.CDp_model = set.codes.CDp_CONST;
+
+set.CDp_CONST_CD = 0.2; % the drag coefficent used for each store in the CDp_CONST model
 
 fullPath = mfilename('fullpath');
 codeFolder = fileparts(fullPath);

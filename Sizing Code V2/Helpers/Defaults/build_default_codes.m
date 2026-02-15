@@ -21,10 +21,17 @@ function codes = build_default_codes()
 
     codes.PROP_BASIC = 701;
 
+    codes.CDp_CONST = 801; % payload drag -> all payloads have the same CD0
+    codes.CDp_IGNORE = 802;
+
     % Override codes for the model class
     codes.OVER_NONE = 900; % just kidding don't override anything
     codes.OVER_NO_WRITE = 901; % 1 = don't bother writing this to memory (ignored if there is already a value in memory)
     codes.OVER_NO_READ = 902; % 2 = don't read from the memory
     codes.OVER_NO_READ_NO_WRITE = 903; % 3 = don't read from the memory and don't write (this is a one off call)
 
+    codes.MISSILE = 10;
+    codes.BOMB = 11;
+    codes.TANK = 12;
+    codes.POD = 13;
 end

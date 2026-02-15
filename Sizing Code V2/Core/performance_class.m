@@ -37,7 +37,7 @@ classdef performance_class < handle % <--- Inheriting from handle allows in-plac
 
         % Total CD
         function out = CD(obj)
-            out = obj.simpleUpdateCheck('CD', @() obj.model.CD0 + obj.model.CDi + obj.model.CDw);
+            out = obj.simpleUpdateCheck('CD', @() obj.model.CD0 + obj.model.CDi + obj.model.CDw + obj.model.CDp);
         end
 
         % Physical Forces

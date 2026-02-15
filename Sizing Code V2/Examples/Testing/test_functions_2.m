@@ -1,4 +1,8 @@
-% NEXT: Need conditions to update properly in a useful way
+% the plan for external stores
+% New struct: config
+% contains information about fuel tanks, weapons, current max fuel weight, etc.
+% is not updated with normal updates need. geom.set_config(config)
+
 
 % NAME: test_functions_2
 % PURPOSE:
@@ -10,6 +14,9 @@ matlabSetup
 
 settings = readSettings();
 geom = loadAircraft("f18_superhornet");
+
+geom = setLoadout(geom, ["AIM-9X" "" "" "AIM-120" "AIM-120" "" "" "AIM-9x"]);
+
 cond = generateCondition(geom, 1000, 1.2, 1, 0.5, 1.0);
 
 model = model_class(settings, geom, cond);
@@ -27,8 +34,9 @@ fprintf("For h = %.0f m + M = %.3f. TA = %.3f kN, TSFC = %.3g kg/(Ns), alpha = %
 
 % PLOTTING
 %     Runs the main models with vector calls instead and plots them
-plot_models(geom, model, 200)
-plot_performance(geom, perf, 200);
+
+% plot_models(geom, model, 200)
+% plot_performance(geom, perf, 200);
 
 % geom = editGeom(geom, "wing.AR", 2);
 
@@ -39,3 +47,5 @@ weight_comps = getRaymerWeightStruct(geom);
 
 % For AVL
 generatePlane(geom);
+
+perf.CD

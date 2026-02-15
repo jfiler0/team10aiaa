@@ -10,6 +10,5 @@ function s = assignNestedField(s, fields, val)
 
     % With things processed, we run a recrusive call to run through the struct
 
-    % TODO: Consider changing this to a for loop like readNestedField for speed
     s = assignNestedFieldRecrusive(s, fields, val);
 end

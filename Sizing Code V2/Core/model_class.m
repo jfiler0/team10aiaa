@@ -107,7 +107,7 @@ classdef model_class < handle
         % end
 
         function clear_mem(obj)
-            obj.mem = struct('CD0', [], 'CDi', [], 'CDw', [], 'CLa', [], 'COST', [], 'PROP', []);
+            obj.mem = struct('CD0', [], 'CDi', [], 'CDw', [], 'CLa', [], 'COST', [], 'PROP', [], 'CDp', []);
         end
 
         %% ACUTUAL MODELS
@@ -319,7 +319,6 @@ classdef model_class < handle
                     
                         TA = F_th_mil .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( F_th_AB - F_th_mil );
                         TSFC = TSFC_mil .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TSFC_AB - TSFC_mil );
-                            % TODO: Need to actually use cond.mil_throttle to get TSFC change with throttle
                         TSFC = lbmlbfhr_2_kgNs(TSFC); % Since the regression was not in metric units
                     
                         % Added in the max check and zeroing since it got weird for high mach at sea level
@@ -339,6 +338,33 @@ classdef model_class < handle
                         
                     otherwise
                         error("Code '%i' has no recognized definition for the COST model.", code)
+                end
+            end
+        function CDp = CDp(obj, override, code)
+            if nargin < 2
+                override = obj.settings.codes.OVER_NONE;
+            end
+            if nargin < 3
+                code = obj.settings.CDp_model;
+            end
+            
+            compute_CDp = @() obj.compute_CDp_value(code);
+            
+            CDp = obj.compute_with_cache('CDp', override, compute_CDp, obj.settings.CDp_scaler);
+        end
+
+            function value = compute_CDp_value(obj, code)
+                switch code
+                    case obj.settings.codes.CDp_CONST
+                        value = 0;
+                        for i = 1:length(obj.geom.stores)
+                            value = value + obj.geom.stores(i).frontal_area.v * obj.settings.CDp_CONST_CD / obj.geom.ref_area.v;
+                        end
+                    case obj.settings.codes.CDp_IGNORE
+                        value = 0;
+
+                    otherwise
+                        error("Code '%i' has no recognized definition for the CDp model.", code)
                 end
             end
 

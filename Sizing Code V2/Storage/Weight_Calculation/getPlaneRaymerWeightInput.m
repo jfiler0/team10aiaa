@@ -52,7 +52,6 @@ input.Nnw    = 2;             % Number of nose wheels
 input.Nen    = geom.prop.num_engine.v;             % Number of engines
 input.T      = geom.prop.T0_AB.v;         % Total thrust [N] per engine ~ 77000 N  *** THESE NEED TO HAVE AN INPUT
 input.Wen    = geom.prop.dry_weight.v;     % Engine weight [N]
-    % TODO: Check if this is both engines
 input.Sfw    = geom.fuselage.max_area.v;             % Firewall area [m^2]
 input.K_vg   = 1;
 input.Ld     = 0.1333 * geom.fuselage.length.v;             % Intake length [m]

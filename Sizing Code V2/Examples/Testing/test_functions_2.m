@@ -1,8 +1,8 @@
-% the plan for external stores
-% New struct: config
-% contains information about fuel tanks, weapons, current max fuel weight, etc.
-% is not updated with normal updates need. geom.set_config(config)
-
+% Whats next?
+%   General function for making a map to speed up using interpolation
+%   Additionl performance functions that we need for constraints
+%   Actually running missions - with the sub missions
+%   
 
 % NAME: test_functions_2
 % PURPOSE:
@@ -35,17 +35,15 @@ fprintf("For h = %.0f m + M = %.3f. TA = %.3f kN, TSFC = %.3g kg/(Ns), alpha = %
 % PLOTTING
 %     Runs the main models with vector calls instead and plots them
 
-% plot_models(geom, model, 200)
-% plot_performance(geom, perf, 200);
+plot_models(geom, model, 200)
+plot_performance(geom, perf, 200);
 
 % geom = editGeom(geom, "wing.AR", 2);
 
 %% Weight Calculation
 
-% builds a struct of weight components
+% Builds a struct of weight components
 weight_comps = getRaymerWeightStruct(geom);
 
 % For AVL
 generatePlane(geom);
-
-perf.CD

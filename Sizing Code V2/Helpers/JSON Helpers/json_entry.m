@@ -33,7 +33,4 @@ function struct = json_entry(name, value, units, geom)
     else
         error("Invalid input variable type")
     end
-
-    
-
 end

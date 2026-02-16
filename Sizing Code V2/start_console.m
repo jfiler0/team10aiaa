@@ -5,4 +5,7 @@ matlabSetup;
 
 console = console_class();
 
-console.start();
+commandList = [];
+commandList = ["load f18_superhornet", "INSPECT"];
+
+console.start(commandList);

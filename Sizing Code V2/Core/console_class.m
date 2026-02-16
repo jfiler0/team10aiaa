@@ -17,17 +17,61 @@ classdef console_class < handle
         function obj = console_class()
             obj.settings = readSettings();
             obj.run = true; % once this is set to false the program ends
+            obj.mem = struct();
         end
 
-        function obj = start(obj)
+        function obj = start(obj, commandList)
+            % commandList allows starting the console with a predfiend set of user inputs. This makes it easier to test
+            if nargin > 1
+                obj.mem.commandList = commandList;
+            end
+
             jprint("=== Sizing V2 :: AVD Team 10 ===", 2)
             jprint("List available commands with: '?'", 1)
             obj.load_loop;
         end
 
+        function [userInput, args] = getInput(obj, header)
+        % thanks chat again
+        
+            jprint("[" + header + "] << ", -2, false);
+        
+            if( isempty(obj.mem.commandList) )
+                raw = input('', 's');
+            else
+                % There are still so more commands we want to run
+                raw = obj.mem.commandList(1);
+                jprint(raw);
+                obj.mem.commandList(1) = [];
+            end
+        
+            % Convert to string and trim whitespace
+            raw = strtrim(string(raw));
+        
+            % Handle empty input
+            if strlength(raw) == 0
+                userInput = "";
+                args = string.empty;
+                return
+            end
+        
+            % Split on one-or-more whitespace
+            parts = split(raw);
+        
+            userInput = parts(1);
+        
+            if numel(parts) > 1
+                args = parts(2:end);
+            else
+                args = string.empty;
+            end
+        end
+
+        %% MAIN LOOPS
+
         function obj = load_loop(obj)
             while obj.run
-                [userInput, args] = getInput("load");
+                [userInput, args] = obj.getInput("load");
 
                 switch  userInput
                     case '?'
@@ -52,7 +96,7 @@ classdef console_class < handle
                         printArray( names );
 
                     case 'load'
-                        obj.geom = readAircraftFile(args(1));
+                        obj.geom = loadAircraft(args(1));
                         jprint("Working geometry set using " + obj.geom.id.v + ".json: " + obj.geom.name.v)
 
                     case 'INSPECT'
@@ -71,16 +115,20 @@ classdef console_class < handle
 
         function obj = inspect_loop(obj)
             while obj.run
-                [userInput, args] = getInput("inspect");
+                [userInput, args] = obj.getInput("inspect");
 
                 switch  userInput
                     case '?'
                         commands = [...
                             "?" "List available commands"; ...
                             "q" "Quit program"; ...
-                            "LOAD" "Return to command set for loading a geoemtry "
-                            "geomInfo" "Creates a table of properties associated with loaded geometry"
-                            "setCond" "Set a condition to run analyisis at"
+                            "geomInfo" "Creates a table of properties associated with loaded geometry"; ...
+                            "setCond" "Set a condition to run analyisis at"; ...
+                            "printData" "Runs avaiable models and performance functions and prints table of outputs"; ...
+                            "LOAD" "Return to command set for loading a geoemtry "; ...
+                            "GRAPHING" "Enter command set for creating different default graphs"; ...
+                            "MISSIONS" "Enter command set for running mission files"; ...
+                            "STABILITY" "Enter command set for evaluating design stability"; ...
                             ];
 
                         printCommands( commands );
@@ -89,13 +137,26 @@ classdef console_class < handle
                         obj.run = false;
                     % These are critical ^^. Start of actual functions:
 
+                    case 'geomInfo'
+                        T = geomInfoTable(obj.geom);
+                        printTableConsole( sortrows(T) );
+
+                    case 'setCond'
+                        jprint("Not implemented yet.", -1)
+
+                    case 'printData'
+                        jprint("Not implemented yet.", -1)
+
                     case 'LOAD'
                         obj.load_loop;
 
-                    case 'geomInfo'
+                    case 'GRAPHING'
                         jprint("Not implemented yet.", -1)
 
-                    case 'setCond'
+                    case 'MISSIONS'
+                        jprint("Not implemented yet.", -1)
+
+                    case 'STABILITY'
                         jprint("Not implemented yet.", -1)
 
                     % Catch all
@@ -146,36 +207,6 @@ function printCommands(commands)
     end
 end
 
-function [userInput, args] = getInput(header)
-% thanks chat again
-
-    jprint("[" + header + "] << ", -2, false);
-
-    raw = input('', 's');
-
-    % Convert to string and trim whitespace
-    raw = strtrim(string(raw));
-
-    % Handle empty input
-    if strlength(raw) == 0
-        userInput = "";
-        args = string.empty;
-        return
-    end
-
-    % Split on one-or-more whitespace
-    parts = split(raw);
-
-    userInput = parts(1);
-
-    if numel(parts) > 1
-        args = parts(2:end);
-    else
-        args = string.empty;
-    end
-end
-
-
 function notRecognized()
     % Seperate this out as it is a common statement. This way it can be easily edited
     jprint("Not a recognized command. Use '?' for display available commands", -1)
@@ -217,5 +248,128 @@ function jprint(text, code, do_return)
             cprintf('*#FF3BEF', text)
         otherwise
             error("Unrecognized jprint code: %i", code)
+    end
+end
+
+% some real gpt
+function printTableConsole(T)
+
+    if isempty(T) || width(T) == 0
+        jprint("Empty table.", 0);
+        return
+    end
+
+    % Convert entire table to string array
+    Tstr = varfun(@string, T);
+    headers = string(T.Properties.VariableNames);
+
+    nRows = height(Tstr);
+    nCols = width(Tstr);
+
+    % Preallocate matrix of strings (including header row)
+    data = strings(nRows + 1, nCols);
+
+    % First row = headers
+    data(1,:) = headers;
+
+    % Remaining rows = table content
+    for c = 1:nCols
+        data(2:end,c) = Tstr.(c);
+    end
+
+    % Determine column widths
+    colWidths = zeros(1, nCols);
+    for c = 1:nCols
+        colWidths(c) = max(strlength(data(:,c)));
+    end
+
+    % ---- Print Header ----
+    printRow(data(1,:), colWidths);
+
+    % ---- Print Separator ----
+    sepLine = "";
+    for c = 1:nCols
+        sepLine = sepLine + "|" + repmat('-',1,colWidths(c)+2);
+    end
+    sepLine = sepLine + "|";
+    jprint(sepLine, 0);
+
+    % ---- Print Data Rows ----
+    for r = 2:size(data,1)
+        printRow(data(r,:), colWidths);
+    end
+
+end
+
+function printRow(rowData, colWidths)
+
+    line = "";
+
+    for c = 1:numel(rowData)
+
+        cellText = rowData(c);
+
+        padding = repmat(' ', 1, colWidths(c) - strlength(cellText));
+
+        line = line + "| " + cellText + padding + " ";
+    end
+
+    line = line + "|";
+
+    jprint(line, 0);
+
+end
+
+function T = geomInfoTable(geom)
+
+    rows = {};
+    rows = collectEntries(geom, "", rows);
+
+    if isempty(rows)
+        T = table;
+        return
+    end
+
+    rows = vertcat(rows{:});
+    T = struct2table(rows);
+
+end
+function rows = collectEntries(s, parentPath, rows)
+
+    if ~isstruct(s)
+        return
+    end
+
+    fields = fieldnames(s);
+
+    for i = 1:numel(fields)
+
+        fname = fields{i};
+
+        if strlength(parentPath) > 0
+            currentPath = parentPath + "." + fname;
+        else
+            currentPath = string(fname);
+        end
+
+        value = s.(fname);
+
+        % ---- Leaf detection ----
+        if isstruct(value) && isfield(value, "v") && isfield(value, "n")
+
+            entry = struct();
+            entry.Name  = string(value.n);
+            entry.Value = string(value.v);          % allow mixed types
+            entry.Units = string(value.u);
+            entry.Path  = string(currentPath);
+            entry.Derived = string(value.d);
+
+            rows{end+1} = entry; %#ok<AGROW>
+
+        elseif isstruct(value)
+
+            rows = collectEntries(value, currentPath, rows);
+
+        end
     end
 end

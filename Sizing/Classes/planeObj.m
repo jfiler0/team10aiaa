@@ -578,7 +578,6 @@ classdef planeObj
             L_max = q * CL_max_clean * obj.S_ref;
             n = min( L_max / W, obj.g_limit);
             turn_rate = rad2deg( n * 9.8051 / V);
-            
         end
 
         function [turn_rate, mach] = getMaxTurnAtAlt(obj, h, W, M_guess)

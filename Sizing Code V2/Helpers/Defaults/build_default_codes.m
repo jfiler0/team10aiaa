@@ -24,6 +24,8 @@ function codes = build_default_codes()
     codes.CDp_CONST = 801; % payload drag -> all payloads have the same CD0
     codes.CDp_IGNORE = 802;
 
+    codes.SpotFactor_BASIC = 1001;
+
     % Override codes for the model class
     codes.OVER_NONE = 900; % just kidding don't override anything
     codes.OVER_NO_WRITE = 901; % 1 = don't bother writing this to memory (ignored if there is already a value in memory)

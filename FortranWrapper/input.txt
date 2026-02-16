@@ -1,0 +1,498 @@
+
+
+INPUT GUIDE FOR PROGRAM D2500                             \wavedrag\input.txt
+
+     Input for the D2500 wave drag analysis program is in a formatted,
+column-sensitive format.  Blanks in a field are interpreted as zeroes.  
+All configurations are assumed to be symmetric with respect to the 
+X-Z plane so that only the "positive y" half of the vehicle is defined.  
+The positive direction of the y-axis is out the right wing.
+X is positive rearward and z is positive upward.
+The option exists to stack input files (see NCON on the Case Control 
+Record) to reanalyze a configuration with minor geometry changes.  
+For the second and successive configurations, the control Jx for 
+unchanged components may be set to 2 to avoid repeating the input 
+data for that component.
+
+
+
+                    Problem Control Records
+
+
+Title : Format(A80)
+
+  Any 80-column alphanumeric title.
+
+
+Geometry Input Control: Format(24I3)  Integer input must be
+  right justified in the indicated 3-column field.
+
+ Variable   Columns    Description
+
+  J0          1- 3     = 0, No reference area
+                       = 1, Reference area will be input and used
+                       = 2, Reference area from previous
+                            configuration will be used
+
+  J1          4- 6     = 0, No wing
+                       = 1, Cambered wing data will be input
+                       =-1, Uncambered wing data will be input
+                       = 2, Wing data from previous configuration
+                            will be used
+
+  J2          7- 9     = 0, No fuselage
+                       = 1, Arbitrarily shaped fuselage
+                       =-1, Circular fuselage
+                       = 2, Fuselage data from previous
+                            configuration will be used
+
+  J3         10-12     = 0, No pod
+                       = 1, Pod data will be input
+                       = 2, Pod data from previous configuration
+                            will be used
+
+  J4         13-15     = 0, No fin (Vertical tail)
+                       = 1, Fin data will be input
+                       = 2, Fin data from previous configuration
+                            will be used
+
+  J5         16-18     = 0, No canard (Horizontal tail)
+                       = 1, Canard data will be input
+                       = 2, Canard data from previous
+                            configuration will be used
+
+  J6         19-21     = 1, Complete configuration is symmetrical
+                            with respect to the X-Y plane, implies
+                            an uncambered circular fuselage if a
+                            fuselage exists.
+                       =-1, The circular fuselage is symmetrical
+                            (uncambered)
+                       = 0, No X-Y plane symmetry
+
+  NWAF       22-24     Number of airfoil sections used to describe
+                       the wing (minimum = 2, maximum = 20)
+
+  NWAFOR     25-27     Number of stations at which ordinates are
+                       input for each wing airfoil section
+                       (minimum = 3, maximum = 30)
+                       If given a negative sign, the program
+                       will expect to read both upper and lower
+                       ordinates.  If positive, the airfoil is
+                       assumed to be symmetrical.
+
+  NFUS       28-30     Number of fuselage segments
+                       (minimum = 1, maximum = 4)
+
+  NRADX(1)   31-33     Number of points per station used to
+                       represent a half-section of the first
+                       fuselage segment.  For circular fuselages,
+                       NRADX y and z coordinates are computed
+                       (minimum = 3, maximum = 50)
+
+  NFORX(1)   34-36     Number of stations for first fuselage
+                       segment (minimum = 4, maximum = 30)
+
+  NRADX(2)   37-39     Same as NRADX(1) but for second segment
+
+  NFORX(2)   40-42     Same as NFORX(1) but for second segment
+
+  NRADX(3)   43-45     Same as NRADX(1) but for third segment
+
+  NFORX(3)   46-48     Same as NFORX(1) but for third segment
+
+  NRADX(4)   49-51     Same as NRADX(1) but for fourth segment
+
+  NFORX(4)   52-54     Same as NFORX(1) but for fourth segment
+
+  NP         55-57     Number of pods described (maximum = 9)
+
+  NPODOR     58-60     Number of stations at which pod radii are
+                       input (minimum = 4, maximum = 30)
+
+  NF         61-63     Number of fins (vertical tails) described
+                       (maximum = 6) If given a negative sign, the
+                       program will expect to read ordinates for
+                       both the outboard and inboard sides of the
+                       fins.  If positive, the airfoils are
+                       assumed to be symmetrical.
+
+  NFINOR     64-66     Number of stations at which ordinates are
+                       input for each fin airfoil
+                       (minimum = 3, maximum = 10)
+
+  NCAN       67-69     Number of canards (horizontal tails)
+                       defined (maximum = 2).  If given a negative
+                       sign, the program will expect to read
+                       ordinates for both the root and tip.  If
+                       positive, the root and tip airfoils are
+                       assumed to be the same.
+
+  NCANOR     70-72     Number of stations at which ordinates are
+                       input for each canard airfoil
+                       (minimum = 3, maximum = 10) 
+                       If given a negative sign, the program
+                       will expect to read both upper and lower
+                       ordinates.  If positive, the airfoil is
+                       assumed to be symmetrical.
+
+
+Reference Area: Format(F7.0)  Input only if J0 = 1
+
+  REFA          Reference wing area used for drag coefficient
+                computation
+
+
+
+                    Configuration Data Records
+
+
+     Data describing the configuration are input in seven column
+fields with a decimal point, with up to ten fields per record.  If
+more than ten fields are required, additional records are used.
+
+     Columns 73 and up are used for identification.  This usually
+consists of a key word and a number or combination of numbers
+identifying that record within the group.  For example, "WAFORG 3"
+would be the record specifying the location of the third airfoil,
+and "TZORD 3-2" might be the second record defining the mean camber
+line for the third airfoil.  This identification is not used by
+the program, but it is useful because all configuration data are
+input in the same format, and it all looks alike.  Suggested
+identifiers are provided.
+
+
+
+                        Wing Data 
+
+
+     If J1 = 0 or 2, no wing data is input.  Only one wing may be
+defined for a configuration.  Input must include Wing Percent
+Chord Location Record(s), Wing Airfoil Location Records, and Wing
+Airfoil Ordinate Records.  Wing Mean Camber Line Recordss are optional
+depending on J1.
+
+
+Wing Percent Chord Location: Format(10F7.0)  NWAFOR values
+  are input, ten to a record.  (Identifier = XAF)
+
+  XAF(I)        Locations in percent chord ((x/c)*100) at which the
+                ordinates of all wing airfoils are to be specified.
+
+
+Wing Airfoil Location: Format(4F7.0)  NWAF records are input,
+  one for each airfoil, in order, from the most inboard airfoil to
+  the most outboard.  (Identifier = WAFORG)
+
+  Columns       Description
+
+    1- 7        x coordinate of airfoil leading edge
+
+    8-14        y coordinate of airfoil leading edge
+
+   15-21        z coordinate of airfoil leading edge
+
+   22-28        airfoil streamwise chord length
+
+
+Wing Mean Camber Line: Format(10F7.0)  Input only if J1 = 1.
+  NWAFOR values are input for each airfoil, ten to a record.  Each
+  airfoil is started on a new record.  NWAF sets of data are input,
+  one for each airfoil.  (Identifier = TZORD)
+
+  TZORD(I,J)    Delta z value, referenced to the z coordinate of
+                the airfoil leading edge, at the Jth wing percent
+                chord location for the Ith wing airfoil.
+
+
+Wing Airfoil Ordinate: Format(10F7.0)  NWAF sets of data are
+  input, one for each airfoil. NWAFOR values are input for each
+  airfoil, ten to a record.  Each airfoil is started on a new record.
+  If NWAFOR < 0, the wing is not symmetric and two sets of data
+  are input for each airfoil, the distance from the mean camber
+  line to the upper surface followed (on a new record) by the
+  distance from the lower surface to the mean camber line.  Both
+  are expressed as percent chord as described below.  (Identifier
+  = WAFORD)
+
+  WAFORD(I,J)   Airfoil half-thickness ordinates of the wing,
+                expressed as percent chord (100 * (t/c) / 2),
+                at the Jth wing percent chord location for the
+                Ith wing airfoil.
+
+
+
+                      Fuselage Data 
+
+
+     If J2 = 0 or 2, no fuselage data is input.  Otherwise, NFUS
+sets of fuselage data are input.  Each set consists of Fuselage
+Station Records and, depending on the options specified on the
+Geometry Input Control Record, Fuselage Camber Records, Fuselage Area
+Records, and/or Fuselage cross section y coordinate and z coordinate
+Records.  Fuselage segments and stations within each segment must be
+in order of increasing x.
+
+
+Fuselage Station: Format(10F7.0)   NFORX(I) values are 
+  input, ten to a record, for the Ith fuselage segment.  
+  (Identifier = XFUS)
+
+  XFUS(J,I)     x coordinate of the Jth station for the Ith
+                fuselage segment
+
+
+Fuselage Camber: Format(10F7.0)   Input only for circular,
+  cambered fuselages (J2 = -1, J6 = 0).  NFORX(I) values are 
+  input, ten to a record, for the Ith fuselage segment.  
+  (Identifier = ZFUS)
+
+  ZFUS(J,I)     z coordinate of the center of the Jth station of
+                the Ith fuselage segment
+
+
+Fuselage Area: Format(10F7.0)   Input only for circular
+  fuselages (J2 = -1).  NFORX(I) values are input, ten to a record,
+  for the Ith fuselage segment.  (Identifier = FUSARD)
+
+  FUSARD(J,I)   Cross-sectional area of the Jth station of the Ith
+                fuselage segment
+
+
+Fuselage Coordinates: Format(10F7.0)  Input only for
+  arbitrary cross section fuselages (J2 = 1).  NRADX(I) values are
+  input, ten to a record, for the y coordinate followed by NRADX(I)
+  values for the z coordinate for the points defining a
+  half-section of the Jth station of the Ith fuselage segment.
+  The z coordinates are started on a new record.  The points are
+  ordered from bottom to top.  (Identifiers = Y and Z)
+
+  Y(K,J,I)      y coordinate of the Kth point defining the Jth
+                station of the Ith fuselage segment
+
+  Z(K,J,I)      z coordinate of the Kth point defining the Jth
+                station of the Ith fuselage segment
+
+
+
+                    Pod (Nacelle) Data 
+
+
+     If J3 = 0 or 2, no pod data is input.  Otherwise, NP sets of
+data are input, one for each pod defined.  Each set consists of a
+Pod Location Record and Pod Station and Radius Records.  Pods are
+located symmetrically, i.e., unless the y coordinate is 0., a
+mirror image at -y is asssumed.  If y = 0., a single pod on the
+configuration centerline is defined.
+
+
+Pod (Nacelle) Location: Format(3F7.0)  One record is input
+  in each set defining the pod location.  (Identifier = PODORG)
+
+  Columns       Description
+
+    1- 7        x coordinate of the origin of the Ith pod
+
+    8-14        y coordinate of the origin of the Ith pod
+
+   15-21        z coordinate of the origin of the Ith pod
+
+
+Pod (Nacelle) Stations: Format(10F7.0)   NPODOR values are 
+  input, ten to a record, for the pod currently being defined.
+  (Identifier = XPOD)
+
+  XPOD(I,J)     X location of the Jth station for the Ith pod
+                referenced to the pod origin, i. e., the first
+                value must be zero, and the last value is the
+                length of the pod.
+
+
+Pod (Nacelle) Radii: Format(10F7.0)   NPODOR values are 
+  input, ten to a record, for the pod currently being defined.
+  (Identifier = PODR)
+
+  PODR(I,J)     Pod radius at the Jth station of the Ith pod
+
+
+
+                  Fin (Vertical Tail) Data 
+
+
+     If J4 = 0 or 2, no fin data is input.  Otherwise, NF sets of
+data are input, one for each fin defined.  Each set consists of a
+Fin Planform Record, a Fin Percent Chord Location Record, and Fin
+Airfoil Ordinate Record(s).  Fins are located symmetrically, i.e.,
+unless the y coordinates are 0., a mirror image at -y is asssumed.
+If y = 0., a single vertical tail on the configuration centerline
+is defined.
+
+
+Fin (Vertical Tail) Planform: Format(3F7.0)  One record is
+  input in each set defining the fin location and planform.
+  (Identifier = FINORG)
+
+  Columns       Description
+
+    1- 7        x coordinate of the lower airfoil leading edge
+
+    8-14        y coordinate of the lower airfoil leading edge
+
+   15-21        z coordinate of the lower airfoil leading edge
+
+   22-28        Chord length of the lower airfoil
+
+   29-35        x coordinate of the upper airfoil leading edge
+
+   36-42        y coordinate of the upper airfoil leading edge
+
+   43-49        z coordinate of the upper airfoil leading edge
+
+   50-56        Chord length of the upper airfoil
+
+
+Fin (Vertical Tail) Percent Chord Location: Format(10F7.0)
+  NFINOR values are input.  (Identifier = XFIN)
+
+  XFIN(I,J)     Locations in percent chord ((x/c)*100) at which
+                the airfoil ordinates of the Ith fin are to be
+                specified.
+
+
+Fin (Vertical Tail) Airfoil Ordinates: Format(10F7.0)
+  NFINOR values are input.  If NF < 0, the fin airfoil is not
+  symmetric with respect to the inclined plane defined on the Fin
+  Planform Record and two sets of ordinates are input, the distance
+  from the inclined plane to the outboard surface followed by the
+  distance from the inboard surface to the inclined plane.  Both
+  are expressed as percent chord as described below.
+  (Identifier = FINORD)
+
+  FINORD(I,J)   Airfoil half-thickness ordinates of the Ith fin,
+                expressed as percent chord (100 * (t/c) / 2).
+
+
+
+               Canard (Horizontal Tail) Data 
+
+
+     If J5 = 0 or 2, no canard data is input.  Otherwise, NCAN
+sets of data are input, one for each canard or horizontal tail
+defined.  Each set consists of a Canard Planform Record, a Canard
+Percent Chord Location Record, and Canard Airfoil Ordinate Record(s).
+
+
+Canard (Horizontal Tail) Planform: Format(3F7.0)  One record is
+  input in each set defining the canard location and planform.
+  (Identifier = CANORG)
+
+  Columns       Description
+
+    1- 7        x coordinate of the inboard airfoil leading edge
+
+    8-14        y coordinate of the inboard airfoil leading edge
+
+   15-21        z coordinate of the inboard airfoil leading edge
+
+   22-28        Chord length of the inboard airfoil
+
+   29-35        x coordinate of the outboard airfoil leading edge
+
+   36-42        y coordinate of the outboard airfoil leading edge
+
+   43-49        z coordinate of the outboard airfoil leading edge
+
+   50-56        Chord length of the outboard airfoil
+
+
+Canard (Horizontal Tail) Percent Chord Location:
+  Format(10F7.0)  NCANOR values are input.  (Identifier = XCAN)
+
+  XCAN(I,J)     Locations in percent chord ((x/c)*100) at which
+                the airfoil ordinates of the Ith canard are to be
+                specified.
+
+
+Canard (Horizontal Tail) Airfoil Ordinates: Format(10F7.0)
+  NCANOR values are input.  If NCAN < 0, the outboard canard
+  airfoil is different from the inboard airfoil, and two sets of
+  ordinates are input, inboard airfoil data followed (starting on
+  a new record) by outboard airfoil data.  If NCANOR < 0, the canard
+  airfoil is not symmetric with respect to the inclined plane
+  defined on the Canard Planform Record and two sets of ordinates
+  are input, the distance from the inclined plane to the upper
+  surface followed by the distance from the lower surface to the
+  inclined plane.  If both NCAN < 0 and NCANOR < 0, four sets of
+  ordinates are required in the following order: inboard upper
+  surface, outboard upper surface, inboard lower surface, and
+  outboard lower surface.  Each set is started on a new record.
+  (Identifier = CANORD)
+
+  CANORD(I,J)   Airfoil half-thickness ordinates of the Ith canard,
+                expressed as percent chord (100 * (t/c) / 2).
+
+
+
+                     Case Definition Input Data
+
+
+Case Control Record: Format(A4,11I4)  Integer input must be right
+  justified in the indicated 4-column field.  As many Case Control
+  Records as desired may be input.  If NREST > 0, the Case Control
+  Record is followed by a Restraint Record, but only one Restraint
+  Record may be input per configuration.
+
+ Variable   Columns    Description
+
+  NCASE       1- 4     Case number or other 4 character descriptor
+
+  MACH        5- 8     Mach number * 1000
+
+  NX          9-12     Number of intervals on x axis
+
+  NTHETA     13-16     Number of thetas ( multiple of 4 )
+
+  NREST      17-20     Number of restraint points for drag
+                       minimization (maximum = 10)
+                       (only applies if ICYC > 0)
+
+  NCON       21-24     Configuration control
+                       = 1, A new configuration follows this case.
+                            (Title, Geometry Input Control Record,
+                            etc.) This option is normally used when
+                            only minor geometry changes are desired.
+                       = 0, Otherwise (another case or nothing)
+
+  ICYC       25-28     Number of Optimization cycles ( < 10)
+                       = 0 for analysis run, no optimization
+
+  KKODE      29-32     Slope check control
+                       = 0, Turn on slope checking
+                       = 1, No slope checking
+
+  JRST       33-36     Equivalent body data control
+                       = 0, Compute equivalent body areas, drags etc.
+                       = 1, Perform minimum calculations required for
+                            wave drag (saves ~25% execution time)
+
+
+Restraint Record: Format(10F7.0)  Input only if NREST > 0
+
+  XREST(I)      X locations of fuselage restraint points.  The
+                fuselage cross-sectional area is held constant at
+                these locations during optimization.
+
+                            
+                            
+                            end
+-----------------------------------------------------------------------------
+
+THINGS TO BE CAREFUL ABOUT:
+  Wing, fin, canard longitudinal x-coordinates are non-dimensional, while 
+  fuselage and pod x-coordinates are dimensional
+
+  Thickness values for wing,fin,canard are half-thickness. If your wing
+  has a maximum thickness of 12 percent, then the largest entry in
+  WAFORD is 6.  ( A favorite error of beginners)
+
+  *** send me additional entries for this list ***
+

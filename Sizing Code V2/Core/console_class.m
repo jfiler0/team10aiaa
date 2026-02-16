@@ -106,6 +106,10 @@ classdef console_class < handle
                             obj.inspect_loop;
                         end
 
+                    case 'fun'
+                        obj.run = false;
+                        do_fun();
+
                     % Catch all
                     otherwise
                         notRecognized;
@@ -334,6 +338,7 @@ function T = geomInfoTable(geom)
     T = struct2table(rows);
 
 end
+
 function rows = collectEntries(s, parentPath, rows)
 
     if ~isstruct(s)

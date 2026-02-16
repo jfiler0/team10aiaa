@@ -4,6 +4,7 @@
 %       Finding/tracking the optimal TSFC
 %   Calculate trim condition set
 %   Make sure performance functions can deal with vector conditions (mesh grids would be cool)
+%   Console interaction
 
 % NAME: test_functions_2
 % PURPOSE:

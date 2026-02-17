@@ -42,5 +42,7 @@ plane.prop.engine = json_entry("Engine Name", "F414", "s");
 plane.racks = [-1 -0.7 -0.5 -0.2 0.2 0.5 0.7 1]; % spanwise position of the racks
 % plane.stores = []; % clean confiuration
 
+plane = setLoadout(plane, ["" "" "" "" "" "" "" ""]);
+
 writeAircraftFile(plane);
     % Writes the actual file generally. This also means the location only needs to be changed in one place

@@ -1,4 +1,4 @@
-function struct = json_entry(name, value, units, geom)
+function struct = json_entry(name, value, units, geom, derived_override)
     % name = some string to call this entry. Can have spaces but avoid special characters. This is the selection for gui but not used
         % anywhere else in the actual analyisis
     % value = whatever the value is. Can be NaN or [] if it should not be assigned yet
@@ -8,6 +8,10 @@ function struct = json_entry(name, value, units, geom)
 
     if nargin < 4
         geom = NaN;
+    end
+    if nargin < 5
+        % When true this forces the derived setting to true. Otherwise it defaults to the string check
+        derived_override = false;
     end
 
     struct.n = name;
@@ -20,7 +24,7 @@ function struct = json_entry(name, value, units, geom)
 
     % check if the unit is 's' which designates a string input. This can only be a primary variable
     if struct.u == 's' || any( [ isa(value, 'double'), isa(value, 'int') ] ) % this is a primary var and can take value
-        struct.d = false;
+        struct.d = derived_override; % Having derived_override is needed for the default condition struct
         struct.eval = 0;
         struct.v = value;
     elseif isa(value, 'string')

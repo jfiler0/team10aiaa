@@ -4,6 +4,9 @@ classdef console_class < handle
         geom
         cond
 
+        model
+        perf
+
         run
         
         mem
@@ -86,7 +89,8 @@ classdef console_class < handle
                             "edit param value" "Change aircraft geometry. Must be a struct path like: wing.span (must be a primary variable). See available with 'geomInfo'. 'value' argument is optional."; ...
                             "geomInfo" "Creates a table of properties associated with loaded geometry"; ...
                             "save name" "Creates a new aircraft file with the given name. If 'name' argument for provided, it uses the current file name." ; ...
-                            "INSPECT" "Enter command set for analyzing a geometry at point conditions" ...
+                            "INSPECT" "Enter command set for analyzing a geometry at point conditions" ; ...
+                            "EDITLOADOUT" "Enter a command set for changing the current loadout with a set of predefined stores." ...
                             ];
 
                         printCommands( commands );
@@ -103,6 +107,8 @@ classdef console_class < handle
 
                     case 'load'
                         obj.geom = loadAircraft(args(1));
+                        % loadout is now initially saved
+                        % TODO: Since loadouts don't follow the same format, they are breaking lots of stuff
                         jprint("Working geometry set using " + obj.geom.id.v + ".json: " + obj.geom.name.v)
 
                     case 'edit'
@@ -172,6 +178,8 @@ classdef console_class < handle
                             writeAircraftFile(obj.geom);
                             jprint("Wrote current geometry to: " + savePath);
                         end
+                    case 'editloadout'
+                        jprint("Not implemented yet.", -1)
 
                     case 'inspect'
                         if isempty(obj.geom)
@@ -217,18 +225,88 @@ classdef console_class < handle
                         % These are critical ^^. Start of actual functions:
 
                     case 'setcond'
-                        jprint("Not implemented yet.", -1)
+                        % h, M_vel, n, W, throttle
+                        % H, MV, N, W, T
+                        
+                        jprint("Cycling through five condition inputs. Enter new value or leave blank to skip");
+                        jprint("Couple key things to remember. The MV input can either be mach number of velocity. If the value is above 5, it is treated as velocity. The weight input cutoff is 1. If 1, it is set to MTOW. If 0, empty weight. If above 1, it hard sets the current weight to the value in N. Finally, throttle scales without afterburner up to 0.9 (max military power). 0.9-1 sets the afterburner throttle. 1 is full afterburner. 0.95 is 50% afterburner.", 0, true, true)
+
+                        H = str2double( obj.getInput("H (alt, m)") );
+                        MV  = str2double( obj.getInput("MV (mach number or velocity, m/s)") );
+                        N = str2double( obj.getInput("N (load factor)") );
+                        W = str2double( obj.getInput("W (normalized or in N)") );
+                        T = str2double( obj.getInput("T (throttle)") );
+
+                        if( isempty(obj.cond) && anynan([H MV N W T]))
+                            % No condition object is defined and not all the inputs were provided
+                            jprint("All condition elements must be provided for the first condition defenition", -1)
+                        else
+    
+                            if isnan(H) ; H = obj.cond.h.v; end
+                            if isnan(MV) ; MV = obj.cond.vel.v; end
+                            if isnan(N) ; N = obj.cond.n.v; end
+                            if isnan(W) ; W = obj.cond.W.v; end
+                            if isnan(T) ; T = obj.cond.throttle.v; end
+    
+                            obj.cond = generateCondition(obj.geom, H, MV, N, W, T);
+
+                            T = geomInfoTable(obj.cond);
+
+                            printTableConsole(T)
+                        end
 
                     case 'printdata'
                         if isempty(obj.cond)
                             jprint("Cannot run analyisis until a point condition is specified using 'setCond'.", -1)
                         else
-                            jprint("Not implemented yet.", -1)
+                            if(isempty(obj.model) || isempty(obj.perf))
+                                obj.model = model_class(obj.settings, obj.geom, obj.cond);
+                                obj.perf = performance_class(obj.model);
+                            end
+
+                            obj.model.clear_mem();
+
+                            sigfigs = 5;
+
+                            data = { ...
+                                "CD0", "Parasite Drag Coefficent", obj.model.CD0, "" ; ...
+                                "CDi", "Induced Drag Coefficent", obj.model.CDi, "" ; ...
+                                "CDw", "Wave Drag Coefficent", obj.model.CDw, "" ; ...
+                                "CDp", "Drag Coefficent from stores", obj.model.CDp, "" ; ...
+                                "CD", "Total Drag Coefficent", obj.perf.CD, "" ; ...
+                                "CLa", "Lift slope", obj.model.CLa, "" ; ...
+                                "CL", "Lift Coefficent", obj.cond.CL.v, "" ; ...
+                                "LD", "Lift Over Drag Ratio", obj.perf.LD, "" ; ...
+                                "D", "Drag", obj.perf.Drag / 1000, "kN" ; ...
+                                "L", "Lift", obj.perf.Lift / 1000, "kN" ; ...
+                                "TA", "Thrust Available", obj.perf.TA / 1000, "kN" ; ...
+                                "TSFC", "Thrust Specific Fuel Conumption", obj.perf.TSFC, "sec" ; ...
+                                "alpha", "Thrust Lapse", obj.perf.alpha, "" ; ...
+                                "mdotf", "Fuel Flow Rate", obj.perf.mdotf, "kg/s" ; ...
+                                "TE", "Excess Thrust", obj.perf.ExcessThrust / 1000, "kN" ; ...
+                                "PE", "Excess Power", obj.perf.ExcessPower, "m/s" ; ...
+                                "phi_dot", "Turn Rate", obj.perf.TurnRate, "deg/s" ; ...
+                                "phi_dot", "Level Turn Rate", obj.perf.LevelTurnRate, "deg/s" ; ...
+                                "theta", "Climb Angle (no axial accelleration)", obj.perf.ClimbAngle, "deg" ; ...
+                                "C", "Unit Cost", obj.model.COST, "million" ; ...
+                                "Sp", "Spot Factor (relative to F18)", obj.model.SpotFactor, "" };
+
+                            % probably a way to vectorizes this. I dont care anymore
+                            for i = 1:height(data);
+                                data{i,3} = round(data{i,3}, sigfigs, 'significant');
+                            end
+
+                            T = cell2table(data, 'VariableNames', {'Parameter', 'Name', 'Value', 'Unit'});
+
+                            printTableConsole(T);                            
                         end
                     case 'printcomps'
+
+                        sigfigs = 5;
+                        
                         weight_comps = getRaymerWeightStruct(obj.geom);
                         Field_Name = fieldnames(weight_comps);
-                        Weight = struct2array(weight_comps)';
+                        Weight = round( struct2array(weight_comps)' , 5, 'significant' );
                         Units = repmat("N", length(Weight), 1);
                         T = table(Field_Name, Weight, Units);
                         printTableConsole(T);
@@ -251,7 +329,6 @@ classdef console_class < handle
                 end
             end
         end
-        
     end
 end
 
@@ -439,6 +516,8 @@ end
 
 function rows = collectEntries(s, parentPath, rows)
 
+    paths_to_ignore = ["racks" "stores"]; % These do not follow json_entry and need their own things
+
     if ~isstruct(s)
         return
     end
@@ -457,22 +536,26 @@ function rows = collectEntries(s, parentPath, rows)
 
         value = s.(fname);
 
-        % ---- Leaf detection ----
-        if isstruct(value) && isfield(value, "v") && isfield(value, "n")
+        % We are not about to go down a struct that is not in json_entry format
+        if( ~any(contains(paths_to_ignore, string(fname))) )
 
-            entry = struct();
-            entry.Name  = string(value.n);
-            entry.Value = string(value.v);          % allow mixed types
-            entry.Units = string(value.u);
-            entry.Path  = string(currentPath);
-            entry.Derived = string(value.d);
-
-            rows{end+1} = entry; %#ok<AGROW>
-
-        elseif isstruct(value)
-
-            rows = collectEntries(value, currentPath, rows);
-
+            % ---- Leaf detection ----
+            if isstruct(value) && isfield(value, "v") && isfield(value, "n")
+    
+                entry = struct();
+                entry.Name  = string(value.n);
+                entry.Value = string(value.v);          % allow mixed types
+                entry.Units = string(value.u);
+                entry.Path  = string(currentPath);
+                entry.Derived = string(value.d);
+    
+                rows{end+1} = entry; %#ok<AGROW>
+    
+            elseif isstruct(value)
+    
+                rows = collectEntries(value, currentPath, rows);
+    
+            end
         end
     end
 end

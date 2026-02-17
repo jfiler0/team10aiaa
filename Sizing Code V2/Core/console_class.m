@@ -10,7 +10,6 @@ classdef console_class < handle
     end
 
     % TODO: Work on case sensitivity
-    % TODO: Deal with empty input
     
     methods
         % INITIALIZATION
@@ -27,12 +26,16 @@ classdef console_class < handle
             end
 
             jprint("=== Sizing V2 :: AVD Team 10 ===", 2)
+            jprint("    Program structure is similar to XFOIL. Use ? to ask for the active set of commands at each level. Some commands switch level/operation. For example, you start in the LOAD function. Here, you can perform operations to load, save, edit, and read aircraft files. A layer deeper is INSPECT which is the start of the analyisis layer. It will have its own list of functions discoverable using ?", 0, true, true)
+            jprint("    There are some rules to know. When entering inputs, spaces act as delimeters. You enter: 'command arg1 arg2 arg3' (for however many arguments it asks). Avoid special characters. q allows you to exit.", 0, true, true)
+            jprint("    Finally, note that the console gui is more limited than actual scripting. This is a good place to analyze existing geometries and do rough plotting. However, you can create your own scripts to interact with the program. This is only the front end.", 0, true, true)
             jprint("List available commands with: '?'", 1)
             obj.load_loop;
         end
 
         function [userInput, args] = getInput(obj, header)
         % thanks chat again
+            % TODO: Can have way to read ""s so that user can enter values with spaces
         
             jprint("[" + header + "] << ", -2, false);
         
@@ -45,8 +48,8 @@ classdef console_class < handle
                 obj.mem.commandList(1) = [];
             end
         
-            % Convert to string and trim whitespace
-            raw = strtrim(string(raw));
+            % Convert to string and trim whitespace and make it al LOWERCASE
+            raw = lower( strtrim(string(raw)) );
         
             % Handle empty input
             if strlength(raw) == 0
@@ -78,9 +81,12 @@ classdef console_class < handle
                         commands = [...
                             "?" "List available commands"; ...
                             "q" "Quit program"; ...
-                            "listAircraft" "Print out all viable aircraft files which can be loaded"
-                            "load [name]" "Load an aircraft geometry by file name (exclude .json extension)"
-                            "INSPECT" "Enter command set for analyzing a geometry at point conditions"
+                            "listAircraft" "Print out all viable aircraft files which can be loaded"; ...
+                            "load name" "Load an aircraft geometry by file name (exclude .json extension)"; ...
+                            "edit param value" "Change aircraft geometry. Must be a struct path like: wing.span (must be a primary variable). See available with 'geomInfo'. 'value' argument is optional."; ...
+                            "geomInfo" "Creates a table of properties associated with loaded geometry"; ...
+                            "save name" "Creates a new aircraft file with the given name. If 'name' argument for provided, it uses the current file name." ; ...
+                            "INSPECT" "Enter command set for analyzing a geometry at point conditions" ...
                             ];
 
                         printCommands( commands );
@@ -89,7 +95,7 @@ classdef console_class < handle
                         obj.run = false;
                     % These are critical ^^. Start of actual functions:
 
-                    case 'listAircraft'
+                    case 'listaircraft'
                         fileList = dir(fullfile("Aircraft Files/", '*.json'));
                         names = string({fileList.name}); % so we can use printArray. Otherwise it is a character array
                         names = erase(names, ".json"); % to keep it clean
@@ -99,7 +105,75 @@ classdef console_class < handle
                         obj.geom = loadAircraft(args(1));
                         jprint("Working geometry set using " + obj.geom.id.v + ".json: " + obj.geom.name.v)
 
-                    case 'INSPECT'
+                    case 'edit'
+                        structPath = args(1);
+                        structChain = strsplit(structPath, '.');
+
+                        does_exist = verifyNestedStruct(obj.geom, structChain, true);
+
+                        if does_exist
+                            % check if it is a derived variable
+                            if readNestedField(obj.geom, structChain, 'd')
+                                jprint("The given parmeter is derived: '" + structPath + "'. Select a primary parameter.", -1)
+                            else
+                                % ask for the value
+                                current_value = readNestedField(obj.geom, structChain); % defaults to 'v'
+                                if isempty(args(2)) % see if the user gave a value in the second argument
+                                    % if not, ask
+                                    [value, ~] = obj.getInput(structPath + " = "); % this is a string
+                                else
+                                    % if they did, set it
+                                    value = args(2);
+                                end
+
+                                % Need to convert value type to same types as current_value
+                                value = matchType(value, current_value);
+
+                                obj.geom = editGeom(obj.geom, structPath, value, true);
+                            end
+                        else
+                            jprint("The given parmeter does not exist: '" + structPath+"'", -1)
+                        end
+
+                    case 'geominfo'
+                        T = geomInfoTable(obj.geom);
+                        printTableConsole( sortrows(T) );
+
+                    case 'save'
+                        if isempty(args) % check if an argyments were passed in. If not:
+                            name = obj.geom.id.v; % use the current name
+                            jprint("No name entered. Saving as current file: '" + name+"'")
+                        else
+                            % otherwise we can just use the provided argument
+                            name = args(1);
+                        end
+
+                        % matlab provides a helpful function to make sure no weird file names are used
+                        name = matlab.lang.makeValidName( string(name), 'ReplacementStyle', 'delete');
+
+                        % identify where it would go to check for overwrites
+                        fullPath = mfilename('fullpath');
+                        codeFolder = fileparts(fullPath);
+                        savePath = fullfile(codeFolder, "../Aircraft Files", name+".json");
+
+                        do_write = true;
+                        if isfile(savePath) % if this already exists, make sure the user actually wants to overwrite it
+                            jprint("This file already exists. Overwrite it? [Y/N]", -1)
+                            [userInput, ~] = obj.getInput("replace");
+                            % Any input not Y will lead to it continuing without writing
+                            if( strcmp(userInput, 'Y') )
+                                do_write = true;
+                            else
+                                jprint("save operation cancelled", -1)
+                            end
+                        end
+                        if do_write
+                            obj.geom = editGeom(obj.geom, "id", name);
+                            writeAircraftFile(obj.geom);
+                            jprint("Wrote current geometry to: " + savePath);
+                        end
+
+                    case 'inspect'
                         if isempty(obj.geom)
                             jprint("Must load an aircraft first.", -1)
                         else
@@ -126,9 +200,9 @@ classdef console_class < handle
                         commands = [...
                             "?" "List available commands"; ...
                             "q" "Quit program"; ...
-                            "geomInfo" "Creates a table of properties associated with loaded geometry"; ...
                             "setCond" "Set a condition to run analyisis at"; ...
                             "printData" "Runs avaiable models and performance functions and prints table of outputs"; ...
+                            "printComps" "Uses Raymer estimations to predict weight for a bunch of different system components" ; ...
                             "LOAD" "Return to command set for loading a geoemtry "; ...
                             "GRAPHING" "Enter command set for creating different default graphs"; ...
                             "MISSIONS" "Enter command set for running mission files"; ...
@@ -139,28 +213,36 @@ classdef console_class < handle
                     case 'q'
                         jprint("Exiting...", 1)
                         obj.run = false;
-                    % These are critical ^^. Start of actual functions:
+                    
+                        % These are critical ^^. Start of actual functions:
 
-                    case 'geomInfo'
-                        T = geomInfoTable(obj.geom);
-                        printTableConsole( sortrows(T) );
-
-                    case 'setCond'
+                    case 'setcond'
                         jprint("Not implemented yet.", -1)
 
-                    case 'printData'
-                        jprint("Not implemented yet.", -1)
+                    case 'printdata'
+                        if isempty(obj.cond)
+                            jprint("Cannot run analyisis until a point condition is specified using 'setCond'.", -1)
+                        else
+                            jprint("Not implemented yet.", -1)
+                        end
+                    case 'printcomps'
+                        weight_comps = getRaymerWeightStruct(obj.geom);
+                        Field_Name = fieldnames(weight_comps);
+                        Weight = struct2array(weight_comps)';
+                        Units = repmat("N", length(Weight), 1);
+                        T = table(Field_Name, Weight, Units);
+                        printTableConsole(T);
 
-                    case 'LOAD'
+                    case 'load'
                         obj.load_loop;
 
-                    case 'GRAPHING'
+                    case 'graphing'
                         jprint("Not implemented yet.", -1)
 
-                    case 'MISSIONS'
+                    case 'missions'
                         jprint("Not implemented yet.", -1)
 
-                    case 'STABILITY'
+                    case 'stability'
                         jprint("Not implemented yet.", -1)
 
                     % Catch all
@@ -216,7 +298,7 @@ function notRecognized()
     jprint("Not a recognized command. Use '?' for display available commands", -1)
 end
 
-function jprint(text, code, do_return)
+function jprint(text, code, do_return, do_wrap)
     % code defines what level of print to do
     %   0 -> standard white print out
     %   1 -> subheader
@@ -225,6 +307,7 @@ function jprint(text, code, do_return)
     %   -2 -> Input line coloring
 
     % do_return is defaulted to true. If set to false you can do multiple colors in a line
+    % do_wrap is disabled by defaut (how matlab normally is. Otherwise it uses the wraptext function
     
     % TODO: Add alternate color format for dark mode
 
@@ -234,24 +317,39 @@ function jprint(text, code, do_return)
     if nargin < 3
         do_return = true;
     end
-
-    if do_return
-        text = text + "\n";
+    if nargin < 4
+        do_wrap = false;
     end
 
-    switch code 
-        case 0
-            fprintf(text);
-        case 1
-            cprintf('*cyan', text)
-        case 2
-            cprintf('_*#45FF69', text)
-        case -1
-            cprintf('#FCA835', text)
-        case -2
-            cprintf('*#FF3BEF', text)
-        otherwise
-            error("Unrecognized jprint code: %i", code)
+    % Since the new cprint uses %s, we need to manually do this through some basic recurison by splitting by the \n delimiter and recalling
+    % for each line
+    if do_wrap
+        text = wraptext( char(text) );
+        text_arr = split(text, '\n'); 
+        for i = 1:length(text_arr)
+            jprint(text_arr{i}, code, true, false)
+        end
+    else
+        append = "";
+    
+        if do_return
+            append = append + "\n";
+        end
+    
+        switch code
+            case 0
+                fprintf("%s" + append, text);
+            case 1
+                cprintf('*cyan', "%s" + append, text)
+            case 2
+                cprintf('_*#45FF69', "%s" + append, text)
+            case -1
+                cprintf('#FCA835', "%s" + append, text)
+            case -2
+                cprintf('*#FF3BEF', "%s" + append, text)
+            otherwise
+                error("Unrecognized jprint code: %i", code)
+        end
     end
 end
 
@@ -376,5 +474,38 @@ function rows = collectEntries(s, parentPath, rows)
             rows = collectEntries(value, currentPath, rows);
 
         end
+    end
+end
+
+function converted_val = matchType(value_in, value_to_match)
+    % thanks claude
+    % Note the type of value_to_match and convert value_in to match it (as converted_val)
+
+    % Convert value type to match current_value's type
+    
+    if isnumeric(value_to_match)
+        % Convert to double
+        converted_val = str2double(value_in);
+        if isnan(converted_val)
+            jprint("Invalid numeric input. Reverting to previous value.", -1)
+            converted_val = value_to_match;
+        end
+    elseif islogical(value_to_match)
+        % Convert to boolean
+        value_lower = lower(strtrim(value_in));
+        if ismember(value_lower, {'true', '1', 'yes', 't', 'y'})
+            converted_val = true;
+        elseif ismember(value_lower, {'false', '0', 'no', 'f', 'n'})
+            converted_val = false;
+        else
+            jprint("Invalid boolean input.  Reverting to previous value.", -1)
+            converted_val = value_to_match;
+        end
+    elseif ischar(value_to_match) || isstring(value_to_match)
+        % Keep as string (already correct type)
+        converted_val = char(value_in); % Ensure it's char if original was char
+    else
+        jprint("Unknown data type for parameter to set.  Reverting to previous value.", -1)
+        converted_val = value_to_match;
     end
 end

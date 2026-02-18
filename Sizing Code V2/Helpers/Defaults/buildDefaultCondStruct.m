@@ -16,7 +16,7 @@ function cond = buildDefaultCondStruct()
 
     cond.throttle = json_entry("Throttle", 0, "");
     cond.mil_throttle = json_entry("Military Throttle", 0, "", NaN, true);
-    cond.ab_throttl = json_entry("Afterburner Throttle", 0, "", NaN, true);
+    cond.ab_throttle = json_entry("Afterburner Throttle", 0, "", NaN, true);
 
     cond.qinf = json_entry("Dynamic Pressure", 0, "Pa", NaN, true);
 

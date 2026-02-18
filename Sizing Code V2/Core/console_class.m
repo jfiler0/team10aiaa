@@ -179,7 +179,11 @@ classdef console_class < handle
                             jprint("Wrote current geometry to: " + savePath);
                         end
                     case 'editloadout'
-                        jprint("Not implemented yet.", -1)
+                        if isempty(obj.geom)
+                            jprint("Must load an aircraft first.", -1)
+                        else
+                            obj.editloadout_loop;
+                        end
 
                     case 'inspect'
                         if isempty(obj.geom)
@@ -191,6 +195,49 @@ classdef console_class < handle
                     case 'fun'
                         obj.run = false;
                         do_fun();
+
+                    % Catch all
+                    otherwise
+                        notRecognized;
+                end
+            end
+        end
+
+        function obj = editloadout_loop(obj)
+            while obj.run
+                [userInput, args] = obj.getInput("edit_loadout");
+
+                switch  userInput
+                    case '?'
+                        commands = [...
+                            "?" "List available commands"; ...
+                            "q" "Quit program"; ...
+                            "listStores" "Print out all viable stores that can be loaded"; ...
+                            "loadoutInfo" "Show the current stores loaded on the aicraft"
+                            "rackInfo" "Display rack positions (y/span)"
+                            "editRack rackNum newPos" "Change the rack position for a given index. Position is normalized by wing span."
+                            "setRack rackNum storeName" "Set a store to a given rack number. Leave no storeName to set it as empty. If rack number does not exist, it is created."
+                            "removeRack rackNum" "Deletes the rack and the "
+                            ];
+
+                        printCommands( commands );
+                    case 'q'
+                        jprint("Exiting...", 1)
+                        obj.run = false;
+                    % These are critical ^^. Start of actual functions:
+
+                    case 'liststores'
+                        jprint("Not implemented.", -1);
+                    case 'loadoutinfo'
+                        jprint("Not implemented.", -1);
+                    case 'rackinfo'
+                        jprint("Not implemented.", -1);
+                    case 'editrack'
+                        jprint("Not implemented.", -1);
+                    case 'setrack'
+                        jprint("Not implemented.", -1);
+                    case 'removerack'
+                        jprint("Not implemented.", -1);
 
                     % Catch all
                     otherwise
@@ -266,6 +313,11 @@ classdef console_class < handle
 
                             obj.model.clear_mem();
 
+                            % since they don't seem to update
+                            obj.model.cond = obj.cond;
+                            obj.model.geom = obj.geom;
+                            % obj.perf.model = obj.model; - for some reason this isn't needed lol
+
                             sigfigs = 5;
 
                             data = { ...
@@ -292,7 +344,7 @@ classdef console_class < handle
                                 "Sp", "Spot Factor (relative to F18)", obj.model.SpotFactor, "" };
 
                             % probably a way to vectorizes this. I dont care anymore
-                            for i = 1:height(data);
+                            for i = 1:height(data)
                                 data{i,3} = round(data{i,3}, sigfigs, 'significant');
                             end
 

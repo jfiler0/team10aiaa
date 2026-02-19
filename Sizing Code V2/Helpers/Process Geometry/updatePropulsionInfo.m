@@ -13,7 +13,7 @@ function geom = updatePropulsionInfo(geom)
         % get the table row asked for and return as a table
 
     if(isempty(selectedEngine))
-        error("Did not find engine: " + engine_name)
+        error("Did not find engine in engine_lookup.xslx: " + engine_name)
     end
 
     % Assign the variables (don't need to pass geom as these should not be changed)
@@ -23,4 +23,6 @@ function geom = updatePropulsionInfo(geom)
     %  NOTE THAT THE IMPACT OF MULTIPLE ENGINES IS APPLIED HERE
     geom.prop.T0_NoAB = json_entry("Max Sealevel Military Thrust", selectedEngine.h0_maxThrust_NoAB * geom.prop.num_engine.v, "N"); % N
     geom.prop.T0_AB = json_entry("Max Sealevel Afterburning Thrust", selectedEngine.h0_maxThrust_AB * geom.prop.num_engine.v, "N"); % N
+
+    geom.prop.engine_cost_mil = json_entry("Engine Purchase Cost", selectedEngine.Cost_mil, "million");
 end

@@ -20,15 +20,16 @@ geom = loadAircraft("f18_superhornet");
 geom = setLoadout(geom, ["AIM-9X" "" "" "AIM-120" "AIM-120" "" "" "AIM-9x"]);
 
 % Set the condition
-% cond = generateCondition(geom, 1000, 0.8, 1.7, 0.5, 1);
+cond = generateCondition(geom, 1000, 0.8, 1.7, 0.5, 1);
 
-N = 10;
-cond = generateCondition(geom, ...
-    linspace(0, 5000, N), ... % Altitude
-    linspace(0.5, 2, N), ... % Mach Number
-    linspace(1, 2, N), ... % Load Factor
-    linspace(0, 1, N), ... % Weight
-    linspace(0.5, 1, N)); % Throttle
+% TODO: Finish vectorizing this
+% N = 10;
+% cond = generateCondition(geom, ...
+%     linspace(0, 5000, N), ... % Altitude
+%     linspace(0.5, 2, N), ... % Mach Number
+%     linspace(1, 2, N), ... % Load Factor
+%     linspace(0, 1, N), ... % Weight
+%     linspace(0.5, 1, N)); % Throttle
 
 model = model_class(settings, geom, cond);
 perf = performance_class(model);
@@ -60,3 +61,7 @@ weight_comps = getRaymerWeightStruct(geom);
 generatePlane(geom);
 
 perf.ClimbAngle
+
+% cost_struct = xanderscript_modified(geom, true, false);
+
+model.COST

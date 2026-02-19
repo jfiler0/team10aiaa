@@ -260,6 +260,11 @@ classdef model_class < handle
                 switch code
                     case obj.settings.codes.COST_BASIC
                         value = ( getcost(N2lb(obj.geom.weights.empty.v), obj.geom.input.kloc.v) / 500 )  / 1000000;
+
+                    case obj.settings.codes.COST_XANDERSCRIPT
+                        % the crazy cost estimation
+                        cost_struct = xanderscript_modified(obj.geom, false, false);
+                        value = cost_struct.unit_cost / 1E6; % convert to million
                         
                     otherwise
                         error("Code '%i' has no recognized definition for the COST model.", code)

@@ -258,6 +258,7 @@ classdef console_class < handle
                             "setCond" "Set a condition to run analyisis at"; ...
                             "printData" "Runs avaiable models and performance functions and prints table of outputs"; ...
                             "printComps" "Uses Raymer estimations to predict weight for a bunch of different system components" ; ...
+                            "printCostBreakdown" "Prints the tables from xanderscript.m"
                             "LOAD" "Return to command set for loading a geoemtry "; ...
                             "GRAPHING" "Enter command set for creating different default graphs"; ...
                             "MISSIONS" "Enter command set for running mission files"; ...
@@ -353,7 +354,6 @@ classdef console_class < handle
                             printTableConsole(T);                            
                         end
                     case 'printcomps'
-
                         sigfigs = 5;
                         
                         weight_comps = getRaymerWeightStruct(obj.geom);
@@ -362,18 +362,63 @@ classdef console_class < handle
                         Units = repmat("N", length(Weight), 1);
                         T = table(Field_Name, Weight, Units);
                         printTableConsole(T);
-
+                    case 'printcostbreakdown'
+                        if obj.settings.COST_model ~= obj.settings.codes.COST_XANDERSCRIPT
+                            jprint("Currently only possible with XANDER_SCRIPT model");
+                        else
+                            xanderscript_modified(obj.geom, true, false);
+                        end
                     case 'load'
                         obj.load_loop;
 
                     case 'graphing'
-                        jprint("Not implemented yet.", -1)
+                        obj.graphing_loop;
 
                     case 'missions'
                         jprint("Not implemented yet.", -1)
 
                     case 'stability'
                         jprint("Not implemented yet.", -1)
+
+                    % Catch all
+                    otherwise
+                        notRecognized;
+                end
+            end
+        end
+
+        function obj = graphing_loop(obj)
+            while obj.run
+                [userInput, args] = obj.getInput("graphing");
+
+                switch  userInput
+                    case '?'
+                        commands = [...
+                            "?" "List available commands"; ...
+                            "q" "Quit program"; ...
+                            "costBreakdown" "Creates a set of figures as an overview of cost. From xanderscript."; ...
+                            "LOAD" "Return to command set for loading a geoemtry"; ...
+                            "INSPECT" "Return to command set for analyzing a geometry at point conditionsy"; ...
+                            ];
+
+                        printCommands( commands );
+                    case 'q'
+                        jprint("Exiting...", 1)
+                        obj.run = false;
+                    
+                        % These are critical ^^. Start of actual functions:
+
+                    case 'costbreakdown'
+                        if obj.settings.COST_model ~= obj.settings.codes.COST_XANDERSCRIPT
+                            jprint("Currently only possible with XANDER_SCRIPT model");
+                        else
+                            xanderscript_modified(obj.geom, false, true);
+                        end
+                    case 'load'
+                        obj.load_loop;
+
+                    case 'inspect'
+                        obj.inspect_loop;
 
                     % Catch all
                     otherwise

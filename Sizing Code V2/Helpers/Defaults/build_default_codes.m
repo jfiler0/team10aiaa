@@ -18,6 +18,7 @@ function codes = build_default_codes()
     codes.CLa_BASIC = 501;
 
     codes.COST_BASIC = 601;
+    codes.COST_XANDERSCRIPT = 602;
 
     codes.PROP_BASIC = 701;
 

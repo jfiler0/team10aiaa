@@ -9,6 +9,8 @@ function cd_induced = call_idrag(p)
     outLog = fullfile(folder,"LogFiles/", "run_stdout.txt");
     errLog = fullfile(folder,"LogFiles/", "run_stderr.txt");
 
+    workingPath = fullfile(folder,"OutputFiles/"); % where the output file goes
+
     if ~isfile(exePath)
         error("Missing run_idrag.exe: %s", exePath);
     end
@@ -31,7 +33,7 @@ function cd_induced = call_idrag(p)
         '& ''%s'' ''%s'' 1> ''%s'' 2> ''%s''; ', ...
         'exit $LASTEXITCODE', ...
         '"'], ...
-        folder, exePath, inFile, outLog, errLog);
+        workingPath, exePath, inFile, outLog, errLog);
 
     [status, txt] = system(psCmd);
 

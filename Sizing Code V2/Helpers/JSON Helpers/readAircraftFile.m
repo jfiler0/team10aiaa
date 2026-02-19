@@ -7,6 +7,11 @@ function read_struct = readAircraftFile(file_name)
     codeFolder = fileparts(fullPath);
     readFile = fullfile(codeFolder, "../..","Aircraft Files", file_name+".json");
         % if this is updated, writeAircraftFile must also be corrected
+
+    if ~isfile(readFile)
+        warning("Aircraft file '%s' does not exist in 'Aircraft Files' folder. Defaulting to superhornet.", file_name);
+        readFile = fullfile(codeFolder, "../..","Aircraft Files", "f18_superhornet.json");
+    end
     
     read_struct = readstruct(readFile);
 end

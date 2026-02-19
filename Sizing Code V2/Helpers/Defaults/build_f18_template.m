@@ -19,6 +19,7 @@ plane.fuselage.E_WD = json_entry("Fuselage Wave Drag Efficency", 2.2, "");
 
 plane.input.g_limit = json_entry("Structural G-Limit", 7.5, "");
 plane.input.kloc = json_entry("KLOC", 5000, "");
+plane.input.fold_ratio = json_entry("Fold Ratio", 0.3, "");
 
 plane.weights.mtow = json_entry("Max Takeoff Weight", lb2N(59488), "N");
 plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
@@ -40,6 +41,8 @@ plane.prop.engine = json_entry("Engine Name", "F414", "s");
 
 plane.racks = [-1 -0.7 -0.5 -0.2 0.2 0.5 0.7 1]; % spanwise position of the racks
 % plane.stores = []; % clean confiuration
+
+plane = setLoadout(plane, ["" "" "" "" "" "" "" ""]);
 
 writeAircraftFile(plane);
     % Writes the actual file generally. This also means the location only needs to be changed in one place

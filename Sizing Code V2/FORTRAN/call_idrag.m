@@ -2,22 +2,23 @@ function cd_induced = call_idrag(p)
 %CALL_IDRAG Run Fortran wrapper and return cd_induced (Windows robust)
 
     folder  = fileparts(mfilename('fullpath'));
-    exePath = fullfile(folder, "run_idrag.exe");
-    inFile  = fullfile(folder, "idrag_input.txt");
+
+    exePath = fullfile(folder,"Applications/", "run_idrag.exe");
+    inFile  = fullfile(folder,"InputFiles/", "idrag_input.txt");
+    outFile = fullfile(folder,"OutputFiles/", "idrag_result.txt");
+    outLog = fullfile(folder,"LogFiles/", "run_stdout.txt");
+    errLog = fullfile(folder,"LogFiles/", "run_stderr.txt");
 
     if ~isfile(exePath)
         error("Missing run_idrag.exe: %s", exePath);
     end
 
     % 1) Write input
-    write_idrag_input(p, folder);
+    write_idrag_input(p, inFile, outFile);
     if ~isfile(inFile)
         error("Input file was not created: %s", inFile);
     end
-
-    % 2) Prepare log files
-    outLog = fullfile(folder, "run_stdout.txt");
-    errLog = fullfile(folder, "run_stderr.txt");
+   
     if isfile(outLog), delete(outLog); end
     if isfile(errLog), delete(errLog); end
 
@@ -56,6 +57,6 @@ function cd_induced = call_idrag(p)
     end
 
     % 6) Read result
-    cd_induced = read_idrag_output(folder);
+    cd_induced = read_idrag_output(folder, outFile);
 
 end

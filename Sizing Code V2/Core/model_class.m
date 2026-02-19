@@ -107,7 +107,7 @@ classdef model_class < handle
         % end
 
         function clear_mem(obj)
-            obj.mem = struct('CD0', [], 'CDi', [], 'CDw', [], 'CLa', [], 'COST', [], 'PROP', [], 'CDp', []);
+            obj.mem = struct('CD0', [], 'CDi', [], 'CDw', [], 'CLa', [], 'COST', [], 'PROP', [], 'CDp', [], 'SpotFactor', []);
         end
 
         %% ACUTUAL MODELS
@@ -260,6 +260,11 @@ classdef model_class < handle
                 switch code
                     case obj.settings.codes.COST_BASIC
                         value = ( getcost(N2lb(obj.geom.weights.empty.v), obj.geom.input.kloc.v) / 500 )  / 1000000;
+
+                    case obj.settings.codes.COST_XANDERSCRIPT
+                        % the crazy cost estimation
+                        cost_struct = xanderscript_modified(obj.geom, false, false);
+                        value = cost_struct.unit_cost / 1E6; % convert to million
                         
                     otherwise
                         error("Code '%i' has no recognized definition for the COST model.", code)
@@ -280,7 +285,8 @@ classdef model_class < handle
             % [TA, TSFC, alpha]
             PROP = obj.compute_with_cache('PROP', override, compute_PROP, 1);
         end
-
+            
+            % Note that TA is scaled
             function PROP = compute_PROP_value(obj, code)
                 switch code
                     case obj.settings.codes.PROP_BASIC
@@ -323,9 +329,8 @@ classdef model_class < handle
                     
                         % Added in the max check and zeroing since it got weird for high mach at sea level
                         alpha = max(alpha_dry + obj.cond.ab_throttle.v .* (alpha_AB - alpha_dry), 0);
-                        if(alpha < 0)
-                            TA = 0;
-                        end
+
+                        TA(alpha == 0) = 0; % if alpha was set to 0, TA should be 0 too
                     
                         TA = TA * obj.settings.TA_scaler;
                         TSFC = TSFC * obj.settings.TSFC_scaler;
@@ -340,6 +345,7 @@ classdef model_class < handle
                         error("Code '%i' has no recognized definition for the COST model.", code)
                 end
             end
+        
         function CDp = CDp(obj, override, code)
             if nargin < 2
                 override = obj.settings.codes.OVER_NONE;
@@ -368,5 +374,27 @@ classdef model_class < handle
                 end
             end
 
+        function SpotFactor = SpotFactor(obj, override, code)
+            if nargin < 2
+                override = obj.settings.codes.OVER_NONE;
+            end
+            if nargin < 3
+                code = obj.settings.SpotFactor_model;
+            end
+            
+            compute_SpotFactor = @() obj.compute_SpotFactor_value(code);
+            
+            SpotFactor = obj.compute_with_cache('SpotFactor', override, compute_SpotFactor, obj.settings.SpotFactor_scaler);
+        end
+
+            function value = compute_SpotFactor_value(obj, code)
+                switch code
+                    case obj.settings.codes.SpotFactor_BASIC
+                        value = obj.geom.wing.fold_area.v / obj.settings.spot_factor_reference;
+
+                    otherwise
+                        error("Code '%i' has no recognized definition for the SpotFactor model.", code)
+                end
+            end
     end
 end

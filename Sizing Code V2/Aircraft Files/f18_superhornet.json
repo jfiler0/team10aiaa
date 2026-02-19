@@ -57,6 +57,14 @@
       "d": false,
       "eval": 0,
       "v": 5000
+    },
+    "fold_ratio": {
+      "n": "Fold Ratio",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 0.3
     }
   },
   "weights": {
@@ -188,5 +196,6 @@
     0.5,
     0.7,
     1
-  ]
+  ],
+  "stores": []
 }

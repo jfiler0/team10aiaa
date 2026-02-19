@@ -1,11 +1,6 @@
-function cd = read_idrag_output(folder)
+function cd = read_idrag_output(folder, outFile)
 %READ_IDRAG_OUTPUT Reads idrag_result.txt
 
-if nargin < 1 || isempty(folder)
-    folder = fileparts(mfilename('fullpath'));
-end
-
-outFile = fullfile(folder, "idrag_result.txt");
 assert(isfile(outFile), "Missing output file: %s", outFile);
 
 line = strtrim(readlines(outFile));

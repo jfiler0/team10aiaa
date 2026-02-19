@@ -1,16 +1,14 @@
-function inFile = write_idrag_input(p, folder)
+function inFile = write_idrag_input(p, inFile, outFile)
 
 %WRITE_IDRAG_INPUT Writes idrag_input.txt in fixed format Fortran driver expects.
 
-if nargin < 2 || isempty(folder)
-    folder = fileparts(mfilename('fullpath'));
-end
+assert(isfile(inFile), "Input file path does not exist: %s", inFile);
 
-inFile = fullfile(folder, "idrag_input.txt");
 fid = fopen(inFile, "w");
 assert(fid>0, "Could not open %s for writing.", inFile);
 
-fprintf(fid, "%s\n", string(p.outfile));
+% fprintf(fid, "%s\n", string(p.outfile));
+fprintf(fid, "%s\n", string(outFile));
 fprintf(fid, "%s\n", string(p.title));
 
 fprintf(fid, "%d %d %d\n", p.input_mode, p.write_flag, p.sym_flag);

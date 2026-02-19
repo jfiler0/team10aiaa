@@ -14,11 +14,16 @@ set.program_name = "Sizing Code V2.1";
 set.transonic_range = [0.95 1.3];
 set.transonic_M_eps = 0.005;
 
+set.g_const = 9.8051; % gravitational const
+
+set.spot_factor_reference = 52.7559; % Folded wing area of an f18e
+
 set.CD0_scaler = 1; % general scaler to parasite drag
 set.CDi_scaler = 1;
 set.CDw_scaler = 1; % general scaler to wave drag
 set.CLa_scaler = 1;
 set.CDp_scaler = 1;
+set.SpotFactor_scaler = 1;
 
 set.COST_scaler = 1;
 set.TA_scaler = 1;
@@ -30,9 +35,10 @@ set.CD0_model = set.codes.CD0_BASIC;
 set.CDi_model = set.codes.CDi_BASIC_SUBSONIC;
 set.CDw_model = set.codes.CDw_BASIC;
 set.CLa_model = set.codes.CLa_BASIC;
-set.COST_model = set.codes.COST_BASIC;
+set.COST_model = set.codes.COST_XANDERSCRIPT;
 set.PROP_model = set.codes.PROP_BASIC;
 set.CDp_model = set.codes.CDp_CONST;
+set.SpotFactor_model = set.codes.SpotFactor_BASIC;
 
 set.CDp_CONST_CD = 0.2; % the drag coefficent used for each store in the CDp_CONST model
 

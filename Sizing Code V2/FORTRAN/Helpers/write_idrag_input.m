@@ -2,7 +2,7 @@ function inFile = write_idrag_input(p, inFile, outFile)
 
 %WRITE_IDRAG_INPUT Writes idrag_input.txt in fixed format Fortran driver expects.
 
-assert(isfile(inFile), "Input file path does not exist: %s", inFile);
+% assert(isfile(inFile), "Input file path does not exist: %s", inFile);
 
 fid = fopen(inFile, "w");
 assert(fid>0, "Could not open %s for writing.", inFile);

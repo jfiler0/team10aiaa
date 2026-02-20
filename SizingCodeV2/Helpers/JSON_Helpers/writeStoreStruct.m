@@ -35,7 +35,7 @@ comp.rack_ypos = 0; % normalized by wingspan. Is set in setLoadout
 
 fullPath = mfilename('fullpath');
 codeFolder = fileparts(fullPath);
-saveFile = fullfile(codeFolder, "../..","Aircraft Files/Stores", comp.short_name.v + ".json");
+saveFile = fullfile(codeFolder, "../..","AircraftFiles/Stores", comp.short_name.v + ".json");
 % If this is changed, setLoadout must also be changed
 
 jsonText = jsonencode(comp, 'PrettyPrint', true);

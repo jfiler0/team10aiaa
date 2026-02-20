@@ -32,7 +32,7 @@ function geom = setLoadout(geom, storeNames)
 
     fullPath = mfilename('fullpath');
     codeFolder = fileparts(fullPath);
-    storesFolder = fullfile(codeFolder, "../Aircraft Files/Stores");
+    storesFolder = fullfile(codeFolder, "../AircraftFiles/Stores");
         % If this is changed, writeStoreStruct must also be corrected
 
     % Prefill with empty stores to make sure fields are correct

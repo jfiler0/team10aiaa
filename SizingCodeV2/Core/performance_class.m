@@ -63,7 +63,7 @@ classdef performance_class < handle % <--- Inheriting from handle allows in-plac
                 out = obj.data.('TA');
             else
                 out = obj.model.PROP;
-                out = out(1);
+                out = out(1, :);
             end
         end
         function out = TSFC(obj)
@@ -72,7 +72,7 @@ classdef performance_class < handle % <--- Inheriting from handle allows in-plac
                 out = obj.data.('TSFC');
             else
                 out = obj.model.PROP;
-                out = out(2);
+                out = out(2,:);
             end
         end
         function out = alpha(obj)
@@ -80,12 +80,12 @@ classdef performance_class < handle % <--- Inheriting from handle allows in-plac
                 out = obj.data.('alpha');
             else
                 out = obj.model.PROP;
-                out = out(3);
+                out = out(3, :);
             end
         end
         function out = mdotf(obj)
             % kg/s
-            out = obj.TA * obj.TSFC;
+            out = obj.TA .* obj.TSFC;
         end
         % Actually called performance
         function out = ExcessThrust(obj)
@@ -94,15 +94,15 @@ classdef performance_class < handle % <--- Inheriting from handle allows in-plac
         end
         function out = ExcessPower(obj)
             % m/s
-            out =  obj.simpleUpdateCheck('ExcessPower', @() obj.model.cond.vel.v * obj.ExcessThrust ./ obj.model.cond.W.v);
+            out =  obj.simpleUpdateCheck('ExcessPower', @() obj.model.cond.vel.v .* obj.ExcessThrust ./ obj.model.cond.W.v);
         end
         function out = TurnRate(obj)
             % deg/s - is not neccessarily a level turn
-            out =  obj.simpleUpdateCheck('TurnRate', @() rad2deg( obj.model.cond.n.v * obj.model.settings.g_const / obj.model.cond.vel.v ) );
+            out =  obj.simpleUpdateCheck('TurnRate', @() rad2deg( obj.model.cond.n.v .* obj.model.settings.g_const ./ obj.model.cond.vel.v ) );
         end
         function out = LevelTurnRate(obj)
             % deg/s - holding a level turn
-            out =  obj.simpleUpdateCheck('LevelTurnRate', @() rad2deg( sqrt( obj.model.cond.n.v .* obj.model.cond.n.v - 1) * obj.model.settings.g_const / obj.model.cond.vel.v ) );
+            out =  obj.simpleUpdateCheck('LevelTurnRate', @() rad2deg( sqrt( obj.model.cond.n.v .* obj.model.cond.n.v - 1) * obj.model.settings.g_const ./ obj.model.cond.vel.v ) );
         end
         function out = ClimbAngle(obj)
             % This also acts as glide angle if TA = 0
@@ -111,21 +111,30 @@ classdef performance_class < handle % <--- Inheriting from handle allows in-plac
             % If ExcesssThrust is less than 0, it instead gives a negative climb angle, which is the 'glide' angle to have no accelleration
             % Note that if turn load factor is not 1, this does not make much sense
 
-            out =  obj.simpleUpdateCheck('LevelTurnRate', @() ClimbAngleHepler(obj) );
+            out =  obj.simpleUpdateCheck('ClimbAngle', @() ClimbAngleHepler(obj) );
         end
             function out = ClimbAngleHepler(obj)
                 % So that there can be a update check
-                % TODO: Make sure this is vectorized
-                if obj.ExcessPower > obj.model.cond.vel.v % we can climb straight up
-                   out = 90;
-                elseif obj.ExcessThrust + obj.model.cond.W.v < 0
-                    % there is so much drag we are decellerating when pointing straight down
-                    out = -90;
-                else
-                    % Solve for the right climb angle theta so that axial forces are balanced
-                    % TA = Drag + weight * sin(theta)
-                    out = asind( (obj.TA - obj.Drag)./obj.model.cond.W.v);
-                end
+                
+                % This is a vectorized version of the if statements
+                climbing_straight_up = obj.ExcessPower > obj.model.cond.vel.v;
+                going_straight_down = obj.ExcessThrust + obj.model.cond.W.v < 0;
+                % standard = ~climbing_straight_up .* ~going_straight_down;
+
+                out = asind( (obj.TA - obj.Drag)./obj.model.cond.W.v);
+                out(climbing_straight_up) = 90;
+                out(going_straight_down) = 90;
+
+                % if obj.ExcessPower > obj.model.cond.vel.v % we can climb straight up
+                %    out = 90;
+                % elseif obj.ExcessThrust + obj.model.cond.W.v < 0
+                %     % there is so much drag we are decellerating when pointing straight down
+                %     out = -90;
+                % else
+                %     % Solve for the right climb angle theta so that axial forces are balanced
+                %     % TA = Drag + weight * sin(theta)
+                %     out =  asind( (obj.TA - obj.Drag)./obj.model.cond.W.v);
+                % end
             end
         function out = e_osw(obj)
             % return the oswlad efficency

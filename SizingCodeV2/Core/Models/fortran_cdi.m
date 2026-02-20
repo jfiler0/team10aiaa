@@ -1,4 +1,4 @@
-function CDi = fortran_cdi(geom, cond)
+function CDi = fortran_cdi(geom, CL)
 
 p.outfile = "idrag_pretty.txt";      % Fortran's pretty output
 p.title   = "Fortran CDI";
@@ -8,19 +8,15 @@ p.write_flag = 1;  % write pretty file
 p.sym_flag   = 1;
 
 % parameters we will need to write from the sizing code
-p.cl_design  = 0.60;
+p.cl_design  = CL;
 p.cm_flag    = 0;
 p.cm_design  = 0.0;
-p.xcg        = 1.2;
-p.cp         = 0.25;
-p.sref       = 12.5;
-p.cavg       = 1.1;
 
-p.xc = zeros(5,4); p.yc = zeros(5,4); p.zc = zeros(5,4);
-% panel 1 corner
-p.xc(1,:) = [0 0 1 1];
-p.yc(1,:) = [0 5 5 0];
-p.zc(1,:) = [0 0 0 0];
+% TODO : Need actual method for xcg
+p.xcg        = geom.fuselage.length.v / 2; % why do they need xcg
+p.cp         = 0.25; % center of pressure for local chord (25%)
+p.sref       = geom.ref_area.v;
+p.cavg       = geom.wing.chord_avg.v;
 
 p.panels(1) = panelObj(geom.outline.coords.wing(1,:), geom.outline.coords.wing(2,:), geom.outline.coords.wing(5,:), geom.outline.coords.wing(6,:));
 p.panels(2) = panelObj(geom.outline.coords.wing(2,:), geom.outline.coords.wing(3,:), geom.outline.coords.wing(4,:), geom.outline.coords.wing(5,:));

@@ -38,4 +38,7 @@ function codes = build_default_codes()
     codes.BOMB = 11;
     codes.TANK = 12;
     codes.POD = 13;
+
+    codes.WE_RAYMER = 51; % simple regression based on mtow
+    codes.WE_COMPS = 52; % builds up all the component weights and adds
 end

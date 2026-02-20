@@ -31,8 +31,9 @@ set.TSFC_scaler = 1;
 
 set.codes = build_default_codes();
 
+set.WE_model = set.codes.WE_COMPS;
 set.CD0_model = set.codes.CD0_BASIC;
-set.CDi_model = set.codes.CDi_IDRAG;
+set.CDi_model = set.codes.CDi_BASIC_SUBSONIC;
 set.CDw_model = set.codes.CDw_BASIC;
 set.CLa_model = set.codes.CLa_BASIC;
 set.COST_model = set.codes.COST_XANDERSCRIPT;

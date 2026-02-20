@@ -44,6 +44,21 @@ classdef model_class < handle
                 % Check if we should write to cache
                 should_write = (override ~= obj.settings.codes.OVER_NO_WRITE && ...
                                override ~= obj.settings.codes.OVER_NO_READ_NO_WRITE);
+
+                % Check if the result was correctly patterned
+                % width since the prop model is three high
+                if width(result) ~= obj.cond.Nc.v
+                    if size(result) ~= [1 1]
+                        % The only input should be scaler values. We don't want to pattern it otherwise
+                        error("Something very strange has happend")
+                    end
+                    result = result(ones(1,obj.cond.Nc.v)); % index replication to match
+                end
+                
+                if obj.cond.Nc.v > 1
+                    % Don't write if the condition input is a vector
+                    should_write = false;
+                end
                 
                 if should_write
                     obj.mem.(property_name) = result;
@@ -161,6 +176,7 @@ classdef model_class < handle
                         e_osw = 0.85;
                         k1_sub = 1 / (pi * e_osw * obj.geom.wing.AR.v);
 
+                        % TODO: This is not right
                         % Could take CL out but is example of safe_cond_call
                         % sub_fun = @(M, I) M*0 + k1_sub * obj.safe_cond_call('CL', I) .^ 2;
                         % sup_fun = @(M, I) obj.safe_cond_call('CL', I) .^ 2 .* obj.geom.wing.AR.v .* (M.^2 - 1) ./ (4*obj.geom.wing.AR.v * sqrt(M.^2 - 1) -2) * cosd(obj.geom.wing.le_sweep.v);
@@ -178,7 +194,10 @@ classdef model_class < handle
                         value = 0;
 
                     case obj.settings.codes.CDi_IDRAG
-                        value = fortran_cdi(obj.geom, obj.cond);
+                        value = zeros([1 obj.cond.Nc.v]);
+                        for i = 1:obj.cond.Nc.v
+                            value(i) = fortran_cdi(obj.geom, obj.cond.CL.v(i));
+                        end
                         
                     otherwise
                         error("Code '%i' has no recognized definition for the CDi model.", code)
@@ -215,7 +234,7 @@ classdef model_class < handle
                         value = 0;
                         
                     otherwise
-                        error("Code '%i' has no recognized definition for the CDi model.", code)
+                        error("Code '%i' has no recognized definition for the CDw model.", code)
                 end
             end
 
@@ -342,7 +361,7 @@ classdef model_class < handle
                         TA(less_than_0) = 0;
                         alpha(less_than_0) = 0;
 
-                        PROP = [TA', TSFC', alpha'];
+                        PROP = [TA; TSFC; alpha];
                         
                     otherwise
                         error("Code '%i' has no recognized definition for the COST model.", code)

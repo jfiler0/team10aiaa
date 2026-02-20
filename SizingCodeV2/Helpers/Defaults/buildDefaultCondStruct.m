@@ -3,6 +3,7 @@ function cond = buildDefaultCondStruct()
     cond = struct();
 
     cond.h = json_entry("Altitude", 0, "m");
+    cond.Nc = json_entry("Number of Conditions", 0, "");
     cond.T = json_entry("Temperture", 0, "K", NaN, true);
     cond.a = json_entry("Speed of Sound", 0, "m/s", NaN, true);
     cond.P = json_entry("Temperture", 0, "K", NaN, true);

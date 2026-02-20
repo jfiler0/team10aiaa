@@ -1,19 +1,24 @@
-function geom = processGeometryWeight(geom)
+function geom = processGeometryWeight(geom, settings)
     % apply a weight model to compute the empty weight
 
-    geom.weights.empty = json_entry("Empty Weight", "geom.weights.mtow.v * geom.weights.raymer.A.v * N2lb(geom.weights.mtow.v)^geom.weights.raymer.C.v", "m", geom);
-
-    % TODO: Make a way to transition between basic and advanced WE estimates
-
-    % Some old code that may become useful
+    switch settings.WE_model
+        case settings.codes.WE_RAYMER
+            WE = geom.weights.mtow.v * geom.weights.raymer.A.v * N2lb(geom.weights.mtow.v)^geom.weights.raymer.C.v;
     
-    % geom.weights.components = calcRaymerWeights(getPlaneRaymerWeightInput(geom));
-    % fn = fieldnames(geom.weights.components);  % get all field names
-    % total = 0;
-    % for i = 1:numel(fn)
-    %     total = total + geom.weights.components.(fn{i});
-    % end
-    % geom.weights.empty = total;
+        case settings.codes.WE_COMPS
+            weight_comps = getRaymerWeightStruct(geom);
+            fn = fieldnames(weight_comps);  % get all field names
+            total = 0;
+            for i = 1:numel(fn)
+                total = total + weight_comps.(fn{i});
+            end
+            WE = total;
+    end
+
+    % Usally, we enter derived equations as a string. This can be fixed later. Easier to just used derived override here
+    geom.weights.empty = json_entry("Empty Weight", WE, "m", geom, true);
+    
+    % TODO: How to compute usable fuel weight
 
     % obj.max_fuel_weight = obj.MTOW - obj.WE - obj.W_P - obj.W_Tanks - obj.W_F;
     % obj.internal_fuel_weight = 0.7 * obj.max_fuel_weight; % Accounts for tanks in an actual mission

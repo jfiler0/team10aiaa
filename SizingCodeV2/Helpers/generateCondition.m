@@ -15,6 +15,10 @@ function cond = generateCondition(geom, h, M_vel, n, W, throttle)
     cond = buildDefaultCondStruct();
 
     cond.h.v = h;
+
+    % could have a check to make sure all lengths are the same, but relying on passive enforcement
+    cond.Nc.v = length(cond.h.v); % easy number to check how long the condition array is and how models should be patterned
+
     [cond.T.v, cond.a.v, cond.P.v, cond.rho.v, cond.mu.v] = queryAtmosphere(h, [1 1 1 1 1]);
 
     % using max and min helps ensure proper behavior when using a vector

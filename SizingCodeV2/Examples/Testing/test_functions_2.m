@@ -73,3 +73,4 @@ perf.e_osw
 % Connect that to the models
 % finally work on adding the fucking vectorization
 % Remove vtail and LERX requirements to be more general to other planes
+% Want the geometry display figure to show stores as cylinders

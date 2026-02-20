@@ -222,6 +222,7 @@ classdef console_class < handle
                             "editRack rackNum newPos" "Change the rack position for a given index. Position is normalized by wing span."
                             "setRack rackNum storeName" "Set a store to a given rack number. Leave no storeName to set it as empty. If rack number does not exist, it is created."
                             "removeRack rackNum" "Deletes the rack and the "
+                            "LOAD" "Return to command set for loading a geoemtry "
                             ];
 
                         printCommands( commands );
@@ -242,6 +243,8 @@ classdef console_class < handle
                         jprint("Not implemented.", -1);
                     case 'removerack'
                         jprint("Not implemented.", -1);
+                    case 'load'
+                        obj.load_loop;
 
                     % Catch all
                     otherwise
@@ -401,6 +404,7 @@ classdef console_class < handle
                             "?" "List available commands"; ...
                             "q" "Quit program"; ...
                             "costBreakdown" "Creates a set of figures as an overview of cost. From xanderscript."; ...
+                            "geomView" "Opens a figure with the loaded outlines for the fuselage, wing, elevator, and vtail"
                             "LOAD" "Return to command set for loading a geoemtry"; ...
                             "INSPECT" "Return to command set for analyzing a geometry at point conditionsy"; ...
                             ];
@@ -418,6 +422,8 @@ classdef console_class < handle
                         else
                             xanderscript_modified(obj.geom, false, true);
                         end
+                    case 'geomview'
+                        displayAircraftGeom(obj.geom);
                     case 'load'
                         obj.load_loop;
 

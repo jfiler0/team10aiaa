@@ -47,14 +47,22 @@ function geom = generateGeometryOutline(geom)
         makeSecObj( [vtail_le_pos + vtail_semispan * sind(rudder_sweep), cosd(elevator_dihedral)*(aft_fuse_diam/2 + eleavtor_semispan), sind(elevator_dihedral)*(aft_fuse_diam/2 + eleavtor_semispan)], vtail_tip_chord ) ...
         ];
 
-     fuse_coords = [ ...
-        geom.fuselage.length.v, aft_fuse_diam/2
-        elevator_le_pos, aft_fuse_diam/2 ; 
-        geom.wing.le_x.v + geom.wing.root_chord.v, rad ; ...
-        geom.wing.le_x.v - strake_length, rad ; ...
-        0, 0 ];
+    % coords do not need to close. Assumption is that the first and last points connect
 
-    outline.coords.fuseage = [ fuse_coords ; flip(fuse_coords(1:(end-1), 1)) , flip(-fuse_coords(1:(end-1), 2)) ];
+    fuse_coords = [ ...
+        geom.fuselage.length.v, aft_fuse_diam/2, 0 ;
+        elevator_le_pos, aft_fuse_diam/2 , 0 ; 
+        geom.wing.le_x.v + geom.wing.root_chord.v, rad , 0 ; ...
+        geom.wing.le_x.v - strake_length, rad , 0 ; ...
+        0, 0 , 0 ];
+
+    outline.coords.fuseage = [ fuse_coords ; flip(fuse_coords(1:(end-1), 1)) , flip(-fuse_coords(1:(end-1), 2)) , flip(-fuse_coords(1:(end-1), 3)) ];
+
+    outline.coords.wing = [ outline.sections.wing(1).le_coords ; outline.sections.wing(2).le_coords ; outline.sections.wing(3).le_coords ; outline.sections.wing(3).te_coords ; outline.sections.wing(2).te_coords ; outline.sections.wing(1).te_coords ];
+
+    outline.coords.elevator = [ outline.sections.elevator(1).le_coords ; outline.sections.elevator(2).le_coords ; outline.sections.elevator(2).te_coords ; outline.sections.elevator(1).te_coords ];
+
+    outline.coords.vtail = [ outline.sections.vtail(1).le_coords ; outline.sections.vtail(2).le_coords ; outline.sections.vtail(2).te_coords ; outline.sections.vtail(1).te_coords ];
 
     geom.outline = outline;
 end
@@ -71,10 +79,10 @@ function secObj = makeSecObj(le_coords, chord_length, inclination)
     % inclination in body center line
 
     % TODO: Implement this
-    secObj.te_coords = le_coords; % as a vector (X, Y, Z) from nose
-    secObj.TE_X = le_coords(1) + chord_length;
-    secObj.TE_Y = le_coords(2);
-    secObj.TE_Z = le_coords(3);
+    secObj.te_coords = le_coords  + chord_length * [1 0 0]; % as a vector (X, Y, Z) from nose
+    secObj.TE_X = secObj.te_coords(1);
+    secObj.TE_Y = secObj.te_coords(2);
+    secObj.TE_Z = secObj.te_coords(3);
     
 end
 

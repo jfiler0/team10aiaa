@@ -364,7 +364,8 @@ classdef model_class < handle
                     case obj.settings.codes.CDp_CONST
                         value = 0;
                         for i = 1:length(obj.geom.stores)
-                            value = value + obj.geom.stores(i).frontal_area.v * obj.settings.CDp_CONST_CD / obj.geom.ref_area.v;
+                            store = obj.geom.stores(i);
+                            value = value + store.frontal_area.v * obj.settings.CDp_CONST_CD / obj.geom.ref_area.v;
                         end
                     case obj.settings.codes.CDp_IGNORE
                         value = 0;

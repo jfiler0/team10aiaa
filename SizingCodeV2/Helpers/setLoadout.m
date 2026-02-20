@@ -36,13 +36,13 @@ function geom = setLoadout(geom, storeNames)
         % If this is changed, writeStoreStruct must also be corrected
 
     % Prefill with empty stores to make sure fields are correct
-    geom.stores = repmat(readStoreFile("X", storesFolder), num_stores); % prefills with a bunch of empty stores
+    geom.stores = repmat(readStoreFile("X", storesFolder), [num_stores, 1]); % prefills with a bunch of empty stores
 
     for i = 1:num_stores
         geom.stores(i) = readStoreFile(storeNames(i), storesFolder);
         
-        geom.stores(i).rack_ypos = rack_positions(i);
-        geom.stores(i).rack_num = rack_numbers(i);
+        geom.stores(i).rack_ypos = json_entry("Rack Y-Position (normalized)", rack_positions(i), "", NaN, true);
+        geom.stores(i).rack_num = json_entry("Rack Number", rack_numbers(i), "", NaN, true);
     end
 
 end

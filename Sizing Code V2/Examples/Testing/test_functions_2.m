@@ -60,8 +60,18 @@ weight_comps = getRaymerWeightStruct(geom);
 % For AVL
 generatePlane(geom);
 
-perf.ClimbAngle
+% perf.ClimbAngle
 
 % cost_struct = xanderscript_modified(geom, true, false);
 
-model.COST
+% model.COST
+
+ans = fortran_cdi(geom, cond);
+
+fprintf("%.20f\n", ans);
+
+
+% Make a way of plotting the current geometry in matlab
+% Then can take those points into idrag for actual results
+% Connect that to the models
+% finally work on adding the fucking vectorization

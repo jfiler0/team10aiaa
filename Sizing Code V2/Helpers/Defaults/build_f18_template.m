@@ -29,8 +29,33 @@ plane.wing.le_sweep = json_entry("Wing Leading Edge Sweep", 29.3, "deg");
 plane.wing.root_chord = json_entry("Wing Root Chord", 5.07, "m");
 plane.wing.tip_chord = json_entry("Wing Tip Chord", 1.686, "m");
 plane.wing.fold_ratio = json_entry("Wing Fold Ratio", 0.333, "");
-plane.wing.dihedral = json_entry("Dihedral", -2, "deg");
+plane.wing.dihedral = json_entry("Wing Dihedral", -2, "deg");
 plane.wing.le_x = json_entry("Wing Leading Edge X Position", 8, "m");
+
+plane.wing.controls.flap_width = json_entry("Main Wing Flap Width (normalized to span)", 0.3, "");
+plane.wing.controls.flap_length = json_entry("Main Wing Flap Length (normalized to local chod)", 0.2, "");
+plane.wing.controls.aileron_width = json_entry("Main Wing Aileron Width (normalized to span)", 0.3, "");
+plane.wing.controls.aileron_length = json_entry("Main Wing Aileron Length (normalized to local chord)", 0.1, "");
+
+plane.wing.strake.norm_length = json_entry("Strake Length (normalized to root chord)", 0.7, "");
+plane.wing.strake.norm_span = json_entry("Strake Span (normalized to main wing span)", 0.2, "");
+
+plane.elevator.root_chord = json_entry("Elevator Root Chord", 2, "m");
+plane.elevator.tip_chord = json_entry("Elevator Tip Chord", 1, "m");
+plane.elevator.semi_span = json_entry("Elevator Semispan", 1.5, "m");
+plane.elevator.dihedral = json_entry("Elevator Dihedral", -5, "deg");
+plane.elevator.elevator_length = json_entry("Elevator Control Surface Length (normalized to local chord)", 0.15, "");
+
+plane.vtail.root_chord = json_entry("V-Tail Root Chord", 2, "m");
+plane.vtail.tip_chord = json_entry("V-Tail Tip Chord", 1, "m");
+plane.vtail.semi_span = json_entry("V-Tail Semispan", 1.5, "m");
+plane.vtail.dihedral = json_entry("V-Tail Dihedral", 60, "deg");
+plane.vtail.rudder_length = json_entry("Rudder Length (normalized to local chord)", 0.15, "");
+
+vtail_root_chord = 2;
+    vtail_tip_chord = 1;
+    vtail_semispan = 1.5;
+    elevator_dihedral = 60;
 
 plane.type = json_entry("Raymer Aircraft Type", "Jet fighter", "s"); % for coefficent lookups
 plane.weights.raymer.A = json_entry("Raymer A Coeff", getRaymerCoefficents(plane.type.v, 1), "");

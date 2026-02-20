@@ -13,7 +13,6 @@ function geom = editGeom(geom, structPath, value, do_update)
     end
 
     if(do_update)
-        geom = processGeometryDerived(geom); 
-        geom = processGeometryWeight(geom);
+        geom = updateGeom(geom);
     end
 end

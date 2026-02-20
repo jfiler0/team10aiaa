@@ -1,5 +1,7 @@
 function generatePlane(geom)
 
+% TODO - add ability to model inclination
+
 % See AVL User Primer for more information
 
 % The first 5 non comment, not blank lines must contain:
@@ -51,33 +53,17 @@ divider()
 
 surf1 = default_surf("MainWing");
 
-span = geom.wing.span.v;
+strake_norm_span = geom.wing.strake.norm_span.v; % as a ratio of span
 
-strake_norm_length = 0.7; % as a ratio of root chod
-strake_norm_span = 0.2; % as a ratio of span
+flap = build_control("flap", geom.wing.controls.flap_length.v, [0 1 0], 1);
+aileron = build_control("aileron", geom.wing.controls.aileron_length.v, [0 1 0], -1);
 
-flap_width = 0.3; % as a ratio of span
-flap_length = 0.2; % as a ratio of local chord
+sec1 = build_sec( geom.outline.sections.wing(1).le_coords, geom.outline.sections.wing(1).chord_length); % the base root section of the strake;
+sec2 = build_sec( geom.outline.sections.wing(2).le_coords, geom.outline.sections.wing(2).chord_length); % the root of the main wing, offset due to strake
+sec5 = build_sec( geom.outline.sections.wing(3).le_coords, geom.outline.sections.wing(3).chord_length); % main wing tip
 
-aileron_width = 0.3; % as a rtio of span
-aileron_length = 0.1; % as a ratio of local chord
-
-flap = build_control("flap", flap_length, [0 1 0], 1);
-aileron = build_control("aileron", aileron_length, [0 1 0], -1);
-
-semi_span = 0.5 * span;
-rad = geom.fuselage.diameter.v/2; % fuselage radius
-
-sec1 = build_sec([geom.wing.le_x.v rad 0], geom.wing.root_chord.v); % THIS IS GHOST
-sec5 = build_sec([geom.wing.le_x.v + semi_span * sind(geom.wing.le_sweep.v), rad + semi_span semi_span * sind(geom.wing.dihedral.v)], geom.wing.tip_chord.v);
-
-sec2 = betw_sec(sec1, sec5, strake_norm_span);
-sec3 = betw_sec(sec1, sec5, strake_norm_span + flap_width);
-sec4 = betw_sec(sec1, sec5, 1 - aileron_width);
-
-strake_length = strake_norm_length * sec1.Chord;
-sec1.Xle = sec1.Xle - strake_length;
-sec1.Chord = sec1.Chord + strake_length;
+sec3 = betw_sec(sec2, sec5, geom.wing.controls.flap_width.v / (1-strake_norm_span) );
+sec4 = betw_sec(sec2, sec5, (1 - geom.wing.controls.aileron_width.v )/ (1-strake_norm_span) );
 
 sec2.control = flap;
 sec4.control = aileron;
@@ -89,21 +75,11 @@ divider()
 
 %% ELEVATOR
 
-elevator_root_chord = 2;
-elevator_tip_chord = 1;
-eleavtor_semispan = 1.5;
-elevator_dihedral = -5;
-
-elevator_length = 0.15; % as a ratio of local chord
-aft_fuse_diam = geom.prop.diam.v * 2;
-
 surf2 = default_surf("Elevator");
-elevator = build_control("elevator", elevator_length, [0 1 0], 1);
+elevator = build_control("elevator", geom.elevator.elevator_length.v, [0 1 0], 1);
 
-elevator_le_pos = geom.fuselage.length.v - elevator_root_chord;
-
-sec1 = build_sec([elevator_le_pos, aft_fuse_diam/2, 0], elevator_root_chord, elevator);
-sec2 = build_sec([elevator_le_pos + eleavtor_semispan * sind(geom.wing.le_sweep.v), aft_fuse_diam/2 + eleavtor_semispan, eleavtor_semispan * sind(elevator_dihedral)], elevator_tip_chord);
+sec1 = build_sec( geom.outline.sections.elevator(1).le_coords, geom.outline.sections.elevator(1).chord_length, elevator); % root
+sec2 = build_sec( geom.outline.sections.elevator(2).le_coords, geom.outline.sections.elevator(2).chord_length); % tip
 
 surf2.sections = [sec1 sec2]; 
 
@@ -112,21 +88,11 @@ divider()
 
 %% VTAIL
 
-vtail_root_chord = 2;
-vtail_tip_chord = 1;
-vtail_semispan = 1.5;
-elevator_dihedral = 60;
-
-rudder_length = 0.15;
-rudder_sweep = geom.wing.le_sweep.v;
-
 surf3 = default_surf("VTail");
-elevator = build_control("rudder", rudder_length, [0 1 0], 1);
+rudder = build_control("rudder", geom.vtail.rudder_length.v, [0 1 0], 1);
 
-vtail_le_pos = geom.fuselage.length.v - vtail_root_chord;
-
-sec1 = build_sec([vtail_le_pos, cosd(elevator_dihedral)*aft_fuse_diam/2, sind(elevator_dihedral)*aft_fuse_diam/2], vtail_root_chord, elevator);
-sec2 = build_sec([vtail_le_pos + vtail_semispan * sind(rudder_sweep), cosd(elevator_dihedral)*(aft_fuse_diam/2 + eleavtor_semispan), sind(elevator_dihedral)*(aft_fuse_diam/2 + eleavtor_semispan)], vtail_tip_chord);
+sec1 = build_sec( geom.outline.sections.vtail(1).le_coords, geom.outline.sections.elevator(1).chord_length, rudder); % root
+sec2 = build_sec( geom.outline.sections.vtail(2).le_coords, geom.outline.sections.elevator(2).chord_length); % tip
 
 surf3.sections = [sec1 sec2]; 
 
@@ -135,14 +101,7 @@ divider()
 
 %% FUSELAGE
 
-fuse_coords = [ ...
-geom.fuselage.length.v, aft_fuse_diam/2
-elevator_le_pos, aft_fuse_diam/2 ; 
-geom.wing.le_x.v + geom.wing.root_chord.v, rad ; ...
-geom.wing.le_x.v - strake_length, rad ; ...
-0, 0 ];
-
-fuse_coords = [ fuse_coords ; flip(fuse_coords(1:(end-1), 1)) , flip(-fuse_coords(1:(end-1), 2)) ];
+fuse_coords = geom.outline.coords.fuseage;
 
 Nbody = 15; 
 Bspace = 1;
@@ -321,7 +280,6 @@ function sec = betw_sec(sec1, sec2, ratio)
     Chord = Chord_1 + (Chord_2 - Chord_1) * ratio;
 
     sec = build_sec(LE_coords, Chord);
-    
 end
 
 function sec = build_sec(LE_coords, Chord, control)

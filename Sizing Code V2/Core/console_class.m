@@ -89,6 +89,7 @@ classdef console_class < handle
                             "edit param value" "Change aircraft geometry. Must be a struct path like: wing.span (must be a primary variable). See available with 'geomInfo'. 'value' argument is optional."; ...
                             "geomInfo" "Creates a table of properties associated with loaded geometry"; ...
                             "save name" "Creates a new aircraft file with the given name. If 'name' argument for provided, it uses the current file name." ; ...
+                            "startAVL" "Creates an AVL session with the current geometry loaded as a .AVL file"
                             "INSPECT" "Enter command set for analyzing a geometry at point conditions" ; ...
                             "EDITLOADOUT" "Enter a command set for changing the current loadout with a set of predefined stores." ...
                             ];
@@ -178,6 +179,9 @@ classdef console_class < handle
                             writeAircraftFile(obj.geom);
                             jprint("Wrote current geometry to: " + savePath);
                         end
+                    case 'startavl'
+                        generatePlane(obj.geom);
+                        start_avl;
                     case 'editloadout'
                         if isempty(obj.geom)
                             jprint("Must load an aircraft first.", -1)

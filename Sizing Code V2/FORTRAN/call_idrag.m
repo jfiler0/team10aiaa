@@ -38,7 +38,7 @@ function cd_induced = call_idrag(p)
     [status, txt] = system(psCmd);
 
     % 4) Always show exit status + any captured launcher text
-    fprintf("Fortran launcher exit STATUS = %d\n", status);
+    % fprintf("Fortran launcher exit STATUS = %d\n", status);
     if ~isempty(strtrim(txt))
         disp("=== system() text ===");
         disp(txt);

@@ -14,6 +14,7 @@ function codes = build_default_codes()
 
     codes.CDi_BASIC_SUBSONIC = 401;
     codes.CDi_IGNORE = 402;
+    codes.CDi_IDRAG = 403; % using the fortran code
 
     codes.CLa_BASIC = 501;
 

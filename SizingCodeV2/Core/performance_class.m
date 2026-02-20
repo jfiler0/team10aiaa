@@ -127,5 +127,9 @@ classdef performance_class < handle % <--- Inheriting from handle allows in-plac
                     out = asind( (obj.TA - obj.Drag)./obj.model.cond.W.v);
                 end
             end
+        function out = e_osw(obj)
+            % return the oswlad efficency
+            out =  obj.simpleUpdateCheck('LevelTurnRate', @() obj.model.cond.CL.v.^2 ./ (pi * obj.model.geom.wing.AR.v * obj.model.CDi) );
+        end
     end
 end

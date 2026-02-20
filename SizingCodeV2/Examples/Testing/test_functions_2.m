@@ -66,14 +66,10 @@ generatePlane(geom);
 
 % model.COST
 
-ans = fortran_cdi(geom, cond);
-
-fprintf("%.20f\n", ans);
-
+perf.e_osw
 
 % Make a way of plotting the current geometry in matlab
 % Then can take those points into idrag for actual results
 % Connect that to the models
 % finally work on adding the fucking vectorization
-
-% displayAircraftGeom(geom)
+% Remove vtail and LERX requirements to be more general to other planes

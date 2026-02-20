@@ -176,6 +176,9 @@ classdef model_class < handle
                                     
                     case obj.settings.codes.CDi_IGNORE
                         value = 0;
+
+                    case obj.settings.codes.CDi_IDRAG
+                        value = fortran_cdi(obj.geom, obj.cond);
                         
                     otherwise
                         error("Code '%i' has no recognized definition for the CDi model.", code)

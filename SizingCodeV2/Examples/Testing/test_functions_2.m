@@ -75,3 +75,4 @@ fprintf("%.20f\n", ans);
 % Then can take those points into idrag for actual results
 % Connect that to the models
 % finally work on adding the fucking vectorization
+% make sure there are no spaces in file paths

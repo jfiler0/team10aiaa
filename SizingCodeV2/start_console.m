@@ -10,6 +10,6 @@ console = console_class();
 commandList = [];
 % commandList = ["load f18_superhornet", "geomInfo", "INSPECT", "setCond", "0", "2", "1", "1", "1", "printData", "GRAPHING", "geomView"];
 % commandList = ["load f18_superhornet", "geomInfo", "INSPECT", "setCond", "10000", "2", "1", "1", "1", "printData", "q"];
-% commandList = ["load f18_superhornet","INSPECT","setCond", "", "0.5", "", "", "", "printData"];
+commandList = ["load f18_superhornet","INSPECT","GRAPHING", "levelFlightPerformance"];
 
 console.start(commandList);

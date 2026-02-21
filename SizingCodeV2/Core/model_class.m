@@ -12,6 +12,11 @@ classdef model_class < handle
         function obj = model_class(settings, geom, cond)
             obj.settings = settings;
             obj.geom = geom;
+
+            if nargin < 3
+                cond = NaN; % Allow setting cond to NaN if not all arguments are given
+            end
+
             obj.cond = cond;
 
             obj.clear_mem
@@ -25,6 +30,10 @@ classdef model_class < handle
             % override - override code from settings.codes
             % compute_func - function handle that computes the value
             % scaler - scaling factor to apply
+
+            if ~isstruct(obj.cond) % is NaN otherwise
+                error("Model condition is not defined.")
+            end
             
             if nargin < 3
                 override = obj.settings.codes.OVER_NONE;
@@ -104,22 +113,6 @@ classdef model_class < handle
             value(index_sup) = value_sup;
             value(index_tran) = value_trans;
         end
-
-        % function value = safe_cond_call(obj, name, indices)
-        %     % Sometimes we need to call conditions and don't know if things have active indices or not
-        %     % So, we want to check the length and then pass it back either as an array or as the scaler
-        % 
-        %     cond_vec = obj.cond.(name).v;
-        %     len = length(cond_vec);
-        % 
-        %     if(len == 1) % Is a scaler. Just return it
-        %         value = cond_vec;
-        %     elseif(len ~= length(indices))
-        %         error("Indices and condtion vector do not match.")
-        %     else
-        %         value = cond_vec(indices);
-        %     end
-        % end
 
         function clear_mem(obj)
             obj.mem = struct('CD0', [], 'CDi', [], 'CDw', [], 'CLa', [], 'COST', [], 'PROP', [], 'CDp', [], 'SpotFactor', []);

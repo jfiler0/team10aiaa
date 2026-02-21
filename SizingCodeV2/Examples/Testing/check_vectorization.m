@@ -1,3 +1,5 @@
+tic;
+
 initialize
 matlabSetup
 
@@ -8,7 +10,7 @@ geom = setLoadout(geom, ["AIM-9X" "" "" "AIM-120" "AIM-120" "" "" "AIM-9x"]);
 
 % Set the condition
 % cond = generateCondition(geom, 1000, 0.8, 1.7, 0.5, 1);
-N = 10;
+N = 100;
 cond = generateCondition(geom, ...
     linspace(0, 5000, N), ... % Altitude
     linspace(0.5, 2, N), ... % Mach Number
@@ -18,6 +20,8 @@ cond = generateCondition(geom, ...
 
 model = model_class(settings, geom, cond);
 perf = performance_class(model);
+
+fprintf("Setup took %.3g ms. \n\n", toc)
 
 fprintf("COST | %s\n", do_check( @() model.COST, N) );
 fprintf("CDw | %s\n", do_check( @() model.CDw, N) );
@@ -41,15 +45,17 @@ fprintf("ClimbAngle | %s\n", do_check( @() perf.ClimbAngle, N) );
 fprintf("mdotf | %s\n", do_check( @() perf.mdotf, N) );
 
 function res = do_check(fun_call, N)
+    tic;
     try
         output = fun_call();
 
         if isequal(size(output), [1, N])
-            res = "SUCCESS";
+            res = sprintf("SUCCESS : %.3g microseconds / call", toc * 1E6 / N);
         else
             res = "INCORRECT DIM";
         end
     catch
         res = "NOT VECTORIZED - ERRORED";
+        toc;
     end
 end

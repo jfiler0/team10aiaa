@@ -35,13 +35,6 @@ function cond = generateCondition(geom, h, M_vel, n, W, throttle)
 
     cond.qinf.v = 0.5 * cond.rho.v .* cond.vel.v .* cond.vel.v;
 
-    if(max(throttle) > 1)
-        error("Throttle cannot be above 1.")
-    end
-    cond.throttle.v = throttle;
-    cond.mil_throttle.v = min(throttle, 0.9)/0.9; % Goes from 0-1 from output between throttle=0-0.9
-    cond.ab_throttle.v = (max(throttle, 0.9) - 0.9)/0.1; % Stays 0 unitl throttle = 0.9 and grows to 1between 0.9-1
-
     if( min(W) > 1)
         % Weight was passed in normally
         cond.W.v = W;
@@ -58,4 +51,6 @@ function cond = generateCondition(geom, h, M_vel, n, W, throttle)
     cond.n.v = n;
     cond.Lift.v = cond.W.v .* cond.n.v;
     cond.CL.v = cond.Lift.v ./ (geom.ref_area.v * cond.qinf.v);
+
+    cond = addCondThrottle(cond, throttle);
 end

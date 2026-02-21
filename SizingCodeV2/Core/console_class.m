@@ -20,6 +20,8 @@ classdef console_class < handle
             obj.settings = readSettings();
             obj.run = true; % once this is set to false the program ends
             obj.mem = struct();
+
+            obj.model
         end
 
         function obj = start(obj, commandList)
@@ -108,6 +110,8 @@ classdef console_class < handle
 
                     case 'load'
                         obj.geom = loadAircraft(args(1), obj.settings);
+                        obj.model = model_class(obj.settings, obj.geom); % not including condition
+                        obj.perf = performance_class(obj.model);
                         % loadout is now initially saved
                         % TODO: Since loadouts don't follow the same format, they are breaking lots of stuff
                         jprint("Working geometry set using " + obj.geom.id.v + ".json: " + obj.geom.name.v)
@@ -304,6 +308,7 @@ classdef console_class < handle
                             if isnan(T) ; T = obj.cond.throttle.v; end
     
                             obj.cond = generateCondition(obj.geom, H, MV, N, W, T);
+                            obj.model.cond = obj.cond;
 
                             T = geomInfoTable(obj.cond);
 
@@ -314,12 +319,12 @@ classdef console_class < handle
                         if isempty(obj.cond)
                             jprint("Cannot run analyisis until a point condition is specified using 'setCond'.", -1)
                         else
-                            if(isempty(obj.model) || isempty(obj.perf))
-                                obj.model = model_class(obj.settings, obj.geom, obj.cond);
-                                obj.perf = performance_class(obj.model);
-                            end
+                            % if(isempty(obj.model) || isempty(obj.perf))
+                            %     obj.model = model_class(obj.settings, obj.geom, obj.cond);
+                            %     obj.perf = performance_class(obj.model);
+                            % end
 
-                            obj.model.clear_mem();
+                            obj.model.clear_mem(); obj.perf.clear_data();
 
                             % since they don't seem to update
                             obj.model.cond = obj.cond;
@@ -405,6 +410,7 @@ classdef console_class < handle
                             "?" "List available commands"; ...
                             "q" "Quit program"; ...
                             "costBreakdown" "Creates a set of figures as an overview of cost. From xanderscript."; ...
+                            "levelFlightPerformance" "Propulsion and drag performance for level flight at a range of mach numbers and altitudes"
                             "geomView" "Opens a figure with the loaded outlines for the fuselage, wing, elevator, and vtail"
                             "LOAD" "Return to command set for loading a geoemtry"; ...
                             "INSPECT" "Return to command set for analyzing a geometry at point conditionsy"; ...
@@ -423,6 +429,14 @@ classdef console_class < handle
                         else
                             xanderscript_modified(obj.geom, false, true);
                         end
+                    case 'levelflightperformance'
+                        % if isempty(obj.cond)
+                        %     before_cond = obj.model.cond;
+                        % end
+                        levelflight_performance_plots(obj.perf, 50);
+                        % if isempty(obj.model.cond)
+                        %     obj.cond = before_cond;
+                        % end
                     case 'geomview'
                         displayAircraftGeom(obj.geom);
                     case 'load'

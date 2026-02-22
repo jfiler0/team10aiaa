@@ -15,7 +15,7 @@ geom = setLoadout(geom, ["AIM-9X" "" "" "AIM-120" "AIM-120" "" "" "AIM-9x"]);
 model = model_class(settings, geom); % not including condition
 perf = performance_class(model);
 % max_performance_plots(perf, 50)
-levelflight_performance_plots(perf, 50)
+% levelflight_performance_plots(perf, 50)
 
 %% STORAGE
 
@@ -60,17 +60,11 @@ levelflight_performance_plots(perf, 50)
 % 
 % perf.ExcessThrust
 
-% Finally work on adding the fucking vectorization
 % Remove vtail and LERX requirements to be more general to other planes
 % Want the geometry display figure to show stores as cylinders
 % Need a better CD0 model - more as flat plate with mach number corrections
-% Then we can work on missions
 
 % Whats next?
 %   General function for making a map to speed up using interpolation
 %   Actually running missions - with the sub missions
 %       Finding/tracking the optimal TSFC
-%   Calculate trim condition set
-%   Console interaction
-
-

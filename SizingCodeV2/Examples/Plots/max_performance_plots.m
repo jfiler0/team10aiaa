@@ -23,5 +23,5 @@ function max_performance_plots(perf, N)
     % general_contour("Altitude [m]", "Mach Number", "Rate [deg/s]", "Max Level Turn Rate", H, M, perf.LevelTurnRate)
     general_contour("Altitude [m]", "Mach Number", "Rate [deg/s]", "Max Turn Rate", H, M, perf.TurnRate)
 
-    % Now how to get sustained turn rates?
+    perf.model.clear_mem(); perf.clear_data();
 end

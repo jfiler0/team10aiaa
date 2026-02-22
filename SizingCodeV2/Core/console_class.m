@@ -20,8 +20,6 @@ classdef console_class < handle
             obj.settings = readSettings();
             obj.run = true; % once this is set to false the program ends
             obj.mem = struct();
-
-            obj.model
         end
 
         function obj = start(obj, commandList)
@@ -412,6 +410,7 @@ classdef console_class < handle
                             "costBreakdown" "Creates a set of figures as an overview of cost. From xanderscript."; ...
                             "levelFlightPerformance" "Propulsion and drag performance for level flight at a range of mach numbers and altitudes"
                             "maxPerformance" "Set of plots of turn rates, excess power, and more. Sweep of mach and height with throttle set to max."
+                            "maxSustainedTurn" "Plots max sustained turn rate vs H and M. Seperated as it is more time intensive."
                             "geomView" "Opens a figure with the loaded outlines for the fuselage, wing, elevator, and vtail"
                             "LOAD" "Return to command set for loading a geoemtry"; ...
                             "INSPECT" "Return to command set for analyzing a geometry at point conditionsy"; ...
@@ -434,6 +433,8 @@ classdef console_class < handle
                         levelflight_performance_plots(obj.perf, 50);
                     case 'maxperformance'
                         max_performance_plots(obj.perf, 50);
+                    case 'maxsustainedturn'
+                        max_sustained_turn(obj.perf, 25)
                     case 'geomview'
                         displayAircraftGeom(obj.geom);
                     case 'load'

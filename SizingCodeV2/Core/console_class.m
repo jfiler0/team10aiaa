@@ -411,6 +411,7 @@ classdef console_class < handle
                             "q" "Quit program"; ...
                             "costBreakdown" "Creates a set of figures as an overview of cost. From xanderscript."; ...
                             "levelFlightPerformance" "Propulsion and drag performance for level flight at a range of mach numbers and altitudes"
+                            "maxPerformance" "Set of plots of turn rates, excess power, and more. Sweep of mach and height with throttle set to max."
                             "geomView" "Opens a figure with the loaded outlines for the fuselage, wing, elevator, and vtail"
                             "LOAD" "Return to command set for loading a geoemtry"; ...
                             "INSPECT" "Return to command set for analyzing a geometry at point conditionsy"; ...
@@ -430,13 +431,9 @@ classdef console_class < handle
                             xanderscript_modified(obj.geom, false, true);
                         end
                     case 'levelflightperformance'
-                        % if isempty(obj.cond)
-                        %     before_cond = obj.model.cond;
-                        % end
                         levelflight_performance_plots(obj.perf, 50);
-                        % if isempty(obj.model.cond)
-                        %     obj.cond = before_cond;
-                        % end
+                    case 'maxperformance'
+                        max_performance_plots(obj.perf, 50);
                     case 'geomview'
                         displayAircraftGeom(obj.geom);
                     case 'load'

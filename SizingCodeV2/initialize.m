@@ -10,3 +10,5 @@ build_atmosphere_lookup(-5000, ft2m(100000), 500); % Refresh atmosphere lookup
 build_standard_stores;
 
 clear; % since the main file should not inherit anything from these calls
+
+disp("Good to go!")

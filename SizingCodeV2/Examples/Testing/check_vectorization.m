@@ -43,6 +43,7 @@ fprintf("TurnRate | %s\n", do_check( @() perf.TurnRate, N) );
 fprintf("LevelTurnRate | %s\n", do_check( @() perf.LevelTurnRate, N) );
 fprintf("ClimbAngle | %s\n", do_check( @() perf.ClimbAngle, N) );
 fprintf("mdotf | %s\n", do_check( @() perf.mdotf, N) );
+fprintf("AxialAccelleration | %s\n", do_check( @() perf.AxialAccelleration, N) );
 
 function res = do_check(fun_call, N)
     tic;

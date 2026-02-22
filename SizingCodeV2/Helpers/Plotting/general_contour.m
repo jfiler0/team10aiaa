@@ -1,19 +1,28 @@
-function general_contour(xname, yname, zname, title_name, X, Y, z_long, limits)
-
-    if nargin < 8
+function general_contour(xname, yname, zname, title_name, X, Y, z_long, do_0_line, limits)
+    if nargin < 9
         limits = [min(z_long) max(z_long)];
+    end
+    if nargin < 8
+        do_0_line = false;
     end
 
     Z = reshape(z_long', size(X));
-    
-    % Spline interpolate to 4x resolution
     [X_fine, Y_fine, Z_fine] = upsample_grid(X, Y, Z, 4);
 
     figure("Name", title_name);
-    contourf(X_fine, Y_fine, Z_fine, 20, 'LineColor', 'none');
+    surf(X_fine, Y_fine, Z_fine, 'EdgeColor', 'none');
+    view(2);  % flatten to top-down 2D view
+    shading interp;
+    hold on;
+
+    if do_0_line && min(Z_fine(:)) < 0 && max(Z_fine(:)) > 0
+        contour(X_fine, Y_fine, Z_fine, [0 0], 'k', 'LineWidth', 2);
+    end
+
+    axis tight
+
     cb = colorbar;
     ylabel(cb, zname);
-
     colormap(jet);
     xlabel(xname);
     ylabel(yname);

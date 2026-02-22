@@ -14,6 +14,7 @@ geom = setLoadout(geom, ["AIM-9X" "" "" "AIM-120" "AIM-120" "" "" "AIM-9x"]);
 
 model = model_class(settings, geom); % not including condition
 perf = performance_class(model);
+% max_performance_plots(perf, 50)
 levelflight_performance_plots(perf, 50)
 
 %% STORAGE

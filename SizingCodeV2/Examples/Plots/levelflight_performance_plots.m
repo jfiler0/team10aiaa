@@ -10,11 +10,15 @@ function levelflight_performance_plots(perf, N)
     perf.model.cond = levelFlightCondition(perf, h_vec_long, M_vec_long, W * ones(size(h_vec_long)));
 
     general_contour("Altitude [m]", "Mach Number", "TSFC [s]", "TSFC", H, M, perf.TSFC)
-    general_contour("Altitude [m]", "Mach Number", "CD", "Drag Coefficent", H, M, perf.CD, [0 0.15])
+    general_contour("Altitude [m]", "Mach Number", "mdotf [kg/s]", "Fuel Mass Flow", H, M, perf.mdotf)
+    general_contour("Altitude [m]", "Mach Number", "CD", "Drag Coefficent", H, M, perf.CD, false, [0 0.15])
     general_contour("Altitude [m]", "Mach Number", "CL", "Lift Coefficent", H, M, perf.model.cond.CL.v)
     general_contour("Altitude [m]", "Mach Number", "L/D", "Lift Over Drag", H, M, perf.LD)
     general_contour("Altitude [m]", "Mach Number", "CDw", "Wave Drag Coeffcient", H, M, perf.model.CDw)
     general_contour("Altitude [m]", "Mach Number", "CDi", "Induced Drag Coeffcient", H, M, perf.model.CDi)
     general_contour("Altitude [m]", "Mach Number", "e_osw", "Oswald Efficency", H, M, perf.e_osw)
     general_contour("Altitude [m]", "Mach Number", "CLa", "Lift Slope", H, M, perf.model.CLa)
+    general_contour("Altitude [m]", "Mach Number", "Excess Power [m/s]", "Excess Power", H, M, perf.ExcessPower)
+    general_contour("Altitude [m]", "Mach Number", "mdotf / V", "Optimium Range Term (minimize)", H, M, perf.mdotf ./ perf.model.cond.vel.v, false, [0 0.003] )
+    
 end

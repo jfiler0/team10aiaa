@@ -123,7 +123,7 @@ classdef performance_class < handle % <--- Inheriting from handle allows in-plac
 
                 out = asind( (obj.TA - obj.Drag)./obj.model.cond.W.v);
                 out(climbing_straight_up) = 90;
-                out(going_straight_down) = 90;
+                out(going_straight_down) = -90;
 
                 % if obj.ExcessPower > obj.model.cond.vel.v % we can climb straight up
                 %    out = 90;
@@ -139,6 +139,10 @@ classdef performance_class < handle % <--- Inheriting from handle allows in-plac
         function out = e_osw(obj)
             % return the oswlad efficency
             out =  obj.simpleUpdateCheck('LevelTurnRate', @() obj.model.cond.CL.v.^2 ./ (pi * obj.model.geom.wing.AR.v * obj.model.CDi) );
+        end
+        function out = AxialAccelleration(obj)
+            % in Gs
+            out = obj.simpleUpdateCheck('AxialAccelleration', @() obj.ExcessThrust ./ obj.model.cond.W.v );
         end
     end
 end

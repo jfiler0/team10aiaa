@@ -318,18 +318,18 @@ classdef model_class < handle
                         
                         % Lapse Ratios for Low-bypass Turbofans (See Mattingly, Aircraft Engine Design, 2e)
                         % Vectorized version using logical indexing - Thanks Claude
-                        alpha_dry = zeros(size(theta_0));
-                        alpha_AB = zeros(size(theta_0));
                         
-                        % For theta_0 <= TR
-                        idx_low = theta_0 <= TR;
-                        alpha_dry(idx_low) = delta_0(idx_low) * 0.6; %Eqn. 2.45b
-                        alpha_AB(idx_low) = delta_0(idx_low) * 1.0; % Eqn. 2.45a
+                        % This was needed as the best cruise appears to end up on this boundary and the kink is bad
+                        blend_width = 0.15;  % tune this — wider = smoother but less faithful to Mattingly
+                        t_blend = 1 ./ (1 + exp(-20/blend_width * (theta_0 - TR)));  % smooth 0->1 around TR
                         
-                        % For theta_0 > TR
-                        idx_high = theta_0 > TR;
-                        alpha_dry(idx_high) = 0.6 * delta_0(idx_high) .* (1 - 3.8 * (theta_0(idx_high) - TR) ./ theta_0(idx_high)); %Eqn. 2.45b
-                        alpha_AB(idx_high) = delta_0(idx_high) .* (1 - 3.5 * (theta_0(idx_high) - TR) ./ theta_0(idx_high)); %Eqn. 2.45a
+                        alpha_dry_low  = delta_0 * 0.6;
+                        alpha_dry_high = 0.6 * delta_0 .* (1 - 3.8 * (theta_0 - TR) ./ theta_0);
+                        alpha_dry      = (1 - t_blend) .* alpha_dry_low + t_blend .* alpha_dry_high;
+                        
+                        alpha_AB_low   = delta_0 * 1.0;
+                        alpha_AB_high  = delta_0 .* (1 - 3.5 * (theta_0 - TR) ./ theta_0);
+                        alpha_AB       = (1 - t_blend) .* alpha_AB_low + t_blend .* alpha_AB_high;
                         
                         % Thrusts (by definition of lapse rate)
                         F_th_mil = obj.geom.prop.T0_NoAB.v * alpha_dry; % (whatever unit thrust was passed with)

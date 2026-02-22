@@ -104,24 +104,33 @@ classdef performance_class < handle % <--- Inheriting from handle allows in-plac
             % deg/s - holding a level turn
             out =  obj.simpleUpdateCheck('LevelTurnRate', @() rad2deg( sqrt( obj.model.cond.n.v .* obj.model.cond.n.v - 1) * obj.model.settings.g_const ./ obj.model.cond.vel.v ) );
         end
-        function out = ClimbAngle(obj)
+        function out = ClimbAngle(obj, EP)
+
+            % EP -> the amount of excess power that should be 'left over' (for axial accelleration) in the climb
+            if nargin < 2
+                EP = 0;
+            end
+
             % This also acts as glide angle if TA = 0
             % If there is a climb angle between 0 and 90 that the plane is not accellerating, that is returned
             % Otherwise, 90 is returned
             % If ExcesssThrust is less than 0, it instead gives a negative climb angle, which is the 'glide' angle to have no accelleration
             % Note that if turn load factor is not 1, this does not make much sense
 
-            out =  obj.simpleUpdateCheck('ClimbAngle', @() ClimbAngleHepler(obj) );
+            out =  obj.simpleUpdateCheck('ClimbAngle', @() ClimbAngleHepler(obj, EP) );
         end
-            function out = ClimbAngleHepler(obj)
+            function out = ClimbAngleHepler(obj, EP)
                 % So that there can be a update check
+
+                % EP = (T - D) * v / W
+                ET = EP .* obj.model.cond.W.v ./ obj.model.cond.vel.v; % excess thrust
                 
                 % This is a vectorized version of the if statements
-                climbing_straight_up = obj.ExcessPower > obj.model.cond.vel.v;
-                going_straight_down = obj.ExcessThrust + obj.model.cond.W.v < 0;
+                climbing_straight_up = obj.ExcessPower - EP > obj.model.cond.vel.v;
+                going_straight_down = obj.ExcessThrust - ET + obj.model.cond.W.v < 0;
                 % standard = ~climbing_straight_up .* ~going_straight_down;
 
-                out = asind( (obj.TA - obj.Drag)./obj.model.cond.W.v);
+                out = asind( (obj.TA - obj.Drag - ET)./obj.model.cond.W.v);
                 out(climbing_straight_up) = 90;
                 out(going_straight_down) = -90;
 
@@ -140,9 +149,29 @@ classdef performance_class < handle % <--- Inheriting from handle allows in-plac
             % return the oswlad efficency
             out =  obj.simpleUpdateCheck('LevelTurnRate', @() obj.model.cond.CL.v.^2 ./ (pi * obj.model.geom.wing.AR.v * obj.model.CDi) );
         end
-        function out = AxialAccelleration(obj)
+        function out = AxialAccelleration(obj, EP)
             % in Gs
-            out = obj.simpleUpdateCheck('AxialAccelleration', @() obj.ExcessThrust ./ obj.model.cond.W.v );
+
+            % If EP is provided, that is the axial accelleration possible given some climb rate in m/s
+            if nargin < 2
+                EP = 0;
+            end
+            ET = EP .* obj.model.cond.W.v ./ obj.model.cond.vel.v; % excess thrust
+
+            out = obj.simpleUpdateCheck('AxialAccelleration', @() (obj.ExcessThrust - ET) ./ obj.model.cond.W.v );
         end
+        function out = Rbar(obj)
+            % Kinda a non-physical term. When minimized it defines the best cruise point
+            out = obj.simpleUpdateCheck('Rbar', @() obj.RbarHelper );
+        end
+            function out = RbarHelper(obj)
+                % slightly more stable method of getting mdotf for level flight
+                
+                Rbar = obj.TSFC .* obj.Drag ./ obj.model.cond.vel.v;
+                % min_alt = 100; % in meters. Passed this it starts to provide a large amount of weighting to keep you from hitting the ground
+                % R = 1E-4;
+                % Rbar = Rbar + R * max(0, (min_alt - obj.model.cond.h.v)/min_alt);
+                out = Rbar;
+            end
     end
 end

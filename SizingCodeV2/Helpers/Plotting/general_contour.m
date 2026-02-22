@@ -28,6 +28,7 @@ function general_contour(xname, yname, zname, title_name, X, Y, z_long, do_0_lin
     ylabel(yname);
     title(title_name);
     clim(limits);
+    zlim(limits);
 end
 
 function [X_fine, Y_fine, Z_fine] = upsample_grid(X, Y, Z, factor)

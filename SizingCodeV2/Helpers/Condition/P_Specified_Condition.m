@@ -9,13 +9,15 @@ function cond = P_Specified_Condition(perf, EP, h, MV, W)
     perf.model.clear_mem(); perf.clear_data();
 
     one_vec = ones(size(h));
-    cond = generateCondition(perf.model.geom, h, MV, one_vec, W, one_vec);
+    if ~isstruct(perf.model.cond)
+        perf.model.cond = buildDefaultCondStruct();
+    end
+    perf.model.cond = generateCondition(perf.model.geom, h, MV, one_vec, W, one_vec, perf.model.cond);
    
-    perf.model.cond = cond;
     drag = perf.Drag;
 
     % EP = (T - D) * v / W
-    thrust_req = EP .* cond.W.v ./ cond.vel.v + drag;
+    thrust_req = EP .* perf.model.cond.W.v ./ perf.model.cond.vel.v + drag;
    
     ab_max_thrust = perf.TA; % When T = 1
 

@@ -12,15 +12,25 @@ geom = loadAircraft("f18_superhornet", settings);
 
 geom = setLoadout(geom, ["AIM-9X" "" "" "AIM-120" "AIM-120" "" "" "AIM-9x"]);
 
+% 3599 iterations with no adaptive
+
 model = model_class(settings, geom); % not including condition
 perf = performance_class(model);
 % max_performance_plots(perf, 50)
 % levelflight_performance_plots(perf, 50)
 
 mission_calculator = mission_calculator(perf);
-mission_calculator.record_hist = true;
+% mission_calculator.record_hist = true;
+mission_calculator.do_print = false;
+
+tic
+
 [hf, vf, Wf] = mission_calculator.solve_section(1500, 150, geom.weights.mtow.v);
-mission_calculator.plot_hist
+
+toc
+
+
+% mission_calculator.plot_hist
 
 %% STORAGE
 

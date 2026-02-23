@@ -1,4 +1,4 @@
-function cond = generateCondition(geom, h, M_vel, n, W, throttle)
+function cond = generateCondition(geom, h, M_vel, n, W, throttle, sample_cond)
     % specify either altitude and mach or altitude and velocity (tells which it is from magnitude)
 
     % n -> load factor for Cl calculation. 1 is level flight.
@@ -12,7 +12,12 @@ function cond = generateCondition(geom, h, M_vel, n, W, throttle)
 
     % Keeping things as .v so that units / names can be added later if needed
 
-    cond = buildDefaultCondStruct();
+    % buildDefaultCondStruct is pretty slow. It is faster to provide an existing struct copy and overwrite it
+    if nargin < 7
+        cond = buildDefaultCondStruct();
+    else
+        cond = sample_cond;
+    end
 
     cond.h.v = h;
 

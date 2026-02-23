@@ -4,12 +4,17 @@ classdef mission_calculator < handle
         perf
         data
         record_hist = false
+        do_print = false
         hist
+        dF_dh_prev = 0
+        dF_dv_prev = 0
+        grad_alpha  = 0.4
     end
 
     methods
         function obj = mission_calculator(perf)
             obj.perf = perf;
+            obj.perf.model.cond = buildDefaultCondStruct(); % so that the first call of generateCondition has the default
             obj.hist = struct();
         end
 
@@ -29,11 +34,11 @@ classdef mission_calculator < handle
         end
 
         function [hf, vf, Wf] = solve_section(obj, h0, v0, W0, section_def)
-            total_range = 500 * 1000;
+            total_range = 3704 * 1000;
             % fun = obj.getFun(1, [NaN NaN], [NaN 180], [NaN 3000]);
-            fun = obj.getFun(1, [NaN NaN], [NaN NaN], [NaN 5000]);
+            fun = obj.getFun(1, [NaN NaN], [NaN NaN], [NaN NaN]);
 
-            hi = h0; vi = v0; Wi = W0; di = 0; ti = 0;
+            hi = h0; vi = v0; Wi = W0; di = 0; ti = 0; theta_i = 0; ang_rate = 0;
             i_limit = 5000;
             dt = 5;
 
@@ -41,11 +46,26 @@ classdef mission_calculator < handle
                 obj.init_hist();
             end
 
+            incr = 1.618; dt_max = 100; dt_min = 2; 
+            climb_limit_lower = 3; climb_limit_upper = 40;
+
             i = 0; S = 0;
             while i < i_limit && S < 1
                 i = i + 1;
                 S = di / total_range;
+                h_prev = hi;
                 [hi, vi, Wi, di, ti] = obj.take_step(hi, vi, Wi, di, ti, dt, fun, S);
+
+                if abs(h_prev - hi) < climb_limit_lower
+                    dt = dt * incr;
+                elseif abs(h_prev - hi) > climb_limit_upper
+                    dt = dt / incr;
+                end
+                dt = max(dt_min, min(dt_max, dt));
+                
+                if obj.do_print
+                    fprintf("dt = %.4g , ang_rate = %.4g , vi = %.4g, i = %i\n", dt, ang_rate, vi, i)
+                end
             end
 
             fprintf("Final distance: %.4f\n", di)
@@ -60,16 +80,26 @@ classdef mission_calculator < handle
             perf = obj.perf;
         end
 
-        function [hi, vi, Wi, di, ti] = take_step(obj, hi, vi, Wi, di, ti, dt, fun, S)
+        function [hi, vi, Wi, di, ti, dF_dh, dF_dv] = take_step(obj, hi, vi, Wi, di, ti, dt, fun, S)
             angle_max = 10;
             dh = 10;
             dv = 5;
 
-            dF_dh = ( fun( obj.adjustPerf(hi+dh, vi, Wi), S ) - fun( obj.adjustPerf(hi-dh, vi, Wi), S ) ) / (2*dh);
-            dF_dv = ( fun( obj.adjustPerf(hi, vi+dv, Wi), S ) - fun( obj.adjustPerf(hi, vi-dv, Wi), S ) ) / (2*dv);
+            % Smoothing these values helps quite a bit with both numerical stability and contuity with adaptive time stepping
+            % Back to forward differencing from center to cut down on calls
+            P_center = obj.adjustPerf(hi, vi, Wi);
+            F_center = fun(P_center, S);
+            dF_dh_raw = ( fun(obj.adjustPerf(hi+dh, vi, Wi), S) - F_center ) / dh;
+            dF_dv_raw = ( fun(obj.adjustPerf(hi, vi+dv, Wi), S) - F_center ) / dv;
 
-            dh_damp = 2E-5; % When less than this it stops using max climb
-            dv_damp = 1E-3;% When less than this it stops going to max/min throttle
+            dF_dh = obj.grad_alpha * dF_dh_raw + (1 - obj.grad_alpha) * obj.dF_dh_prev;
+            dF_dv = obj.grad_alpha * dF_dv_raw + (1 - obj.grad_alpha) * obj.dF_dv_prev;
+
+            obj.dF_dh_prev = dF_dh;
+            obj.dF_dv_prev = dF_dv;
+
+            dh_damp = 1E-5; % When less than this it stops using max climb
+            dv_damp = 5E-3;% When less than this it stops going to max/min throttle
 
             target_climb_angle = -angle_max * min(1, abs(dF_dh)/dh_damp) * sign(dF_dh);
             PE_target = vi * sind(target_climb_angle);
@@ -85,7 +115,7 @@ classdef mission_calculator < handle
 
             throttle = max(throttle, 0); % make sure it does not go under 0
 
-            cond = generateCondition(obj.perf.model.geom, hi, vi, 1, Wi, throttle);
+            cond = generateCondition(obj.perf.model.geom, hi, vi, 1, Wi, throttle, obj.perf.model.cond);
             obj.perf.model.cond = cond;
 
             climb_angle = obj.perf.ClimbAngle(obj.perf.ExcessPower - PE_target);

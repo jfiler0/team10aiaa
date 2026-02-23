@@ -76,42 +76,46 @@ classdef model_class < handle
         end
         
         function value = transonicMerge(obj, sub_fun, sup_fun)
-            % For functions that are ONLY a function mach number
-            % Smoothes out the transition between subsonic and supersonic defensitions using splines
-
-            % sup_fun and sub_fun must both be a function of a mach number and index vector. 
-            % The mach number is run directly. The index allows the functions to work more generally with a vector of cases
-            % to actually run through their respective functions
+            transonic_range = obj.settings.transonic_range;
+            M = obj.cond.M.v;
         
-            transonic_range = obj.settings.transonic_range; % The range to do this 'merging'
-            
-            index_sub = obj.cond.M.v <= transonic_range(1);
-            index_sup = obj.cond.M.v >= transonic_range(2);
-            index_tran = logical( ~index_sub .* ~index_sup );
-                I_tran_start = find(index_tran, 2, "first");
-                I_tran_end = find(index_tran, 2, "last");
-
-                index_tran_start = zeros(size(index_tran)); index_tran_end = index_tran_start;
-                index_tran_start(I_tran_start) = 1; index_tran_end(I_tran_end) = 1;
-
-            M_in_sub = obj.cond.M.v(index_sub);
-            M_in_sup = obj.cond.M.v(index_sup);
-            M_in_tran = obj.cond.M.v(index_tran);
+            % Fast paths - avoid spline entirely for pure subsonic/supersonic
+            if all(M <= transonic_range(1))
+                value = sub_fun(M, true(size(M)));
+                return
+            end
+            if all(M >= transonic_range(2))
+                value = sup_fun(M, true(size(M)));
+                return
+            end
         
-            value_sub = sub_fun(M_in_sub, index_sub);
-            value_sup = sup_fun(M_in_sup, index_sup);
-
-            M_eps = obj.settings.transonic_M_eps;
-            M_vec = [transonic_range(1)-M_eps transonic_range(1) transonic_range(2) transonic_range(2)+M_eps];
-            
-            value_spline_input = [ sub_fun(M_vec( 1:2), logical(index_tran_start) ), sup_fun( M_vec(3:4), logical(index_tran_end) ) ];
-
-            value_trans = spline(M_vec, value_spline_input, M_in_tran);
-
-            value = zeros(size(obj.cond.M.v));
-            value(index_sub) = value_sub;
-            value(index_sup) = value_sup;
-            value(index_tran) = value_trans;
+            index_sub  = M <= transonic_range(1);
+            index_sup  = M >= transonic_range(2);
+            index_tran = ~index_sub & ~index_sup;
+        
+            value = zeros(size(M));
+        
+            if any(index_sub)
+                value(index_sub) = sub_fun(M(index_sub), index_sub);
+            end
+            if any(index_sup)
+                value(index_sup) = sup_fun(M(index_sup), index_sup);
+            end
+            if any(index_tran)
+                I_tran_start = find(index_tran, 2, 'first');
+                I_tran_end   = find(index_tran, 2, 'last');
+                index_tran_start = false(size(index_tran));
+                index_tran_end   = false(size(index_tran));
+                index_tran_start(I_tran_start) = true;
+                index_tran_end(I_tran_end)     = true;
+        
+                M_eps = obj.settings.transonic_M_eps;
+                M_vec = [transonic_range(1)-M_eps, transonic_range(1), ...
+                         transonic_range(2),       transonic_range(2)+M_eps];
+                value_spline_input = [ sub_fun(M_vec(1:2), index_tran_start), ...
+                                        sup_fun(M_vec(3:4), index_tran_end) ];
+                value(index_tran) = spline(M_vec, value_spline_input, M(index_tran));
+            end
         end
 
         function clear_mem(obj)

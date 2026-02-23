@@ -30,7 +30,8 @@ classdef mission_calculator < handle
 
         function [hf, vf, Wf] = solve_section(obj, h0, v0, W0, section_def)
             total_range = 500 * 1000;
-            fun = obj.getFun(1, [NaN NaN], [NaN NaN], [NaN 3000]);
+            % fun = obj.getFun(1, [NaN NaN], [NaN 180], [NaN 3000]);
+            fun = obj.getFun(1, [NaN NaN], [NaN NaN], [NaN 5000]);
 
             hi = h0; vi = v0; Wi = W0; di = 0; ti = 0;
             i_limit = 5000;
@@ -67,8 +68,8 @@ classdef mission_calculator < handle
             dF_dh = ( fun( obj.adjustPerf(hi+dh, vi, Wi), S ) - fun( obj.adjustPerf(hi-dh, vi, Wi), S ) ) / (2*dh);
             dF_dv = ( fun( obj.adjustPerf(hi, vi+dv, Wi), S ) - fun( obj.adjustPerf(hi, vi-dv, Wi), S ) ) / (2*dv);
 
-            dh_damp = 5E-1; % When less than this it stops using max climb
-            dv_damp = 5E-1;% When less than this it stops going to max/min throttle
+            dh_damp = 2E-5; % When less than this it stops using max climb
+            dv_damp = 1E-3;% When less than this it stops going to max/min throttle
 
             target_climb_angle = -angle_max * min(1, abs(dF_dh)/dh_damp) * sign(dF_dh);
             PE_target = vi * sind(target_climb_angle);
@@ -144,7 +145,7 @@ classdef mission_calculator < handle
             min_alt = 100; % Make sure we don't hit the ground
             fun_const = @(P, S) 1E-4 * max(0, (min_alt - P.model.cond.h.v)/min_alt);
 
-            R = 0.1;
+            R = 1E-4;
 
             if ~isnan(alt_const(1))
                 if ~isnan(alt_const(2))
@@ -156,6 +157,32 @@ classdef mission_calculator < handle
                 if ~isnan(alt_const(2))
                     % S^2 helps it stay free at the start and then quickly go to the constraint at the end
                     fun_const = @(P, S) fun_const(P, S) + S * S * R * pseduo_huber(alt_const(2), P.model.cond.h.v, 1E3);
+                end
+            end
+
+            if ~isnan(vel_cost(1))
+                if ~isnan(vel_cost(2))
+                    fun_const = @(P, S) fun_const(P, S) + R * pseduo_huber((1-S)*vel_cost(1) + S*vel_cost(2), P.model.cond.vel.v, 1E3);
+                else
+                    fun_const = @(P, S) fun_const(P, S) + R * pseduo_huber(vel_cost(1), P.model.cond.vel.v, 1E3);
+                end
+            else
+                if ~isnan(vel_cost(2))
+                    % S^2 helps it stay free at the start and then quickly go to the constraint at the end
+                    fun_const = @(P, S) fun_const(P, S) + S * S * R * pseduo_huber(vel_cost(2), P.model.cond.vel.v, 1E3);
+                end
+            end
+
+            if ~isnan(mach_const(1))
+                if ~isnan(mach_const(2))
+                    fun_const = @(P, S) fun_const(P, S) + R * pseduo_huber((1-S)*mach_const(1) + S*mach_const(2), P.model.cond.M.v, 1E3);
+                else
+                    fun_const = @(P, S) fun_const(P, S) + R * pseduo_huber(mach_const(1), P.model.cond.M.v, 1E3);
+                end
+            else
+                if ~isnan(mach_const(2))
+                    % S^2 helps it stay free at the start and then quickly go to the constraint at the end
+                    fun_const = @(P, S) fun_const(P, S) + S * S * R * pseduo_huber(mach_const(2), P.model.cond.M.v, 1E3);
                 end
             end
 

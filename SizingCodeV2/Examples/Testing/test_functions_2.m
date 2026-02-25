@@ -6,9 +6,13 @@
 
 initialize
 matlabSetup
+build_kevin_cad
 
 settings = readSettings();
-geom = loadAircraft("f18_superhornet", settings);
+
+% geom = loadAircraft("f18_superhornet", settings);
+
+geom = loadAircraft("kevin_cad", settings);
 
 geom = setLoadout(geom, ["AIM-9X" "" "" "AIM-120" "AIM-120" "" "" "AIM-9x"]);
 
@@ -28,6 +32,8 @@ tic
 [hf, vf, Wf] = mission_calculator.solve_section(1500, 150, geom.weights.mtow.v);
 
 toc
+
+displayAircraftGeom(geom);
 
 
 % mission_calculator.plot_hist

@@ -2,19 +2,38 @@ function geom = generateGeometryOutline(geom)
     % outline.sections (wing/htail/vtail) -> le chord positions from nose + chord length
     % outline.coords (wing/htail/vtail/fuse) -> global coordinates from nose as 2 columns + rows
 
-    span = geom.wing.span.v;
+    measure_from_centerline = true;
+        % When enabled, it draws instead using acutal span of the offset wing from the fuselage.
+            % Can be more unstable with small LERX
+        % When false, the span artifically increases by the fuselage diameter
 
-    semi_span = 0.5 * span;
+    span = geom.wing.span.v;
     rad = geom.fuselage.diameter.v/2; % fuselage radius
+
+    if measure_from_centerline
+        span = span - rad * 2;
+    end
+    semi_span = 0.5 * span;
+
+    strake_norm_span = geom.wing.strake.norm_span.v;
+    if measure_from_centerline
+        strake_norm_span = strake_norm_span - rad * 2 / geom.wing.span.v;
+        if strake_norm_span < 0
+            warning("Drawing from centerline results in LERX that does not extend past the fuselage resulting in negative span")
+        end
+    end
+
+    % length must also get shorter
+    strake_norm_length = geom.wing.strake.norm_length.v * strake_norm_span / geom.wing.strake.norm_span.v;
 
     aft_fuse_diam = geom.prop.diam.v * geom.prop.num_engine.v; % TODO: Should be number of engines
 
     % Main wing:
     sec1 = makeSecObj( [geom.wing.le_x.v rad 0], geom.wing.root_chord.v );
     sec3 = makeSecObj( [geom.wing.le_x.v + semi_span * sind(geom.wing.le_sweep.v), rad + semi_span semi_span * sind(geom.wing.dihedral.v)], geom.wing.tip_chord.v);
-    sec2 = betw_sec(sec1, sec3, geom.wing.strake.norm_span.v);
+    sec2 = betw_sec(sec1, sec3, strake_norm_span);
     
-    strake_length = geom.wing.strake.norm_length.v * sec1.chord_length;
+    strake_length = strake_norm_length * sec1.chord_length;
     sec1 = makeSecObj( [sec1.LE_X - strake_length, sec1.LE_Y, sec1.LE_Z], sec1.chord_length + strake_length);
     
     outline.sections.wing = [sec1, sec2, sec3];

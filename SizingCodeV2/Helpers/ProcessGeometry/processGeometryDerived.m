@@ -19,8 +19,8 @@ function geom = processGeometryDerived(geom)
     geom.wing.area = json_entry("Wing Area", "geom.wing.span.v * geom.wing.chord_avg.v", "m2", geom);
     
     geom.ref_area = json_entry("Reference Area", "geom.wing.area.v", "m2", geom); 
-    
-    geom.fold_span = json_entry("Folded Span", "geom.wing.span.v * (1 - geom.wing.fold_ratio.v)", "m", geom);
+
+    % geom.fold_span = json_entry("Folded Span", "geom.wing.span.v * (1 - geom.wing.fold_ratio.v)", "m", geom);
     
     geom.wing_height = json_entry("Wing Leading Edge Height", "0.1333 * geom.fuselage.length.v", "m", geom);
     
@@ -28,9 +28,9 @@ function geom = processGeometryDerived(geom)
 
     geom.fuselage.diameter = json_entry("Fuselage Equivalent Diameter", "2*sqrt( geom.fuselage.max_area.v/pi)", "m", geom);
 
-    geom.wing.fold_span = json_entry("Folded Wing Span", "geom.wing.span.v * (1 - geom.input.fold_ratio.v)", "m", geom);
+    geom.wing.fold_span = json_entry("Folded Wing Span", "geom.wing.span.v * (1 - geom.wing.fold_ratio.v)", "m", geom);
 
-    geom.wing.fold_tip_chord = json_entry("Folded Tip Chord", "geom.wing.root_chord.v + (geom.wing.root_chord.v - geom.wing.tip_chord.v) * ( 1 - geom.input.fold_ratio.v)", "m", geom);
+    geom.wing.fold_tip_chord = json_entry("Folded Tip Chord", "geom.wing.root_chord.v + (geom.wing.root_chord.v - geom.wing.tip_chord.v) * ( 1 - geom.wing.fold_ratio.v)", "m", geom);
 
     geom.wing.fold_area = json_entry("Folded Wing Area", "0.5 * geom.wing.fold_span.v * (geom.wing.fold_tip_chord.v + geom.wing.root_chord.v)", "m2", geom);
 end

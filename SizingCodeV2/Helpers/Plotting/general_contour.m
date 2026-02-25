@@ -1,13 +1,15 @@
 function general_contour(xname, yname, zname, title_name, X, Y, z_long, do_0_line, limits)
+    
+
+    Z = reshape(z_long', size(X));
+    [X_fine, Y_fine, Z_fine] = upsample_grid(X, Y, Z, 4);
+
     if nargin < 9
-        limits = [min(z_long) max(z_long)];
+        limits = [min(min(Z_fine)) max(max(Z_fine))];
     end
     if nargin < 8
         do_0_line = false;
     end
-
-    Z = reshape(z_long', size(X));
-    [X_fine, Y_fine, Z_fine] = upsample_grid(X, Y, Z, 4);
 
     figure("Name", title_name);
     surf(X_fine, Y_fine, Z_fine, 'EdgeColor', 'none');

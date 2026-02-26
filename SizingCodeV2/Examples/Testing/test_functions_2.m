@@ -24,19 +24,18 @@ perf = performance_class(model);
 % levelflight_performance_plots(perf, 50)
 
 mission_calculator = mission_calculator(perf);
-% mission_calculator.record_hist = true;
-mission_calculator.do_print = false;
+mission_calculator.record_hist = true;
+mission_calculator.do_print = true;
 
 tic
 
-[hf, vf, Wf] = mission_calculator.solve_section(1500, 150, geom.weights.mtow.v);
+[hf, vf, Wf] = mission_calculator.solve_section(0, 150, geom.weights.mtow.v);
 
 toc
 
-displayAircraftGeom(geom);
+% displayAircraftGeom(geom);
 
-
-% mission_calculator.plot_hist
+mission_calculator.plot_hist
 
 %% STORAGE
 

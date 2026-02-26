@@ -8,7 +8,7 @@ classdef mission_calculator < handle
         hist
         dF_dh_prev = 0
         dF_dv_prev = 0
-        grad_alpha  = 0.4
+        grad_alpha  = 0.25
     end
 
     methods
@@ -34,7 +34,7 @@ classdef mission_calculator < handle
         end
 
         function [hf, vf, Wf] = solve_section(obj, h0, v0, W0, section_def)
-            total_range = 3704 * 1000;
+            total_range = nm2m(2000);
             % fun = obj.getFun(1, [NaN NaN], [NaN 180], [NaN 3000]);
             fun = obj.getFun(1, [NaN NaN], [NaN NaN], [NaN NaN]);
 
@@ -46,7 +46,7 @@ classdef mission_calculator < handle
                 obj.init_hist();
             end
 
-            incr = 1.618; dt_max = 100; dt_min = 2; 
+            incr = 1.618; dt_max = 200; dt_min = 2; 
             climb_limit_lower = 3; climb_limit_upper = 40;
 
             i = 0; S = 0;
@@ -98,19 +98,23 @@ classdef mission_calculator < handle
             obj.dF_dh_prev = dF_dh;
             obj.dF_dv_prev = dF_dv;
 
-            dh_damp = 1E-5; % When less than this it stops using max climb
-            dv_damp = 5E-3;% When less than this it stops going to max/min throttle
+            % dh_damp = 1E-5; % When less than this it stops using max climb
+            % dv_damp = 5E-3;% When less than this it stops going to max/min throttle
+            dh_damp = 1E-11;
+            dv_damp = 5E-8;
 
-            target_climb_angle = -angle_max * min(1, abs(dF_dh)/dh_damp) * sign(dF_dh);
+            % Squaring gets batter damping when near optimum
+            target_climb_angle = -angle_max * min(1, dF_dh^2/dh_damp) * sign(dF_dh);
             PE_target = vi * sind(target_climb_angle);
 
             cond = P_Specified_Condition(obj.perf, PE_target, hi, vi, Wi);
             climbing_throttle = cond.throttle.v;
 
+            
             if dF_dv > 0
-                throttle = climbing_throttle * max(1 - abs(dF_dv)/dv_damp, 0);
+                throttle = climbing_throttle * max(1 - dF_dv^2/dv_damp, 0);
             else
-                throttle = climbing_throttle + (1 - climbing_throttle) * min(1, abs(dF_dv)/dv_damp);
+                throttle = climbing_throttle + (1 - climbing_throttle) * min(1, dF_dv^2/dv_damp);
             end
 
             throttle = max(throttle, 0); % make sure it does not go under 0

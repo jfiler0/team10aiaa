@@ -24,19 +24,24 @@ perf = performance_class(model);
 % max_performance_plots(perf, 50)
 % levelflight_performance_plots(perf, 50)
 
-mission_calculator = mission_calculator(perf);
+mission_calculator = mission_calculator(perf, settings);
 mission_calculator.record_hist = true;
-mission_calculator.do_print = true;
+mission_calculator.do_print = false;
 
+tic
+mission_calculator.build_map(); % assembles v, h, W map for key performance info
+toc
+
+perf.model.cond = cond;
 mission = readMissionStruct("Ferry_Mission_Test");
 % mission = readMissionStruct("Simple_Loiter_Mission");
 % mission = readMissionStruct("Simple_Range_Mission");
 
 tic
-mission_calculator.solve_mission(mission);
+mission_calculator.solve_mission(mission, cond);
 toc
 
-mission_calculator.plot_hist
+% mission_calculator.plot_hist
 
 % % displayAircraftGeom(geom);
 

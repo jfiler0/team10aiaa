@@ -1,4 +1,4 @@
-function strut = missionSeg(name, type, input, vel_cons, M_cons, h_cons)
+function strut = missionSeg(name, type, input, vel_cons, h_cons)
     % type = an array of characters that defines how mission_calculator will interpret the section
     %   'CRUISE' -> objective is to minimize specific fuel consumption (also works as climb seg)
     %   'LOITER' -> objective is to minimize mdotf
@@ -11,8 +11,7 @@ function strut = missionSeg(name, type, input, vel_cons, M_cons, h_cons)
     %   COMBAT : [time in minutes, load factor, list of store indices to deploy during section]
     %   FIXED_WF : [the WF to apply]
 
-    % vel_cons / M_cons
-    %   These two cannot conflict or there will be an error
+    % vel_cons
     %   There are three configurations
     %       [START, NaN] -> the constraint applys as a constant the entire time
     %       [NaN, END] -> unconstraint at the start and begins weighting as S^2 (more to the end).
@@ -22,9 +21,6 @@ function strut = missionSeg(name, type, input, vel_cons, M_cons, h_cons)
         vel_cons = [NaN, NaN];
     end
     if nargin < 5
-        M_cons = [NaN, NaN];
-    end
-    if nargin < 6
         h_cons = [NaN, NaN];
     end
 
@@ -37,9 +33,6 @@ function strut = missionSeg(name, type, input, vel_cons, M_cons, h_cons)
 
     strut.vel_start = vel_cons(1);
     strut.vel_end = vel_cons(2);
-
-    strut.M_start = M_cons(1);
-    strut.M_end = M_cons(2);
 
     strut.h_start = h_cons(1);
     strut.h_end = h_cons(2);

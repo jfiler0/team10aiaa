@@ -2,6 +2,8 @@ classdef mission_calculator < handle
 
     properties
         perf
+        perf_map
+        settings
         data
         record_hist = false
         do_print = false
@@ -9,13 +11,19 @@ classdef mission_calculator < handle
         dF_dh_prev = 0
         dF_dv_prev = 0
         grad_alpha  = 0.25
+
+        % global variables to track
+        h
+        v
+        W
         t = 0 % track current time (globally)
         d = 0 % track global distance
     end
 
     methods
-        function obj = mission_calculator(perf)
+        function obj = mission_calculator(perf, settings)
             obj.perf = perf;
+            obj.settings = settings;
             obj.hist = struct();
         end
 
@@ -35,13 +43,92 @@ classdef mission_calculator < handle
             obj.hist.segment_name= string.empty(0,1);
         end
 
-        function out = solve_mission(obj, mission)
+        function build_map(obj)
+            v_vec = linspace(150, 500, 15);
+            h_vec = linspace(0, ft2m(30000), 8);
+            W_vec = linspace(obj.perf.model.geom.weights.empty.v, obj.perf.model.geom.weights.mtow.v, 5);
+            EP_vec = linspace(-200, 200, 5);
+            
+            perf = obj.perf;
+            
+            % Create 4D grid
+            [V, H, W_grid, EP_grid] = ndgrid(v_vec, h_vec, W_vec, EP_vec);
+            
+            % Flatten for vectorized computation
+            v_flat = V(:)';
+            h_flat = H(:)';
+            W_flat = W_grid(:)';
+            EP_flat = EP_grid(:)';
+            
+            perf.model.cond = P_Specified_Condition(perf, EP_flat, h_flat, v_flat, W_flat);
+            
+            % Compute outputs and reshape to 4D grid
+            Throttle_grid = reshape(perf.model.cond.throttle.v, size(V));
+            TSFC_grid = reshape(perf.TSFC, size(V));
+            mdotf_grid = reshape(perf.mdotf, size(V));
+            ExcessThrust_grid = reshape(perf.ExcessThrust, size(V));
+            ExcessPower_grid = reshape(perf.ExcessPower, size(V));
+            MaxClimbAngle_grid = reshape(perf.ClimbAngle, size(V));
+            
+            % Create gridded interpolants
+            obj.perf_map = struct();
+            obj.perf_map.v_vec = v_vec;
+            obj.perf_map.h_vec = h_vec;
+            obj.perf_map.W_vec = W_vec;
+            obj.perf_map.EP_vec = EP_vec;
+            
+            % Original maps with EP as input
+            obj.perf_map.TSFC = griddedInterpolant({v_vec, h_vec, W_vec, EP_vec}, ...
+                                                  TSFC_grid, 'linear', 'linear');
+            obj.perf_map.mdotf = griddedInterpolant({v_vec, h_vec, W_vec, EP_vec}, ...
+                                                   mdotf_grid, 'linear', 'linear');
+            obj.perf_map.ExcessThrust = griddedInterpolant({v_vec, h_vec, W_vec, EP_vec}, ...
+                                                           ExcessThrust_grid, 'linear', 'linear');
+            obj.perf_map.ExcessPower = griddedInterpolant({v_vec, h_vec, W_vec, EP_vec}, ...
+                                                          ExcessPower_grid, 'linear', 'linear');
+            obj.perf_map.MaxClimbAngle = griddedInterpolant({v_vec, h_vec, W_vec, EP_vec}, ...
+                                                            MaxClimbAngle_grid, 'linear', 'linear');
+            obj.perf_map.Throttle = griddedInterpolant({v_vec, h_vec, W_vec, EP_vec}, ...
+                                                            Throttle_grid, 'linear', 'linear');
+            
+            % This is slower - having to build two maps but oh well
+            % Build a SECOND map with throttle on a regular grid
+            throttle_vec = linspace(0, 1, 10);
+            [V2, H2, W2_grid, T_grid] = ndgrid(v_vec, h_vec, W_vec, throttle_vec);
+            
+            v_flat2 = V2(:)';
+            h_flat2 = H2(:)';
+            W_flat2 = W2_grid(:)';
+            throttle_flat2 = T_grid(:)';
+            n_vec = ones(size(v_flat2));
+            
+            perf.model.clear_mem();
+            perf.clear_data();
+            perf.model.cond = generateCondition(perf.model.geom, h_flat2, v_flat2, ...
+                                                n_vec, W_flat2, throttle_flat2);
+            
+            EP_grid2 = reshape(perf.ExcessPower, size(V2));
+            
+            % Now you can use griddedInterpolant properly
+            obj.perf_map.ExcessPower_Throttle = griddedInterpolant({v_vec, h_vec, W_vec, throttle_vec}, ...
+                                                          EP_grid2, 'linear', 'linear');
+            
+            fprintf('Performance map built: %d grid points\n', numel(V) + numel(V2));
+            
+            perf.model.clear_mem(); 
+            perf.clear_data();
+        end
+
+        function solve_mission(obj, mission, start_cond)
             % mission object must be read from readMissionStruct function and built using a combination of missionSeg
             % the starting condition is buried in obj.perf.cond
 
             % reset these vaues
             obj.t = 0;
             obj.d = 0;
+            obj.h = start_cond.h.v;
+            obj.W = start_cond.W.v;
+            obj.v = start_cond.vel.v;
 
             if obj.record_hist
                 obj.init_hist();
@@ -53,20 +140,20 @@ classdef mission_calculator < handle
 
         end
 
-        function [hf, vf, Wf] = solve_section(obj, segment)
-            type = segment.type.v
+        function solve_section(obj, segment)
+            type = segment.type.v;
 
             if type == 'FIXED_WF'
                 disp("Implement!")
             else
-                fun = getFun(segment);
+                fun = obj.getFun(segment);
     
-                hi = obj.perf.model.cond.h.v; vi = obj.perf.model.cond.vel.v; Wi = obj.perf.model.cond.W.v; di = 0; ti = 0; ang_rate = 0;
+                di = 0; ti = 0;
                 i_limit = 5000;
                 dt = 5;
     
-                incr = 1.618; dt_max = 200; dt_min = 2; 
-                climb_limit_lower = 3; climb_limit_upper = 40;
+                incr = 1.618; dt_max = 50; dt_min = 2; 
+                climb_limit_lower = 3; climb_limit_upper = 10;
     
                 i = 0; S = 0;
                 while i < i_limit && S < 1
@@ -82,45 +169,39 @@ classdef mission_calculator < handle
                             error("Given mission type: %i is not a defined type.", type)
                     end
                     
-                    h_prev = hi;
-                    [hi, vi, Wi, di, ti] = obj.take_step(hi, vi, Wi, di, ti, dt, fun, S, segment.name.v);
+                    h_prev = obj.h;
+                    [di, ti] = obj.take_step(di, ti, dt, fun, S, segment.name.v);
     
-                    if abs(h_prev - hi) < climb_limit_lower
+                    if abs(h_prev - obj.h) < climb_limit_lower
                         dt = dt * incr;
-                    elseif abs(h_prev - hi) > climb_limit_upper
+                    elseif abs(h_prev - obj.h) > climb_limit_upper
                         dt = dt / incr;
                     end
                     dt = max(dt_min, min(dt_max, dt));
                     
                     if obj.do_print
-                        fprintf("dt = %.4g , ang_rate = %.4g , vi = %.4g, i = %i\n", dt, ang_rate, vi, i)
+                        fprintf("dt = %.4g , t = %.4g,  h = %.4g, v = %.4g, i = %i\n", dt, obj.t, obj.h, obj.v, i)
                     end
                 end
-    
-                fprintf("Final distance: %.4f\n", di)
-                fprintf("Iteration count: %i\n", i)
-    
-                hf = hi; vf = vi; Wf = Wi;
             end
         end
 
-        function perf = adjustPerf(obj, h, v, W)
-            obj.perf.model.clear_mem(); obj.perf.clear_data();
-            obj.perf.model.cond = levelFlightCondition(obj.perf, h, v, W);
-            perf = obj.perf;
-        end
+        % function perf = adjustPerf(obj, h, v, W)
+        %     obj.perf.model.clear_mem(); obj.perf.clear_data();
+        %     obj.perf.model.cond = levelFlightCondition(obj.perf, h, v, W);
+        %     perf = obj.perf;
+        % end
 
-        function [hi, vi, Wi, di, ti, dF_dh, dF_dv] = take_step(obj, hi, vi, Wi, di, ti, dt, fun, S, seg_name)
+        function [di, ti, dF_dh, dF_dv] = take_step(obj, di, ti, dt, fun, S, seg_name)
             angle_max = 10;
             dh = 10;
             dv = 5;
 
             % Smoothing these values helps quite a bit with both numerical stability and contuity with adaptive time stepping
             % Back to forward differencing from center to cut down on calls
-            P_center = obj.adjustPerf(hi, vi, Wi);
-            F_center = fun(P_center, S);
-            dF_dh_raw = ( fun(obj.adjustPerf(hi+dh, vi, Wi), S) - F_center ) / dh;
-            dF_dv_raw = ( fun(obj.adjustPerf(hi, vi+dv, Wi), S) - F_center ) / dv;
+            F_center = fun([obj.v, obj.h, obj.W, 0], S); % 0 means level flight
+            dF_dh_raw = ( fun([obj.v, obj.h + dh, obj.W, 0], S) - F_center ) / dh;
+            dF_dv_raw = ( fun([obj.v+dv, obj.h, obj.W, 0], S) - F_center ) / dv;
 
             dF_dh = obj.grad_alpha * dF_dh_raw + (1 - obj.grad_alpha) * obj.dF_dh_prev;
             dF_dv = obj.grad_alpha * dF_dv_raw + (1 - obj.grad_alpha) * obj.dF_dv_prev;
@@ -135,11 +216,9 @@ classdef mission_calculator < handle
 
             % Squaring gets batter damping when near optimum
             target_climb_angle = -angle_max * min(1, (dF_dh/dh_damp)^2 ) * sign(dF_dh);
-            PE_target = vi * sind(target_climb_angle);
+            PE_target = obj.v * sind(target_climb_angle);
 
-            cond = P_Specified_Condition(obj.perf, PE_target, hi, vi, Wi);
-            climbing_throttle = cond.throttle.v;
-
+            climbing_throttle = obj.perf_map.Throttle([obj.v, obj.h, obj.W, PE_target]);
             
             if dF_dv > 0
                 throttle = climbing_throttle * max(1 - (dF_dv/dv_damp)^2, 0);
@@ -148,37 +227,97 @@ classdef mission_calculator < handle
             end
 
             throttle = max(throttle, 0); % make sure it does not go under 0
+            EP_throttle = obj.perf_map.ExcessPower_Throttle(obj.v, obj.h, obj.W, throttle);
+                % How much excess power we get for this throttle setting
 
-            cond = generateCondition(obj.perf.model.geom, hi, vi, 1, Wi, throttle, obj.perf.model.cond);
-            obj.perf.model.cond = cond;
+            % used to do this extra check but it does not seem to be needed
+            % climb_angle = obj.perf.ClimbAngle(obj.perf.ExcessPower - PE_target);
+            climb_angle = target_climb_angle;
 
-            climb_angle = obj.perf.ClimbAngle(obj.perf.ExcessPower - PE_target);
+            I = [obj.v, obj.h, obj.W, EP_throttle]; % input - resolves throttle again
 
-            hi = hi + cond.vel.v * sind(climb_angle) * dt;
-            vi = vi + obj.perf.AxialAccelleration(PE_target) * obj.perf.model.settings.g_const * dt;
-            Wi = Wi - obj.perf.model.settings.g_const * obj.perf.mdotf * dt;
+            ET_Climb = PE_target * obj.W / obj.v; % excess thrust required for the climb
+            axial_acc = (obj.perf_map.ExcessThrust(I) - ET_Climb) / obj.W; % in Gs
+            mdotf = obj.perf_map.mdotf(I);
+
+            obj.h = obj.h + obj.v * sind(climb_angle) * dt;
+            obj.v = obj.v + axial_acc * obj.settings.g_const * dt;
+            obj.W = obj.W - obj.settings.g_const * mdotf * dt;
             
-            di = di + vi * dt;
-            obj.d = obj.d + vi * dt;
-            
+            di = di + obj.v * dt;            
             ti = ti + dt;
-            obj.t = obj.t + dt;
+
+            obj.d = obj.d + obj.v * dt; % tracking global distance
+            obj.t = obj.t + dt; % tracking global time
 
             if obj.record_hist
-                obj.hist.h(end+1)           = hi;
-                obj.hist.v(end+1)           = vi;
-                obj.hist.W(end+1)           = Wi;
+                obj.hist.h(end+1)           = obj.h;
+                obj.hist.v(end+1)           = obj.v;
+                obj.hist.W(end+1)           = obj.W;
                 obj.hist.d(end+1)           = obj.d;
                 obj.hist.t(end+1)           = obj.t; % using this is the global time instead of the local seg
                 obj.hist.throttle(end+1)    = throttle;
                 obj.hist.climb_angle(end+1) = climb_angle;
                 obj.hist.dF_dh(end+1)       = dF_dh;
                 obj.hist.dF_dv(end+1)       = dF_dv;
-                obj.hist.mdotf(end+1)       = obj.perf.mdotf;
-                obj.hist.TSFC(end+1)        = obj.perf.TSFC;
-                obj.hist.F(end+1)           = fun( obj.adjustPerf(hi, vi, Wi), S );
+                obj.hist.mdotf(end+1)       = mdotf;
+                obj.hist.TSFC(end+1)        = obj.perf_map.TSFC(I);
+                obj.hist.F(end+1)           = F_center;
                 obj.hist.segment_name(end+1)= seg_name;
             end
+        end
+
+        function fun = getFun(obj, segment)
+            % Return an anomouys function which takes P the current performance and S the state from 0 to 1
+            % The fact that we need ismissing instead of isnan is an annoying relaity of needing to read json files
+
+            % I = [V, H, W, EP]
+        
+            switch segment.type.v
+                % need scalers so the two functions are kinda near eachother
+                % Goal is to minimize these functions
+                case 'CRUISE'
+                    fun_obj = @(I) ( obj.perf_map.mdotf(I) ./ I(1) ) * ( 200 / 0.3 ); % I(1) is velocity
+                case 'LOITER'
+                    fun_obj = @(I) obj.perf_map.mdotf(I) / 0.3;
+                otherwise
+                    error("Given mission type: %i is not a defined type.", type)
+            end
+        
+            min_alt = 100; % Make sure we don't hit the ground
+            fun_const = @(I, S) 1E-3 * max(0, (min_alt - I(2))/min_alt); % I(2) is altitude
+        
+            R = 1E-3; % changes how much objective is penalized due to the constraints
+        
+            a = 0.75; % When the tail constraint activates
+        
+            if ~ismissing(segment.h_start)
+                if ~ismissing(segment.h_end)
+                    fun_const = @(I, S) fun_const(I, S) + R * pseduo_huber((1-S)*segment.h_start + S*segment.h_end, I(2), 1E3);
+                else
+                    fun_const = @(I, S) fun_const(I, S) + R * pseduo_huber(segment.h_start, I(2), 1E3);
+                end
+            else
+                if ~ismissing(segment.h_end)
+                    % S^2 helps it stay free at the start and then quickly go to the constraint at the end
+                    fun_const = @(I, S) fun_const(I, S) + ( max( S-a, 0)/(1-a) )^2 * R * pseduo_huber(segment.h_end, I(2), 1E3);
+                end
+            end
+        
+            if ~ismissing(segment.vel_start)
+                if ~ismissing(segment.vel_end)
+                    fun_const = @(I, S) fun_const(I, S) + R * pseduo_huber((1-S)*segment.vel_start + S*segment.vel_end, I(1), 100);
+                else
+                    fun_const = @(I, S) fun_const(I, S) + R * pseduo_huber(segment.vel_start, I(1), 100);
+                end
+            else
+                if ~ismissing(segment.vel_end)
+                    % S^2 helps it stay free at the start and then quickly go to the constraint at the end
+                    fun_const = @(I, S) fun_const(I, S) + ( max( S-a, 0)/(1-a) )^2 * R * pseduo_huber(segment.vel_end, I(1), 100);
+                end
+            end
+        
+            fun = @(I, S) fun_obj(I) + fun_const(I, S);
         end
 
         function plot_hist(obj)
@@ -271,72 +410,3 @@ function ylim_percentile(data, percentile)
     end
 end
 
-function fun = getFun(segment)
-    % Return an anomouys function which takes P the current performance and S the state from 0 to 1
-    % The fact that we need ismissing instead of isnan is an annoying relaity of needing to read json files
-
-    switch segment.type.v
-        % need scalers so the two functions are kinda near eachother
-        % Goal is to minimize these functions
-        case 'CRUISE'
-            fun_obj = @(P) ( P.mdotf ./ P.model.cond.vel.v ) * ( 200 / 0.3 );
-        case 'LOITER'
-            fun_obj = @(P) P.mdotf / 0.3;
-        otherwise
-            error("Given mission type: %i is not a defined type.", type)
-    end
-
-    if ( ~ismissing(segment.vel_start) || ~ismissing(segment.vel_end) ) && ( ~ismissing(segment.M_start) || ~ismissing(segment.M_end) )
-        warning("Having both mach and velocity constraints active is not recommended");
-    end
-
-    min_alt = 100; % Make sure we don't hit the ground
-    fun_const = @(P, S) 1E-3 * max(0, (min_alt - P.model.cond.h.v)/min_alt);
-
-    R = 1E-3; % changes how much objective is penalized due to the constraints
-
-    a = 0.75; % When the tail constraint activates
-
-    if ~ismissing(segment.h_start)
-        if ~ismissing(segment.h_end)
-            fun_const = @(P, S) fun_const(P, S) + R * pseduo_huber((1-S)*segment.h_start + S*segment.h_end, P.model.cond.h.v, 1E3);
-        else
-            fun_const = @(P, S) fun_const(P, S) + R * pseduo_huber(segment.h_start, P.model.cond.h.v, 1E3);
-        end
-    else
-        if ~ismissing(segment.h_end)
-            % S^2 helps it stay free at the start and then quickly go to the constraint at the end
-            fun_const = @(P, S) fun_const(P, S) + ( max( S-a, 0)/(1-a) )^2 * R * pseduo_huber(segment.h_end, P.model.cond.h.v, 1E3);
-        end
-    end
-
-    
-
-    if ~ismissing(segment.vel_start)
-        if ~ismissing(segment.vel_end)
-            fun_const = @(P, S) fun_const(P, S) + R * pseduo_huber((1-S)*segment.vel_start + S*segment.vel_end, P.model.cond.vel.v, 100);
-        else
-            fun_const = @(P, S) fun_const(P, S) + R * pseduo_huber(segment.vel_start, P.model.cond.vel.v, 100);
-        end
-    else
-        if ~ismissing(segment.vel_end)
-            % S^2 helps it stay free at the start and then quickly go to the constraint at the end
-            fun_const = @(P, S) fun_const(P, S) + ( max( S-a, 0)/(1-a) )^2 * R * pseduo_huber(segment.vel_end, P.model.cond.vel.v, 100);
-        end
-    end
-
-    if ~ismissing(segment.M_start)
-        if ~ismissing(segment.M_end)
-            fun_const = @(P, S) fun_const(P, S) + R * pseduo_huber((1-S)*segment.M_start + S*segment.M_end, P.model.cond.M.v, 1);
-        else
-            fun_const = @(P, S) fun_const(P, S) + R * pseduo_huber(segment.M_start, P.model.cond.M.v, 1);
-        end
-    else
-        if ~ismissing(segment.M_end)
-            % S^2 helps it stay free at the start and then quickly go to the constraint at the end
-            fun_const = @(P, S) fun_const(P, S) + ( max( S-a, 0)/(1-a) )^2 * R * pseduo_huber(segment.M_end, P.model.cond.M.v, 1);
-        end
-    end
-
-    fun = @(P, S) fun_obj(P) + fun_const(P, S);
-end

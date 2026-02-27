@@ -1,12 +1,17 @@
-function writeMissionStruct(mission, name)
+function writeMissionStruct(mission, name, loadout)
     % Input the structure object. The name will be generated from the id
     % Writes to the "Aircraft Files" folder
+
+    if nargin < 3
+        loadout = "";
+    end
 
     name = matlab.lang.makeValidName(name);
 
     mission_obj = struct();
     mission_obj.name = json_entry("Name", name, "s");
     mission_obj.data = mission;
+    mision_obj.loadout = loadout;
 
     fullPath = mfilename('fullpath');
     codeFolder = fileparts(fullPath);

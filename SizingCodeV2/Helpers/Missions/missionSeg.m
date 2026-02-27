@@ -18,21 +18,41 @@ function strut = missionSeg(name, type, input, vel_cons, M_cons, h_cons)
     %       [NaN, END] -> unconstraint at the start and begins weighting as S^2 (more to the end).
     %       [START, END] -> linear interp between the two constraints
 
+    if nargin < 4
+        vel_cons = [NaN, NaN];
+    end
+    if nargin < 5
+        M_cons = [NaN, NaN];
+    end
+    if nargin < 6
+        h_cons = [NaN, NaN];
+    end
+
     strut = struct();
 
     % SAVE THE INPUTS
     strut.name = json_entry("Name", name, "s");
     strut.type = json_entry("Name", type, "s");
     strut.input = input;
-    strut.vel_cons = vel_cons;
-    strut.M_cons = M_cons;
-    strut.h_cons = h_cons;
+
+    strut.vel_start = vel_cons(1);
+    strut.vel_end = vel_cons(2);
+
+    strut.M_start = M_cons(1);
+    strut.M_end = M_cons(2);
+
+    strut.h_start = h_cons(1);
+    strut.h_end = h_cons(2);
 
     switch type
         case 'CRUISE'
             strut.distance = json_entry("Distance", input(1), "m"); % meters
+
+            strut.time = NaN; strut.load_factor = NaN; strut.racks_to_deploy = NaN; strut.WFi = NaN;
         case 'LOITER'
             strut.time = json_entry("Time", input(1), "min"); % minutes
+
+            strut.distance = NaN; strut.load_factor = NaN; strut.racks_to_deploy = NaN; strut.WFi = NaN;
         case 'COMBAT'
             strut.time = json_entry("Time", input(1), "min"); % minutes
             strut.load_factor = json_entry("Load Factor", input(2), "");
@@ -42,8 +62,12 @@ function strut = missionSeg(name, type, input, vel_cons, M_cons, h_cons)
             else
                 strut.do_deploy = true;
             end
+
+            strut.distance = NaN; strut.time = NaN; strut.WFi = NaN;
         case 'FIXED_WF'
             strut.WFi = json_entry("WF Applied", input(1), "");
+
+            strut.distance = NaN; strut.time = NaN; strut.load_factor = NaN; strut.racks_to_deploy = NaN;
         otherwise
            error("'%s' is not a recognized mission segment type.", type);
     end

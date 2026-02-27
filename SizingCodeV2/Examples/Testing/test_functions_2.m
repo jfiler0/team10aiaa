@@ -18,7 +18,8 @@ geom = setLoadout(geom, ["AIM-9X" "" "" "AIM-120" "AIM-120" "" "" "AIM-9x"]);
 
 % 3599 iterations with no adaptive
 
-model = model_class(settings, geom); % not including condition
+cond = generateCondition(geom, 0, 0.5, 1, 1, 0.3);
+model = model_class(settings, geom, cond);
 perf = performance_class(model);
 % max_performance_plots(perf, 50)
 % levelflight_performance_plots(perf, 50)
@@ -27,15 +28,17 @@ mission_calculator = mission_calculator(perf);
 mission_calculator.record_hist = true;
 mission_calculator.do_print = true;
 
+mission = readMissionStruct("Ferry_Mission_Test");
+% mission = readMissionStruct("Simple_Loiter_Mission");
+% mission = readMissionStruct("Simple_Range_Mission");
+
 tic
-
-[hf, vf, Wf] = mission_calculator.solve_section(0, 150, geom.weights.mtow.v);
-
+mission_calculator.solve_mission(mission);
 toc
 
-% displayAircraftGeom(geom);
-
 mission_calculator.plot_hist
+
+% % displayAircraftGeom(geom);
 
 %% STORAGE
 

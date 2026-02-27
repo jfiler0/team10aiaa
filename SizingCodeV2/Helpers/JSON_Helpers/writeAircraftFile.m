@@ -13,5 +13,4 @@ function writeAircraftFile(geom)
     fileID = fopen(saveFile, 'w');
     fwrite(fileID, jsonText, 'char');
     fclose(fileID);
-
 end

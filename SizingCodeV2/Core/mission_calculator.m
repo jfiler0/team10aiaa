@@ -130,6 +130,8 @@ classdef mission_calculator < handle
             obj.W = start_cond.W.v;
             obj.v = start_cond.vel.v;
 
+            obj.perf.model.geom = setLoadout(obj.perf.model.geom, ["AIM-9X" "" "" "AIM-120" "AIM-120" "" "" "AIM-9x"]);
+
             if obj.record_hist
                 obj.init_hist();
             end
@@ -143,7 +145,7 @@ classdef mission_calculator < handle
         function solve_section(obj, segment)
             type = segment.type.v;
 
-            if type == 'FIXED_WF'
+            if (type == 'FIXED_WF') || (type == 'COMBAT')
                 disp("Implement!")
             else
                 fun = obj.getFun(segment);
@@ -185,12 +187,6 @@ classdef mission_calculator < handle
                 end
             end
         end
-
-        % function perf = adjustPerf(obj, h, v, W)
-        %     obj.perf.model.clear_mem(); obj.perf.clear_data();
-        %     obj.perf.model.cond = levelFlightCondition(obj.perf, h, v, W);
-        %     perf = obj.perf;
-        % end
 
         function [di, ti, dF_dh, dF_dv] = take_step(obj, di, ti, dt, fun, S, seg_name)
             angle_max = 10;

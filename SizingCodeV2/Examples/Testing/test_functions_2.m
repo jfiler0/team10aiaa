@@ -2,46 +2,35 @@
 % PURPOSE:
 %   Replaces test_functions with the new aircraft class. Demonsrates how to load in all the classes and run basic calls
 
-% MAKE SURE TO RUN initialize.m
-
+% STARTUP FUNCTIONS
 initialize
 matlabSetup
 build_kevin_cad
 
+% INITIAL OBJECTS TO LOAD
 settings = readSettings();
-
-% geom = loadAircraft("f18_superhornet", settings);
-
-geom = loadAircraft("kevin_cad", settings);
-
-geom = setLoadout(geom, ["AIM-9X" "" "" "AIM-120" "AIM-120" "" "" "AIM-9x"]);
-
-% 3599 iterations with no adaptive
-
-cond = generateCondition(geom, 0, 0.5, 1, 1, 0.3);
-model = model_class(settings, geom, cond);
+geom = loadAircraft("f18_superhornet", settings);
+% geom = loadAircraft("kevin_cad", settings);
+model = model_class(settings, geom);
 perf = performance_class(model);
-% max_performance_plots(perf, 50)
-% levelflight_performance_plots(perf, 50)
 
+% PRELOAD THE MISSION CALCULATOR
 mission_calculator = mission_calculator(perf, settings);
 mission_calculator.record_hist = true;
 mission_calculator.do_print = false;
-
 tic
 mission_calculator.build_map(); % assembles v, h, W map for key performance info
 toc
 
-perf.model.cond = cond;
-mission = readMissionStruct("Ferry_Mission_Test");
-% mission = readMissionStruct("Simple_Loiter_Mission");
-% mission = readMissionStruct("Simple_Range_Mission");
+%% RUN A MISSION
+mission = readMissionStruct("Air2Gnd_700nm");
 
+cond = generateCondition(geom, 0, 0.5, 1, 1, 0.3);
 tic
 mission_calculator.solve_mission(mission, cond);
 toc
 
-% mission_calculator.plot_hist
+mission_calculator.plot_hist
 
 % % displayAircraftGeom(geom);
 

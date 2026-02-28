@@ -119,18 +119,21 @@ classdef mission_calculator < handle
             perf.clear_data();
         end
 
-        function solve_mission(obj, mission, start_cond)
+        function solve_mission(obj, mission, h0, v0, fuel_weight_start)
             % mission object must be read from readMissionStruct function and built using a combination of missionSeg
             % the starting condition is buried in obj.perf.cond
+            % fuel_weight_start -> ratio from 0 to 1 of how much the tank starts loaded
+
+            obj.perf.model.geom = setLoadout(obj.perf.model.geom, ["AIM-9X" "" "" "AIM-120" "AIM-120" "" "" "AIM-9x"]);
 
             % reset these vaues
             obj.t = 0;
             obj.d = 0;
-            obj.h = start_cond.h.v;
-            obj.W = start_cond.W.v;
-            obj.v = start_cond.vel.v;
-
-            obj.perf.model.geom = setLoadout(obj.perf.model.geom, ["AIM-9X" "" "" "AIM-120" "AIM-120" "" "" "AIM-9x"]);
+            obj.h = h0;
+            obj.v = v0;
+            obj.W = obj.perf.model.geom.weights.empty.v + ...
+                    obj.perf.model.geom.weights.loaded.v + ...
+                    fuel_weight_start * obj.perf.model.geom.weights.max_fuel_weight.v;
 
             if obj.record_hist
                 obj.init_hist();

@@ -25,9 +25,9 @@ toc
 %% RUN A MISSION
 mission = readMissionStruct("Air2Gnd_700nm");
 
-cond = generateCondition(geom, 0, 0.5, 1, 1, 0.3);
+cond = generateCondition(geom, 0, 0.5, 1, 1, 0.3); % the weight here does not actually matter
 tic
-mission_calculator.solve_mission(mission, cond);
+mission_calculator.solve_mission(mission, 0, 150, 1);
 toc
 
 mission_calculator.plot_hist

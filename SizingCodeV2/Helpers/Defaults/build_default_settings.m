@@ -32,6 +32,8 @@ set.TSFC_scaler = 1;
 set.codes = build_default_codes();
 
 set.WE_model = set.codes.WE_COMPS;
+set.WF_max_ratio = 0.5; % WF = WF_ratio * (MTOW - WE)
+
 set.CD0_model = set.codes.CD0_BASIC;
 set.CDi_model = set.codes.CDi_BASIC_SUBSONIC;
 set.CDw_model = set.codes.CDw_BASIC;

@@ -8,6 +8,7 @@ classdef mission_calculator < handle
         record_hist = false
         do_print = false
         hist
+        mission
         dF_dh_prev = 0
         dF_dv_prev = 0
         grad_alpha  = 0.25
@@ -25,22 +26,6 @@ classdef mission_calculator < handle
             obj.perf = perf;
             obj.settings = settings;
             obj.hist = struct();
-        end
-
-        function init_hist(obj)
-            obj.hist.h           = [];
-            obj.hist.v           = [];
-            obj.hist.W           = [];
-            obj.hist.d           = [];
-            obj.hist.t           = [];
-            obj.hist.throttle    = [];
-            obj.hist.climb_angle = [];
-            obj.hist.dF_dh       = [];
-            obj.hist.dF_dv       = [];
-            obj.hist.mdotf       = [];
-            obj.hist.TSFC        = [];
-            obj.hist.F           = [];
-            obj.hist.segment_name= string.empty(0,1);
         end
 
         function build_map(obj)
@@ -112,17 +97,16 @@ classdef mission_calculator < handle
             % Now you can use griddedInterpolant properly
             obj.perf_map.ExcessPower_Throttle = griddedInterpolant({v_vec, h_vec, W_vec, throttle_vec}, ...
                                                           EP_grid2, 'linear', 'linear');
-            
-            fprintf('Performance map built: %d grid points\n', numel(V) + numel(V2));
-            
+                        
             perf.model.clear_mem(); 
             perf.clear_data();
         end
 
-        function solve_mission(obj, mission, h0, v0, fuel_weight_start)
+        function [W_end, total_distance] = solve_mission(obj, mission, h0, v0, fuel_weight_start)
             % mission object must be read from readMissionStruct function and built using a combination of missionSeg
             % the starting condition is buried in obj.perf.cond
             % fuel_weight_start -> ratio from 0 to 1 of how much the tank starts loaded
+            obj.mission = mission;
 
             obj.perf.model.geom = setLoadout(obj.perf.model.geom, ["AIM-9X" "" "" "AIM-120" "AIM-120" "" "" "AIM-9x"]);
 
@@ -136,20 +120,52 @@ classdef mission_calculator < handle
                     fuel_weight_start * obj.perf.model.geom.weights.max_fuel_weight.v;
 
             if obj.record_hist
-                obj.init_hist();
+                obj.hist.h           = obj.h;
+                obj.hist.v           = obj.v;
+                obj.hist.W           = obj.W;
+                obj.hist.d           = obj.d;
+                obj.hist.t           = obj.t; % using this is the global time instead of the local seg
+                obj.hist.throttle    = [NaN];
+                obj.hist.climb_angle = [NaN];
+                obj.hist.dF_dh       = [NaN];
+                obj.hist.dF_dv       = [NaN];
+                obj.hist.mdotf       = [NaN];
+                obj.hist.TSFC        = [NaN];
+                obj.hist.F           = [NaN];
+                obj.hist.segment_name= [mission.data(1).name.v];
             end
 
             for i = 1:length(mission.data)
                 obj.solve_section(mission.data(i));
             end
 
+            W_end = obj.W;
+            total_distance = obj.d;
         end
 
         function solve_section(obj, segment)
             type = segment.type.v;
 
-            if (type == 'FIXED_WF') || (type == 'COMBAT')
-                disp("Implement!")
+            if strcmp(type, 'FIXED_WF')
+                fuel_burned = obj.W * (1 - segment.WFi.v);
+                obj.W = obj.W - fuel_burned;
+                obj.t = obj.t + segment.time.v * 60;
+
+                if obj.record_hist
+                    obj.hist.h(end+1)           = obj.h;
+                    obj.hist.v(end+1)           = obj.v;
+                    obj.hist.W(end+1)           = obj.W;
+                    obj.hist.d(end+1)           = obj.d;
+                    obj.hist.t(end+1)           = obj.t; % using this is the global time instead of the local seg
+                    obj.hist.throttle(end+1)    = NaN;
+                    obj.hist.climb_angle(end+1) = NaN;
+                    obj.hist.dF_dh(end+1)       = NaN;
+                    obj.hist.dF_dv(end+1)       = NaN;
+                    obj.hist.mdotf(end+1)       = NaN;
+                    obj.hist.TSFC(end+1)        = NaN;
+                    obj.hist.F(end+1)           = NaN;
+                    obj.hist.segment_name(end+1)= segment.name.v;
+                end
             else
                 fun = obj.getFun(segment);
     
@@ -170,12 +186,14 @@ classdef mission_calculator < handle
                             S = di / segment.distance.v;
                         case 'LOITER'
                             S = ti / (segment.time.v * 60 ); % converting from minutes to seconds here
+                        case 'COMBAT'
+                            S = ti / (segment.time.v * 60 ); % converting from minutes to seconds here
                         otherwise
                             error("Given mission type: %i is not a defined type.", type)
                     end
                     
                     h_prev = obj.h;
-                    [di, ti] = obj.take_step(di, ti, dt, fun, S, segment.name.v);
+                    [di, ti] = obj.take_step(di, ti, dt, fun, S, segment);
     
                     if abs(h_prev - obj.h) < climb_limit_lower
                         dt = dt * incr;
@@ -191,7 +209,7 @@ classdef mission_calculator < handle
             end
         end
 
-        function [di, ti, dF_dh, dF_dv] = take_step(obj, di, ti, dt, fun, S, seg_name)
+        function [di, ti, dF_dh, dF_dv] = take_step(obj, di, ti, dt, fun, S, segment)
             angle_max = 10;
             dh = 10;
             dv = 5;
@@ -217,12 +235,17 @@ classdef mission_calculator < handle
             target_climb_angle = -angle_max * min(1, (dF_dh/dh_damp)^2 ) * sign(dF_dh);
             PE_target = obj.v * sind(target_climb_angle);
 
-            climbing_throttle = obj.perf_map.Throttle([obj.v, obj.h, obj.W, PE_target]);
-            
-            if dF_dv > 0
-                throttle = climbing_throttle * max(1 - (dF_dv/dv_damp)^2, 0);
+            % Override throttle to max if combat
+            if strcmp(segment.type.v, 'COMBAT')
+                throttle = 1;
             else
-                throttle = climbing_throttle + (1 - climbing_throttle) * min(1, (dF_dv/dv_damp)^2 );
+                climbing_throttle = obj.perf_map.Throttle([obj.v, obj.h, obj.W, PE_target]);
+                
+                if dF_dv > 0
+                    throttle = climbing_throttle * max(1 - (dF_dv/dv_damp)^2, 0);
+                else
+                    throttle = climbing_throttle + (1 - climbing_throttle) * min(1, (dF_dv/dv_damp)^2 );
+                end
             end
 
             throttle = max(throttle, 0); % make sure it does not go under 0
@@ -262,7 +285,7 @@ classdef mission_calculator < handle
                 obj.hist.mdotf(end+1)       = mdotf;
                 obj.hist.TSFC(end+1)        = obj.perf_map.TSFC(I);
                 obj.hist.F(end+1)           = F_center;
-                obj.hist.segment_name(end+1)= seg_name;
+                obj.hist.segment_name(end+1)= segment.name.v;
             end
         end
 
@@ -279,6 +302,8 @@ classdef mission_calculator < handle
                     fun_obj = @(I) ( obj.perf_map.mdotf(I) ./ I(1) ) * ( 200 / 0.3 ); % I(1) is velocity
                 case 'LOITER'
                     fun_obj = @(I) obj.perf_map.mdotf(I) / 0.3;
+                case 'COMBAT'
+                    fun_obj = @(I) obj.perf_map.ExcessPower(I) / 100;
                 otherwise
                     error("Given mission type: %i is not a defined type.", type)
             end
@@ -324,43 +349,49 @@ classdef mission_calculator < handle
             
             % Prepare data
             d_km = obj.hist.d / 1000;
+            t_min = obj.hist.t / 60;  % Convert to minutes
             
             % Get unique segments and assign colors
             [unique_segments, ~, segment_idx] = unique(obj.hist.segment_name, 'stable');
             colors = lines(length(unique_segments));
             
-            % Define plot specifications
-            plots = {
-                obj.hist.h,            'Range [km]', 'h [m]',        'Altitude';
-                obj.hist.v,            'Range [km]', 'v [m/s]',      'Velocity';
-                obj.hist.W,            'Range [km]', 'W [N]',        'Weight';
-                obj.hist.throttle,     'Range [km]', '-',            'Throttle';
-                obj.hist.climb_angle,  'Range [km]', 'deg',          'Climb Angle';
-                obj.hist.F,            'Range [km]', '-',            'F';
-                obj.hist.TSFC,         'Range [km]', 'kg/(N*s)',     'TSFC';
-                obj.hist.dF_dh,        'Range [km]', '-',            'dF/dh';
-                obj.hist.dF_dv,        'Range [km]', '-',            'dF/dv'
-            };
-            
-            % Create figure
-            figure('Name', 'Mission History');
-            
-            % Plot each subplot
-            for i = 1:size(plots, 1)
-                subplot(3, 3, i);
-                plot_segmented_data(d_km, plots{i,1}, segment_idx, colors, unique_segments);
-                xlabel(plots{i,2});
-                ylabel(plots{i,3});
-                title(plots{i,4});
-                grid on;
-                axis tight;
-                ylim_percentile(plots{i,1}, 99);
-                
-                % Add legend only to first subplot
-                if i == 1
-                    legend(unique_segments, 'Location', 'best', 'FontSize', 8);
-                end
+            if obj.settings.be_imperial
+                plots = {
+                    m2ft(obj.hist.h),            'h [ft]',        'Altitude';
+                    m2ft(obj.hist.v),            'v [ft/s]',      'Velocity';
+                    N2lb(obj.hist.W),            'W [lb]',        'Weight';
+                    obj.hist.throttle,     'Throttle',     'Throttle';
+                    obj.hist.climb_angle,  'Angle [deg]',  'Climb Angle';
+                    kgNs_2_lbmlbfhr(obj.hist.TSFC),         'TSFC [lbm/lbfhr]', 'TSFC'
+                };
+            else
+                plots = {
+                    obj.hist.h,            'h [m]',        'Altitude';
+                    obj.hist.v,            'v [m/s]',      'Velocity';
+                    obj.hist.W,            'W [N]',        'Weight';
+                    obj.hist.throttle,     'Throttle',     'Throttle';
+                    obj.hist.climb_angle,  'Angle [deg]',  'Climb Angle';
+                    obj.hist.TSFC,         'TSFC [s]', 'TSFC'
+                };
             end
+            
+            % Determine if we should use point markers (very few unique x values)
+            use_points = (length(unique(d_km)) <= 2);
+            
+            % Create figure 1: vs Distance
+            figure('Name', 'Mission History vs Distance');
+            if obj.settings.be_imperial
+                plot_mission_data(m2nm(d_km*1000), 'Range [nm]', plots, segment_idx, colors, ...
+                                 unique_segments, use_points);
+            else
+                plot_mission_data(d_km, 'Range [km]', plots, segment_idx, colors, ...
+                                 unique_segments, use_points);
+            end
+            
+            % Create figure 2: vs Time
+            figure('Name', 'Mission History vs Time');
+            plot_mission_data(t_min, 'Time [min]', plots, segment_idx, colors, ...
+                             unique_segments, use_points);
         end
     end
 end
@@ -369,10 +400,62 @@ function out = pseduo_huber(x_target, x_current, scale)
     out = scale * (sqrt(1 + ((x_current - x_target)/scale)^2) - 1);
 end
 
-function plot_segmented_data(x, y, segment_idx, colors, segment_names)
-    % Plot data with different colors for each segment
+function plot_mission_data(x_data, x_label, plots, segment_idx, colors, ...
+                          segment_names, use_points)
+    % Create 3x3 grid: left 3x2 for plots, right column for legend
+    n_plots = size(plots, 1);
+    
+    for i = 1:n_plots
+        % Map to left 2 columns: [1,2], [4,5], [7,8]
+        row = floor((i-1)/2) + 1;
+        col = mod(i-1, 2) + 1;
+        plot_idx = (row-1)*3 + col;
+        
+        subplot(3, 3, plot_idx);
+        
+        if use_points
+            plot_segmented_points(x_data, plots{i,1}, segment_idx, colors);
+        else
+            plot_segmented_data(x_data, plots{i,1}, segment_idx, colors);
+        end
+        
+        xlabel(x_label);
+        ylabel(plots{i,2});
+        title(plots{i,3});
+        grid on;
+        axis tight;
+        ylim_percentile(plots{i,1}, 99);
+    end
+    
+    % Create large legend spanning entire right column [3, 6, 9]
+    subplot(3, 3, [3, 6, 9]);
+    axis off;
+    
+    % Create dummy lines for legend
     hold on;
+    legend_handles = [];
     for seg = 1:length(segment_names)
+        if use_points
+            h = plot(NaN, NaN, 'o', 'Color', colors(seg,:), 'MarkerFaceColor', colors(seg,:), ...
+                    'MarkerSize', 8, 'DisplayName', segment_names{seg});
+        else
+            h = plot(NaN, NaN, 'Color', colors(seg,:), 'LineWidth', 2, ...
+                    'DisplayName', segment_names{seg});
+        end
+        legend_handles(end+1) = h;
+    end
+    hold off;
+    
+    % Display legend
+    leg = legend(legend_handles, 'Location', 'northwest', 'FontSize', 12);
+    leg.Box = 'on';
+    title('Mission Segments', 'FontSize', 14, 'FontWeight', 'bold');
+end
+
+function plot_segmented_data(x, y, segment_idx, colors)
+    % Plot line data with different colors for each segment
+    hold on;
+    for seg = 1:max(segment_idx)
         idx = segment_idx == seg;
         
         % Include last point from previous segment to connect
@@ -383,7 +466,18 @@ function plot_segmented_data(x, y, segment_idx, colors, segment_names)
             end
         end
         
-        plot(x(idx), y(idx), 'Color', colors(seg,:), 'LineWidth', 1.5, 'DisplayName', segment_names{seg});
+        plot(x(idx), y(idx), 'Color', colors(seg,:), 'LineWidth', 1.5);
+    end
+    hold off;
+end
+
+function plot_segmented_points(x, y, segment_idx, colors)
+    % Plot point data with different colors for each segment
+    hold on;
+    for seg = 1:max(segment_idx)
+        idx = segment_idx == seg;
+        plot(x(idx), y(idx), 'o', 'Color', colors(seg,:), ...
+            'MarkerFaceColor', colors(seg,:), 'MarkerSize', 8);
     end
     hold off;
 end

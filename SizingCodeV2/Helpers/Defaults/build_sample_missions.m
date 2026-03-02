@@ -1,15 +1,15 @@
 Ferry_700nm = { ...
-    missionSeg("TAKEOFF", 'FIXED_WF', 0.98), ... % basic takeoff
+    missionSeg("TAKEOFF", 'FIXED_WF', [0.98, 5]), ... % basic takeoff
     missionSeg("CRUISE_FREE", 'CRUISE', nm2m(50), [NaN, NaN], [0, ft2m(10000)] ), ... % Climb to 10kf in 50nm
     missionSeg("CRUISE_FREE", 'CRUISE', nm2m(1400-50)), ... % Unconsrained cruise
     missionSeg("LOITER", 'LOITER', 20, [NaN, NaN], [ft2m(10000), NaN] ), ... % maintain 10kf for 20 minutes
     missionSeg("APPROACH", 'LOITER', 5, [NaN, NaN], [ft2m(10000), 0] ), ... % descend from 10kf to sealevel in 5 minutes
-    missionSeg("LANDING", 'FIXED_WF', 0.98)}; % basic landing/taxi
+    missionSeg("LANDING", 'FIXED_WF', [0.98, 5])}; % basic landing/taxi
 
 writeMissionStruct(Ferry_700nm, "Ferry_700nm",  ["AIM-9X" "" "" "" "" "" "" "AIM-9x"]);
 
 Air2Air_700nm = { ...
-    missionSeg("TAKEOFF", 'FIXED_WF', 0.98), ... % basic takeoff
+    missionSeg("TAKEOFF", 'FIXED_WF', [0.98, 5]), ... % basic takeoff
     missionSeg("CLIMB_1", 'CRUISE', nm2m(50), [NaN, NaN], [0, ft2m(10000)] ), ... % Climb to 10kf in 50nm
     missionSeg("CRUISE_1", 'CRUISE', nm2m(650)), ... % Unconsrained cruise for 700nm
     missionSeg("LOITER", 'LOITER', 20, [NaN, NaN], [ft2m(10000), NaN] ), ... % maintain 10kf for 20 minutes
@@ -17,21 +17,21 @@ Air2Air_700nm = { ...
     missionSeg("CLIMB_2", 'CRUISE', nm2m(50), [NaN, NaN], [0, ft2m(10000)] ), ... % Climb to 10kf in 50nm
     missionSeg("CRUISE_2", 'CRUISE', nm2m(650)), ... % Unconsrained cruise for 700nm
     missionSeg("APPROACH", 'LOITER', 5, [NaN, NaN], [ft2m(10000), 0] ), ... % descend from 10kf to sealevel in 5 minutes
-    missionSeg("LANDING", 'FIXED_WF', 0.98)}; % basic landing/taxi
+    missionSeg("LANDING", 'FIXED_WF', [0.98, 5])}; % basic landing/taxi
 
 writeMissionStruct(Air2Air_700nm, "Air2Air_700nm",  ["AIM-9X" "AIM-9X" "AIM-120" "" "" "AIM-120" "AIM-9X" "AIM-9x"]);
 
 Air2Gnd_700nm = { ...
-    missionSeg("TAKEOFF", 'FIXED_WF', 0.98), ... % basic takeoff
+    missionSeg("TAKEOFF", 'FIXED_WF', [0.98, 5]), ... % basic takeoff
     missionSeg("CLIMB_1", 'CRUISE', nm2m(50), [NaN, NaN], [0, ft2m(10000)] ), ... % Climb to 10kf in 50nm
     missionSeg("CRUISE_1", 'CRUISE', nm2m(600)), ... % Unconsrained cruise for 700nm
     missionSeg("DESCENT", 'CRUISE', nm2m(50), [NaN, 250], [NaN, 200] ), ...
     missionSeg("INTERDICTION", 'CRUISE', nm2m(20), [250, NaN], [200, NaN] ), ...
-    missionSeg("COMBAT", 'COMBAT', [8, 3, 1, 2, 3], [NaN, NaN], [ft2m(10000), NaN] ), ... %8 minutes of combat, full throttle, holing 3 Gs. Deploy racks 1,2,3
+    missionSeg("COMBAT", 'COMBAT', [8, 3, 1, 2, 3], [NaN, NaN], [200, NaN] ), ... %8 minutes of combat, full throttle, holing 3 Gs. Deploy racks 1,2,3
     missionSeg("CLIMB OUT", 'CRUISE', nm2m(50), [250, NaN], [1000, ft2m(10000)] ), ...
     missionSeg("CRUISE_2", 'CRUISE', nm2m(650)), ... % Unconsrained cruise for 700nm
     missionSeg("APPROACH", 'LOITER', 5, [NaN, NaN], [ft2m(10000), 0] ), ... % descend from 10kf to sealevel in 5 minutes
-    missionSeg("LANDING", 'FIXED_WF', 0.98)}; % basic landing/taxi
+    missionSeg("LANDING", 'FIXED_WF', [0.98, 5])}; % basic landing/taxi
 
 writeMissionStruct(Air2Gnd_700nm, "Air2Gnd_700nm",  ["AIM-9X" "Mk-83" "Mk-83" "" "" "Mk-83" "Mk-83" "AIM-9x"]);
 

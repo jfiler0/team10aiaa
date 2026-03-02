@@ -9,30 +9,103 @@ build_kevin_cad
 
 % INITIAL OBJECTS TO LOAD
 settings = readSettings();
-geom = loadAircraft("f18_superhornet", settings);
+geom = loadAircraft("kevin_cad", settings);
 % geom = loadAircraft("kevin_cad", settings);
 model = model_class(settings, geom);
 perf = performance_class(model);
 
-% PRELOAD THE MISSION CALCULATOR
-mission_calculator = mission_calculator(perf, settings);
-mission_calculator.record_hist = true;
-mission_calculator.do_print = false;
-tic
-mission_calculator.build_map(); % assembles v, h, W map for key performance info
-toc
 
 %% RUN A MISSION
-mission = readMissionStruct("Air2Gnd_700nm");
 
-cond = generateCondition(geom, 0, 0.5, 1, 1, 0.3); % the weight here does not actually matter
-tic
-mission_calculator.solve_mission(mission, 0, 150, 1);
-toc
+% % PRELOAD THE MISSION CALCULATOR
+% mission_calculator = mission_calculator(perf, settings);
+% mission_calculator.record_hist = true;
+% mission_calculator.do_print = false;
+% tic
+% mission_calculator.build_map(); % assembles v, h, W map for key performance info
+% toc
+
+% mission = readMissionStruct("Air2Gnd_700nm");
+% 
+% cond = generateCondition(geom, 0, 0.5, 1, 1, 0.3); % the weight here does not actually matter
+% tic
+% mission_calculator.solve_mission(mission, 0, 150, 1);
+% toc
+% 
+% mission_calculator.plot_hist
+
+%% Next Up: More plots
+
+% [h_opt, M_opt] = compute_max_mach(perf, 1);
+
+% [v_land, glide_angle, throttle] = compute_landing_speed(perf, 0);
+% fprintf("LANDING: v_land = %.4g kt , glide_angle = %.4g deg , throttle = %.4g\n", ms2kt(v_land), glide_angle, throttle)
+% 
+% cruise_drag_breakdown(perf, 50, 1);
+
+%% COMPUTE MAX RANGE
+
+% PRELOAD THE MISSION CALCULATOR
+mission_calculator = mission_calculator(perf, settings);
+mission_calculator.record_hist = false;
+mission_calculator.do_print = false;
+mission_calculator.build_map(); % assembles v, h, W map for key performance info
+mission = readMissionStruct("Air2Air_700nm");
+
+% Sample range scalers from 0.5 to 2
+scaler_vec = linspace(0.75, 1.5, 50);
+residual_vec = zeros(size(scaler_vec));
+
+for i = 1:length(scaler_vec)
+    residual_vec(i) = fun(mission, mission_calculator, scaler_vec(i), geom);
+end
+
+% Find where residual crosses zero (changes sign)
+sign_change = find(diff(sign(residual_vec)) ~= 0, 1, 'first');
+
+if isempty(sign_change)
+    warning('No zero crossing found. Using closest value.');
+    [~, idx] = min(abs(residual_vec));
+    range_scaler = scaler_vec(idx);
+else
+    % Interpolate to get more accurate zero crossing
+    x1 = scaler_vec(sign_change);
+    x2 = scaler_vec(sign_change + 1);
+    y1 = residual_vec(sign_change);
+    y2 = residual_vec(sign_change + 1);
+    range_scaler = x1 - y1 * (x2 - x1) / (y2 - y1);
+end
+
+% Plot the residual
+figure('Name', 'Range Scaler Optimization');
+plot(scaler_vec, residual_vec, 'b-', 'LineWidth', 2);
+hold on;
+plot(range_scaler, 0, 'ro', 'MarkerSize', 10, 'MarkerFaceColor', 'r');
+yline(0, 'k--', 'LineWidth', 1);
+grid on;
+xlabel('Range Scaler');
+ylabel('Residual (W_{final} - W_{empty}) [N]');
+title('Mission Range Optimization');
+legend('Residual', 'Optimal Point', 'Target', 'Location', 'best');
+hold off;
+
+function res = fun(mission, mission_calculator, range_scaler, geom)
+    mission = scale_mission_range(mission, range_scaler);
+    W_final = mission_calculator.solve_mission(mission, 0, 150, 1);
+    res = W_final - geom.weights.empty.v;
+end
+
+% range_scaler = 0.82;
+
+mission = scale_mission_range(mission, range_scaler);
+mission_calculator.record_hist = true;
+[W_end, total_distance] = mission_calculator.solve_mission(mission, 0, 150, 1);
+
+fprintf("Final Scaler = %.3g | total radius = %.3g nm | W_end - W_E", range_scaler, m2nm(total_distance)/2, W_end - geom.weights.empty.v)
 
 mission_calculator.plot_hist
 
-% % displayAircraftGeom(geom);
+
 
 %% STORAGE
 

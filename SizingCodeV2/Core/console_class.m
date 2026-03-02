@@ -497,8 +497,6 @@ end
 
 function jprint(text, code, do_return, do_wrap)
 
-isDarkMode()
-
     % code defines what level of print to do
     %   0 -> standard white print out
     %   1 -> subheader

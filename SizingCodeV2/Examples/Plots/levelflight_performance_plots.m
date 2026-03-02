@@ -1,35 +1,48 @@
 function levelflight_performance_plots(perf, N)
+    settings = readSettings();
     perf.model.clear_mem(); perf.clear_data();
     W = 1;
-    h_vec = linspace(0, 5000, N);
+    h_vec = linspace(0, ft2m(50000), N);
     M_vec = linspace(0.3, 2, N);
-
-    % h_vec = linspace(0, 5000, N);
-    % M_vec = linspace(0.3, 2, N);
-
-    [H, M] = meshgrid(h_vec, M_vec);
+    [M, H] = meshgrid(M_vec, h_vec);
     h_vec_long = H(:)';
     M_vec_long = M(:)';
-
     perf.model.cond = levelFlightCondition(perf, h_vec_long, M_vec_long, W * ones(size(h_vec_long)));
-
-    general_contour("Altitude [m]", "Mach Number", "TSFC [s]", "TSFC", H, M, perf.TSFC)
-    general_contour("Altitude [m]", "Mach Number", "mdotf [kg/s]", "Fuel Mass Flow", H, M, perf.mdotf)
-    general_contour("Altitude [m]", "Mach Number", "CD", "Drag Coefficent", H, M, perf.CD)
-    general_contour("Altitude [m]", "Mach Number", "CL", "Lift Coefficent", H, M, perf.model.cond.CL.v)
-    general_contour("Altitude [m]", "Mach Number", "L/D", "Lift Over Drag", H, M, perf.LD)
-    
+% Create filter for throttle (Cannot be 1) and CL cannot go above 1.4
+    filter = max(perf.model.cond.throttle.v - 0.99, perf.model.cond.CL.v - 1.4); % When a filter is less than 0, it is plotted
+if settings.be_imperial
+        ydata = m2ft(H);
+        ylabel = "Altitude [ft]";
+        general_contour("Mach Number", ylabel, "mdotf / V [slug/ft]", "Specific Fuel Consumption", ...
+                       M, ydata, kg2slug(perf.Rbar)/m2ft(1), filter)
+        general_contour("Mach Number", ylabel, "mdotf [slug/s]", "Fuel Mass Flow", ...
+                       M, ydata, kg2slug(perf.mdotf), filter)
+        general_contour("Mach Number", ylabel, "TSFC [lbm/lbfhr]", "TSFC", ...
+                       M, ydata, kgNs_2_lbmlbfhr(perf.TSFC), filter)
+        general_contour("Mach Number", ylabel, "TA [lb]", "Thrust Available", ...
+                       M, ydata, N2lb(perf.TA), filter)
+else
+        ydata = H;
+        ylabel = "Altitude [m]";
+        general_contour("Mach Number", ylabel, "mdotf / V [kg/m]", "Optimium Range Term (minimize)", ...
+                       M, ydata, perf.Rbar, filter)
+        general_contour("Mach Number", ylabel, "mdotf [kg/s]", "Fuel Mass Flow", ...
+                       M, ydata, perf.mdotf, filter)
+        general_contour("Mach Number", ylabel, "TSFC [s]", "TSFC", ...
+                       M, ydata, perf.TSFC, filter)
+        general_contour("Mach Number", ylabel, "TA [N]", "Thrust Available", ...
+                       M, ydata, perf.TA, filter)
+end
+    general_contour("Mach Number", ylabel, "CD", "Drag Coefficent", M, ydata, perf.CD, filter)
+    general_contour("Mach Number", ylabel, "CL", "Lift Coefficent", M, ydata, perf.model.cond.CL.v, filter)
+    general_contour("Mach Number", ylabel, "L/D", "Lift Over Drag", M, ydata, perf.LD, filter)
     Cdw_data = perf.model.CDw;
-    if max(Cdw_data) > 0 % if the conditions go into transonic
-        general_contour("Altitude [m]", "Mach Number", "CDw", "Wave Drag Coeffcient", H, M, perf.model.CDw)
-    end
-    general_contour("Altitude [m]", "Mach Number", "CDi", "Induced Drag Coeffcient", H, M, perf.model.CDi)
-    general_contour("Altitude [m]", "Mach Number", "e_osw", "Oswald Efficency", H, M, perf.e_osw)
-    general_contour("Altitude [m]", "Mach Number", "CLa", "Lift Slope", H, M, perf.model.CLa)
-    general_contour("Altitude [m]", "Mach Number", "Excess Power [m/s]", "Excess Power", H, M, perf.ExcessPower)
-    general_contour("Altitude [m]", "Mach Number", "mdotf / V", "Optimium Range Term (minimize)", H, M, perf.Rbar, false, [0 0.002] )
-    general_contour("Altitude [m]", "Mach Number", "Throttle", "Throttle", H, M, perf.model.cond.throttle.v)
-
-    
+if max(Cdw_data) > 0
+        general_contour("Mach Number", ylabel, "CDw", "Wave Drag Coeffcient", M, ydata, perf.model.CDw, filter)
+end
+    general_contour("Mach Number", ylabel, "CDi", "Induced Drag Coeffcient", M, ydata, perf.model.CDi, filter)
+    general_contour("Mach Number", ylabel, "e_osw", "Oswald Efficency", M, ydata, perf.e_osw, filter)
+    general_contour("Mach Number", ylabel, "CLa", "Lift Slope", M, ydata, perf.model.CLa, filter)
+    general_contour("Mach Number", ylabel, "Throttle", "Throttle", M, ydata, perf.model.cond.throttle.v, filter)
     perf.model.clear_mem(); perf.clear_data();
 end

@@ -9,7 +9,7 @@ function strut = missionSeg(name, type, input, vel_cons, h_cons)
     %   CRUISE : [range in meters]
     %   LOITER : [time in minutes]
     %   COMBAT : [time in minutes, load factor, list of store indices to deploy during section]
-    %   FIXED_WF : [the WF to apply]
+    %   FIXED_WF : [the WF to apply, time in minutes]
 
     % vel_cons
     %   There are three configurations
@@ -56,11 +56,12 @@ function strut = missionSeg(name, type, input, vel_cons, h_cons)
                 strut.do_deploy = true;
             end
 
-            strut.distance = NaN; strut.time = NaN; strut.WFi = NaN;
+            strut.distance = NaN; strut.WFi = NaN;
         case 'FIXED_WF'
             strut.WFi = json_entry("WF Applied", input(1), "");
+            strut.time = json_entry("Time", input(1), "min"); % minutes
 
-            strut.distance = NaN; strut.time = NaN; strut.load_factor = NaN; strut.racks_to_deploy = NaN;
+            strut.distance = NaN; strut.load_factor = NaN; strut.racks_to_deploy = NaN;
         otherwise
            error("'%s' is not a recognized mission segment type.", type);
     end

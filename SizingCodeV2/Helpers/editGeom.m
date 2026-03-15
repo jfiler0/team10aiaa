@@ -13,6 +13,7 @@ function geom = editGeom(geom, structPath, value, do_update)
     end
 
     if(do_update)
-        geom = updateGeom(geom);
+        settings = readSettings();
+        geom = updateGeom(geom, settings);
     end
 end

@@ -228,7 +228,7 @@ classdef mission_calculator < handle
 
             % dh_damp = 1E-5; % When less than this it stops using max climb
             % dv_damp = 5E-3;% When less than this it stops going to max/min throttle
-            dh_damp = 2E-4;
+            dh_damp = 2E-3;
             dv_damp = 2E-2;
 
             % Squaring gets batter damping when near optimum
@@ -311,7 +311,7 @@ classdef mission_calculator < handle
             min_alt = 100; % Make sure we don't hit the ground
             fun_const = @(I, S) 1E-3 * max(0, (min_alt - I(2))/min_alt); % I(2) is altitude
         
-            R = 1E-3; % changes how much objective is penalized due to the constraints
+            R = 6E-2; % changes how much objective is penalized due to the constraints
         
             a = 0.75; % When the tail constraint activates
         

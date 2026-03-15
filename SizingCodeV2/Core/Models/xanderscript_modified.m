@@ -14,7 +14,7 @@ function cost_struct = xanderscript_modified(geom, do_tables, do_figures)
     W_TO=N2lb(geom.weights.mtow.v); %lb
     % W_ampr=10^(0.1936+0.8645*log10(W_TO)); this is what Roskam wants but seems to be a poor estimate
     V_max= 563; % knots (max level military). 563 is M0.85 @SL
-    C_e_r = geom.prop.engine_cost_mil.v; %cost per engine (F100-3.5 in 1991 & F414-4.86 in 2025)
+    C_e_r = geom.prop.engine_cost_mil.v * 1000000; %cost per engine (F100-3.5 in 1991 & F414-4.86 in 2025)
     N_e = geom.prop.num_engine.v; % number of engines per plane
     
     % TODO: This is not accurate

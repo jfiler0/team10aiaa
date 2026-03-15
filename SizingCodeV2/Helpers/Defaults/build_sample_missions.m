@@ -11,7 +11,7 @@ writeMissionStruct(Ferry_700nm, "Ferry_700nm",  ["AIM-9X" "" "" "" "" "" "" "AIM
 Air2Air_700nm = { ...
     missionSeg("TAKEOFF", 'FIXED_WF', [0.98, 5]), ... % basic takeoff
     missionSeg("CLIMB_1", 'CRUISE', nm2m(50), [NaN, NaN], [0, ft2m(10000)] ), ... % Climb to 10kf in 50nm
-    missionSeg("CRUISE_1", 'CRUISE', nm2m(650)), ... % Unconsrained cruise for 700nm
+    missionSeg("CRUISE_1", 'CRUISE', nm2m(650),[305,NaN]), ... % Unconsrained cruise for 700nm
     missionSeg("LOITER", 'LOITER', 20, [NaN, NaN], [ft2m(10000), NaN] ), ... % maintain 10kf for 20 minutes
     missionSeg("COMBAT", 'COMBAT', [8, 3, 1, 2, 3], [NaN, NaN], [ft2m(10000), NaN] ), ... %8 minutes of combat, full throttle, holing 3 Gs. Deploy racks 1,2,3
     missionSeg("CLIMB_2", 'CRUISE', nm2m(50), [NaN, NaN], [0, ft2m(10000)] ), ... % Climb to 10kf in 50nm

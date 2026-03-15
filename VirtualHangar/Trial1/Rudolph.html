@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>My first X3DOM page</title>
+    <script type='text/javascript' src='http://www.x3dom.org/download/x3dom.js'> </script>
+    <link rel='stylesheet' type='text/css' href='http://www.x3dom.org/download/x3dom.css'></link>
+    <style>
+        x3d
+        {
+            border:2px solid darkorange;
+            background: rgba(128, 128, 128, 0.4);
+        }
+        body
+        {
+            font-size:110%;
+            font-family:verdana, sans-serif;
+            background-image: url('pattern.png');
+            margin: 3em;
+            color: lightgray;
+        }
+
+        h1
+        {
+            color: darkorange;
+        }
+    </style>
+</head>
+<body>
+
+<x3d width='90%' height='50%'>
+    <scene>
+        <inline url="testassm2_2.x3d"> </inline>
+    </scene>
+</x3d>
+
+</body>
+</html>

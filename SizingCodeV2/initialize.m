@@ -5,6 +5,7 @@ matlabSetup % settings for nice graphs
 build_default_settings(); % rebuilds the setting file to a defined default 
 % simple_model % does not need to be run everytime - just regenerates lookups/analyisis functions being used
 build_standard_stores;
+build_sample_missions;
 
 build_f18_template; % creates a sample JSON file called f18_superhornet
 build_kevin_cad;

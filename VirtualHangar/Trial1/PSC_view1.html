@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>My first X3DOM page</title>
+    <script type='text/javascript' src='http://www.x3dom.org/download/x3dom.js'> </script>
+    <link rel='stylesheet' type='text/css' href='http://www.x3dom.org/download/x3dom.css'></link>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        x3d {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<x3d>
+    <scene>
+        <Background
+                rightUrl="px.png"
+                leftUrl="nx.png"
+                topUrl="py.png"
+                bottomUrl="ny.png"
+                frontUrl="pz.png"
+                backUrl="nz.png">
+        </Background>
+        <inline url="testassmairground2.x3d"> </inline>
+        <transform translation="10 0 10">
+            <inline url="testassmairground2.x3d"> </inline>
+        </transform>
+        <transform translation="10 0 -10">
+            <inline url="testassmairground2.x3d"> </inline>
+        </transform>
+        <transform translation="20 0 20">
+            <inline url="testassmairair2.x3d"> </inline>
+        </transform>
+        <transform translation="20 0 -20">
+            <inline url="testassmairair2.x3d"> </inline>
+        </transform>
+    </scene>
+</x3d>
+
+</body>
+</html>

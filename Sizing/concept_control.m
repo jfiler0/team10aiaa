@@ -41,7 +41,7 @@ clear all
         % 9 -> Concept 5
         % 11 -> PSC (can paste in values here to save them temporarily)
 
-    performance_plots = false; % Aerodynamics, Propulsion, Atmospere, Performance grids
+    performance_plots = true; % Aerodynamics, Propulsion, Atmospere, Performance grids
     mission_plots = false; % Fuel burn, LD, TSFC over time
     geometry_plot = false; % Outline of the wing geometry (not implemented yet)
     drag_polar = false;

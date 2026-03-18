@@ -1,5 +1,5 @@
 %% Preliminary Packing Code 
-% Ver. 1.0, 3/15/26
+% Ver. 2.0, 3/18/26
 % AOE 4106 Air Vehicle Design / Team 10 - AIAA Strike Fighter / Kevin Xu
 
 % Notes: 
@@ -17,7 +17,7 @@ datamat = datamat(:, 1:16);
 
 % Eliminate empty rows from table (loop backwards to avoid index shifting)
 for index1 = component_count:-1:1
-    if strcmp(datamat{index1, 1}, '') || ismissing(datamat{index1, 1})
+    if strcmp(datamat{index1, 1}, '') || ismissing(datamat{index1, 1}) || ismissing(datamat{index1, 3}) || datamat{index1, 4} == 0
         datamat(index1, :) = [];
     end
 end
@@ -123,6 +123,23 @@ annotation('textbox', [0.02, 0.02, 0.5, 0.08], ...
 
 hold off
 
+%% Ensure that code is constantly running 
+
+last_modified = dir('WeightsCGTable.xlsx').datenum;
+
+while true
+    pause(1);
+    current_modified = dir('WeightsCGTable.xlsx').datenum;
+    
+    if current_modified ~= last_modified
+        last_modified = current_modified;
+        close all;
+        run('PrelimPackingCode.m');
+        return; % new run takes over, this one exits
+    end
+    
+    figure(1);  % bring figure to foreground every second
+end
 %% Plotbox function
 function plotBox(x0, y0, z0, dx, dy, dz, surf_props, label)
 % x0,y0,z0 = CENTRE of box, dx,dy,dz = dimensions

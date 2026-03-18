@@ -101,7 +101,7 @@ classdef console_class < handle
                     % These are critical ^^. Start of actual functions:
 
                     case 'listaircraft'
-                        fileList = dir(fullfile("Aircraft Files/", '*.json'));
+                        fileList = dir(fullfile("AircraftFiles/", '*.json'));
                         names = string({fileList.name}); % so we can use printArray. Otherwise it is a character array
                         names = erase(names, ".json"); % to keep it clean
                         printArray( names );
@@ -139,6 +139,10 @@ classdef console_class < handle
                                 value = matchType(value, current_value);
 
                                 obj.geom = editGeom(obj.geom, structPath, value, true);
+                                obj.model.geom = obj.geom;
+                                obj.model.clear_mem();
+                                obj.perf.model = obj.model;
+                                obj.perf.clear_data();
                             end
                         else
                             jprint("The given parmeter does not exist: '" + structPath+"'", -1)
@@ -367,9 +371,9 @@ classdef console_class < handle
                     case 'printcomps'
                         sigfigs = 5;
                         
-                        weight_comps = getRaymerWeightStruct(obj.geom);
+                        weight_comps = obj.geom.weights.components;
                         Field_Name = fieldnames(weight_comps);
-                        Weight = round( struct2array(weight_comps)' , 5, 'significant' );
+                        Weight = round( struct2array(weight_comps)' , sigfigs, 'significant' );
                         Units = repmat("N", length(Weight), 1);
                         T = table(Field_Name, Weight, Units);
                         printTableConsole(T);

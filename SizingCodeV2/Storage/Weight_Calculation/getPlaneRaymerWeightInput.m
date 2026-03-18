@@ -4,7 +4,7 @@ function input = getPlaneRaymerWeightInput(geom)
 input = struct();
 
 % -----------------------------
-% Basic aircraft parameters
+% Basic aircraft parameters 
 % -----------------------------
 input.Wdg    = geom.weights.mtow.v;   % Design gross weight [N] ~ 15000 kg
 input.Nz     = 1.3 * geom.input.g_limit.v;            % Ultimate load factor

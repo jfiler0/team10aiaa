@@ -16,7 +16,7 @@ set.transonic_M_eps = 0.005;
 
 set.g_const = 9.8051; % gravitational const
 
-set.be_imperial = false;
+set.be_imperial = true;
 
 set.spot_factor_reference = 52.7559; % Folded wing area of an f18e
 

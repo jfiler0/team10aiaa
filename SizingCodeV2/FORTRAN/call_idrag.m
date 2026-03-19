@@ -129,10 +129,10 @@ try
     cd(startingPath);
 
 catch ME
-    cd(startingPath);
-    error("call_idrag:Fail", ...
-        "call_idrag failed.\n\nOriginal error:\n%s", ...
-        getReport(ME, "basic", "hyperlinks", "off"));
+    warning("call_idrag:MexFailed", ...
+        "MEX call failed; falling back to EXE.\n\n%s", ...
+        getReport(ME, "extended", "hyperlinks", "off"));  % extended!
+    % fall through to EXE
 end
 
 end
@@ -190,31 +190,70 @@ assert(isequal(size(p.xc), [np,4]), "idrag_mex: xc must be size npanels x 4.");
 assert(isequal(size(p.yc), [np,4]), "idrag_mex: yc must be size npanels x 4.");
 assert(isequal(size(p.zc), [np,4]), "idrag_mex: zc must be size npanels x 4.");
 
-p.nvortices = int64(cfg.nvortices(:));
-p.spacing_flag = int64(cfg.spacing_flag(:));
+nv = double(cfg.nvortices(:));
+sf = double(cfg.spacing_flag(:));
 
-assert(numel(p.nvortices) == np, "idrag_mex: nvortices must be length npanels.");
-assert(numel(p.spacing_flag) == np, "idrag_mex: spacing_flag must be length npanels.");
+% Scalar expand if single value provided for all panels
+if numel(nv) == 1 && np > 1
+    nv = repmat(nv, np, 1);
+end
+if numel(sf) == 1 && np > 1
+    sf = repmat(sf, np, 1);
+end
+
+if numel(nv) ~= np
+    error("call_idrag:BadNVortices", ...
+        "cfg.nvortices must be length npanels (%d), got %d.", np, numel(nv));
+end
+if numel(sf) ~= np
+    error("call_idrag:BadSpacing", ...
+        "cfg.spacing_flag must be length npanels (%d), got %d.", np, numel(sf));
+end
+
+p.nvortices    = nv;
+p.spacing_flag = sf;
 
 p.load_flag = int64(cfg.load_flag);
 
+% And replace the loads section:
 L = double(cfg.loads(:));
 if isempty(L)
-    L = 0; % safe scalar placeholder
+    % Must provide at least sum(nvortices) elements — MEX dereferences
+    % the pointer even in design mode (input_mode=0)
+    nv_tot = sum(double(cfg.nvortices));
+    L = zeros(nv_tot, 1);
 end
 p.loads = L;
 end
 
 function cfg2 = ensure_legacy_writer_fields(cfg, outFile)
-cfg2 = cfg;
+    cfg2 = cfg;
 
-if ~isfield(cfg2, "title")
-    cfg2.title = "IDRAG run (auto title)";
-end
-if ~isfield(cfg2, "outfile")
-    cfg2.outfile = outFile;
-end
-if ~isfield(cfg2, "write_flag")
-    cfg2.write_flag = 1;
+    if ~isfield(cfg2, "title")
+        cfg2.title = "IDRAG run (auto title)";
+    end
+    if ~isfield(cfg2, "outfile")
+        cfg2.outfile = outFile;
+    end
+    if ~isfield(cfg2, "write_flag")
+        cfg2.write_flag = 1;
+    end
+    if ~isfield(cfg2, "panels")
+    nv = double(cfg2.nvortices(:));
+    sf = double(cfg2.spacing_flag(:));
+    % scalar expand
+    if numel(nv) == 1 && cfg2.npanels > 1
+        nv = repmat(nv, cfg2.npanels, 1);
+    end
+    if numel(sf) == 1 && cfg2.npanels > 1
+        sf = repmat(sf, cfg2.npanels, 1);
+    end
+    for i = 1:cfg2.npanels
+        cfg2.panels(i).xc           = cfg2.xc(i,:);
+        cfg2.panels(i).yc           = cfg2.yc(i,:);
+        cfg2.panels(i).zc           = cfg2.zc(i,:);
+        cfg2.panels(i).nvortices    = nv(min(i,numel(nv)));
+        cfg2.panels(i).spacing_flag = sf(min(i,numel(sf)));
+    end
 end
 end

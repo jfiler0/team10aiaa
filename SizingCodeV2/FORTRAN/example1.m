@@ -47,7 +47,7 @@ cfg.sref        = 1.0;
 cfg.cavg        = 1.0;
 
 % geometry (npanels x 4 exactly for MEX)
-cfg.npanels = 1;
+cfg.npanels = 3;
 
 xc = zeros(cfg.npanels,4);
 yc = zeros(cfg.npanels,4);
@@ -73,13 +73,9 @@ cfg.xc = double(xc);
 cfg.yc = double(yc);
 cfg.zc = double(zc);
 
-% nvortices and spacing_flag MUST be length npanels, each nv in 1..200
-cfg.nvortices    = int64([30]');   % column vector length 1
-cfg.spacing_flag = int64([3]');    % 0..3 in your code (3=end-compressed)
-
-% loads vector (only used if input_mode=1). For design mode, empty OK.
-cfg.loads = [];
-
+cfg.nvortices    = double(30);   % scalar is fine, MEX reads m*n
+cfg.spacing_flag = double(3);
+cfg.loads        = zeros(30, 1); % sum(nvortices) x 1
 %% --- Options for wrapper (must match call_idrag arguments block) ---
 opts = struct();
 opts.preferMex = true;
@@ -101,7 +97,6 @@ opts.resultFile = "idrag_result.txt";
 
 %% --- Run ---
 out = call_idrag(cfg, opts);
-
 %% --- Display results ---
 disp("----- IDRAG Results -----")
 disp(out)

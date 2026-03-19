@@ -41,4 +41,6 @@ function codes = build_default_codes()
 
     codes.WE_RAYMER = 51; % simple regression based on mtow
     codes.WE_COMPS = 52; % builds up all the component weights and adds
+    codes.WE_Nicolai = 53;
+    codes.WE_Roskam = 54;
 end

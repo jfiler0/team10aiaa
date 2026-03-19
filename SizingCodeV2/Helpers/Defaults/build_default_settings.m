@@ -16,7 +16,7 @@ set.transonic_M_eps = 0.005;
 
 set.g_const = 9.8051; % gravitational const
 
-set.be_imperial = false;
+set.be_imperial = true;
 
 set.spot_factor_reference = 52.7559; % Folded wing area of an f18e
 
@@ -33,7 +33,7 @@ set.TSFC_scaler = 1.25;
 
 set.codes = build_default_codes();
 
-set.WE_model = set.codes.WE_COMPS;
+set.WE_model = set.codes.WE_COMPS; % go back to set.codes.WE_Nicolai
 set.WF_max_ratio = 0.5; % WF = WF_ratio * (MTOW - WE)
 
 set.CD0_model = set.codes.CD0_BASIC;

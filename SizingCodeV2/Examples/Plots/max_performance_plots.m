@@ -1,4 +1,8 @@
 function max_performance_plots(perf, N)
+
+    compute_max_mach(perf, 1)
+    perf.model.geom.prop.T0_AB
+
     settings = readSettings();
     perf.model.clear_mem(); perf.clear_data();
     W = 1;

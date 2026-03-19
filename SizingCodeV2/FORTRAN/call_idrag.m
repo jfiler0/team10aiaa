@@ -157,73 +157,85 @@ opts.resultFile = string(opts.resultFile);
 end
 
 function p = normalize_idrag_cfg_for_mex_strict(cfg)
-req = ["input_mode","sym_flag","cl_design","cm_flag","cm_design","xcg","cp","sref","cavg","npanels", ...
-       "xc","yc","zc","nvortices","spacing_flag","load_flag","loads"];
-for k = 1:numel(req)
-    if ~isfield(cfg, req(k))
-        error("call_idrag:MissingField", "cfg.%s is required for MEX.", req(k));
+    req = ["input_mode","sym_flag","cl_design","cm_flag","cm_design","xcg","cp","sref","cavg","npanels", ...
+           "xc","yc","zc","nvortices","spacing_flag","load_flag","loads"];
+    for k = 1:numel(req)
+        if ~isfield(cfg, req(k))
+            error("call_idrag:MissingField", "cfg.%s is required for MEX.", req(k));
+        end
     end
-end
-
-np = double(cfg.npanels);
-if np < 1 || np ~= floor(np)
-    error("call_idrag:BadNPanels", "cfg.npanels must be a positive integer.");
-end
-
-p = struct();
-p.input_mode   = int64(cfg.input_mode);
-p.sym_flag     = int64(cfg.sym_flag);
-p.cl_design    = double(cfg.cl_design);
-p.cm_flag      = int64(cfg.cm_flag);
-p.cm_design    = double(cfg.cm_design);
-p.xcg          = double(cfg.xcg);
-p.cp           = double(cfg.cp);
-p.sref         = double(cfg.sref);
-p.cavg         = double(cfg.cavg);
-p.npanels      = int64(np);
-
-p.xc = double(cfg.xc);
-p.yc = double(cfg.yc);
-p.zc = double(cfg.zc);
-
-assert(isequal(size(p.xc), [np,4]), "idrag_mex: xc must be size npanels x 4.");
-assert(isequal(size(p.yc), [np,4]), "idrag_mex: yc must be size npanels x 4.");
-assert(isequal(size(p.zc), [np,4]), "idrag_mex: zc must be size npanels x 4.");
-
+    
+    np = double(cfg.npanels);
+    if np < 1 || np ~= floor(np)
+        error("call_idrag:BadNPanels", "cfg.npanels must be a positive integer.");
+    end
+    
+    p = struct();
+    p.input_mode   = int64(cfg.input_mode);
+    p.sym_flag     = int64(cfg.sym_flag);
+    p.cl_design    = double(cfg.cl_design);
+    p.cm_flag      = int64(cfg.cm_flag);
+    p.cm_design    = double(cfg.cm_design);
+    p.xcg          = double(cfg.xcg);
+    p.cp           = double(cfg.cp);
+    p.sref         = double(cfg.sref);
+    p.cavg         = double(cfg.cavg);
+    p.npanels      = int64(np);
+    
+    p.xc = double(cfg.xc);
+    p.yc = double(cfg.yc);
+    p.zc = double(cfg.zc);
+    
+    assert(isequal(size(p.xc), [np,4]), "idrag_mex: xc must be size npanels x 4.");
+    assert(isequal(size(p.yc), [np,4]), "idrag_mex: yc must be size npanels x 4.");
+    assert(isequal(size(p.zc), [np,4]), "idrag_mex: zc must be size npanels x 4.");
+    
 nv = double(cfg.nvortices(:));
 sf = double(cfg.spacing_flag(:));
 
-% Scalar expand if single value provided for all panels
-if numel(nv) == 1 && np > 1
+% Scalar expand if single value provided
+if numel(nv) == 1
     nv = repmat(nv, np, 1);
 end
-if numel(sf) == 1 && np > 1
+if numel(sf) == 1
     sf = repmat(sf, np, 1);
 end
 
-if numel(nv) ~= np
+% Allow legacy vectors longer than npanels; use first npanels entries
+if numel(nv) < np
     error("call_idrag:BadNVortices", ...
-        "cfg.nvortices must be length npanels (%d), got %d.", np, numel(nv));
+        "cfg.nvortices must have at least npanels (%d) entries, got %d.", ...
+        np, numel(nv));
 end
-if numel(sf) ~= np
+if numel(sf) < np
     error("call_idrag:BadSpacing", ...
-        "cfg.spacing_flag must be length npanels (%d), got %d.", np, numel(sf));
+        "cfg.spacing_flag must have at least npanels (%d) entries, got %d.", ...
+        np, numel(sf));
 end
+
+nv = nv(1:np);
+sf = sf(1:np);
 
 p.nvortices    = nv;
 p.spacing_flag = sf;
-
-p.load_flag = int64(cfg.load_flag);
-
-% And replace the loads section:
+    
+    p.load_flag = int64(cfg.load_flag);
+    
 L = double(cfg.loads(:));
+nv_tot = sum(nv);
+
 if isempty(L)
-    % Must provide at least sum(nvortices) elements — MEX dereferences
-    % the pointer even in design mode (input_mode=0)
-    nv_tot = sum(double(cfg.nvortices));
     L = zeros(nv_tot, 1);
 end
+
+if numel(L) < nv_tot
+    error("call_idrag:BadLoads", ...
+        "cfg.loads must have at least sum(nvortices)=%d elements, got %d.", ...
+        nv_tot, numel(L));
+end
+
 p.loads = L;
+
 end
 
 function cfg2 = ensure_legacy_writer_fields(cfg, outFile)

@@ -32,11 +32,11 @@ cfg.title   = "IDRAG example1";
 cfg.outfile = "idrag_output.txt";
 
 % mode flags
-cfg.input_mode  = 0;   % 0=design (unknown loads), 1=analyze (given loads)
-cfg.write_flag  = 0;   % (legacy output file flag; MEX ignores)
-cfg.sym_flag    = 1;   % 1=symmetric, 0=asymmetric
-cfg.cm_flag     = 0;   % 0=no Cm constraint, 1=use Cm constraint
-cfg.load_flag   = 1;   % 0=cn input, 1=load input (used only if input_mode=1)
+cfg.input_mode  = 0;   % 0 = design (unknown loads), 1 = analyze (given loads)
+cfg.write_flag  = 0;   % legacy EXE flag; ignored by MEX
+cfg.sym_flag    = 1;   % 1 = symmetric, 0 = asymmetric
+cfg.cm_flag     = 0;   % 0 = no Cm constraint, 1 = use Cm constraint
+cfg.load_flag   = 1;   % 0 = cn input, 1 = load input (used only if input_mode = 1)
 
 % targets / refs
 cfg.cl_design   = 0.50;
@@ -46,36 +46,38 @@ cfg.cp          = 0.25;
 cfg.sref        = 1.0;
 cfg.cavg        = 1.0;
 
-% geometry (npanels x 4 exactly for MEX)
-cfg.npanels = 3;
+% geometry: one real panel only (required shape = npanels x 4)
+cfg.npanels = 1;
 
-xc = zeros(cfg.npanels,4);
-yc = zeros(cfg.npanels,4);
-zc = zeros(cfg.npanels,4);
-
-% One rectangular panel (root LE, tip LE, tip TE, root TE)
+% Panel corner ordering:
+%   1 = root LE
+%   2 = tip  LE
+%   3 = tip  TE
+%   4 = root TE
 b_half = 1.0;
 c_root = 1.0;
 c_tip  = 1.0;
 sweep  = 0.0;
-dihed  = 0.0;
+dihed  = 0.0;   % radians
 
-% root LE
-xc(1,1) = 0.0;          yc(1,1) = 0.0;        zc(1,1) = 0.0;
-% tip LE
-xc(1,2) = sweep;        yc(1,2) = b_half;     zc(1,2) = tan(dihed)*b_half;
-% tip TE
-xc(1,3) = sweep + c_tip;yc(1,3) = b_half;     zc(1,3) = tan(dihed)*b_half;
-% root TE
-xc(1,4) = c_root;       yc(1,4) = 0.0;        zc(1,4) = 0.0;
+xc = zeros(1,4);
+yc = zeros(1,4);
+zc = zeros(1,4);
+
+xc(1,:) = [0.0, sweep,         sweep + c_tip, c_root];
+yc(1,:) = [0.0, b_half,        b_half,        0.0   ];
+zc(1,:) = [0.0, tan(dihed)*b_half, tan(dihed)*b_half, 0.0];
 
 cfg.xc = double(xc);
 cfg.yc = double(yc);
 cfg.zc = double(zc);
 
-cfg.nvortices    = double(30);   % scalar is fine, MEX reads m*n
-cfg.spacing_flag = double(3);
-cfg.loads        = zeros(30, 1); % sum(nvortices) x 1
+% panel discretization: must match npanels
+cfg.nvortices    = [30;30;30];    % scalar is OK for one panel
+cfg.spacing_flag = 3;     % 0=equal, 1=outboard, 2=inboard, 3=end-compressed
+
+% loads vector must be at least sum(nvortices) long for the MEX path
+cfg.loads = zeros(30,1);
 %% --- Options for wrapper (must match call_idrag arguments block) ---
 opts = struct();
 opts.preferMex = true;

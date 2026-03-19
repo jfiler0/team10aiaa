@@ -9,8 +9,9 @@ build_kevin_cad
 
 % INITIAL OBJECTS TO LOAD
 settings = readSettings();
-geom = loadAircraft("kevin_cad", settings);
 % geom = loadAircraft("kevin_cad", settings);
+geom = loadAircraft("f18_superhornet", settings);
+
 model = model_class(settings, geom);
 perf = performance_class(model);
 
@@ -33,7 +34,7 @@ perf.model.clear_mem(); perf.clear_data();
 perf.model.geom = editGeom(geom,"prop.num_engine", 1, true);
 
 perf.model.cond = generateCondition(geom, 0, v_land, 1, 0.5, 1);
-fprintf("Two engine landing max climb rate: %.5g ft/min\n", m2ft(perf.ExcessPower) * 60)
+fprintf("SEROC: %.5g ft/min\n", m2ft(perf.ExcessPower) * 60)
 
 
 %% RUN A MISSION

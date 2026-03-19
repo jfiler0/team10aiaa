@@ -44,7 +44,7 @@ c----- locals
       integer input_mode, sym_flag, cm_flag, npanels, load_flag
       integer write_flag
       double precision cl_design, cm_design, xcg, cp, sref, cavg
-      double precision cd_induced
+      real cd_induced
 
       character*72 outfile, title
 
@@ -216,7 +216,7 @@ c==================== call idrag =======================================
 
 c idrag expects REAL scalars; passing double scalars may downcast depending
 c on compiler. We pass doubles for scalars; Intel will convert as needed.
-      call idrag_cores(outfile, title, input_mode, write_flag, sym_flag,
+      call idrag_core(outfile, title, input_mode, write_flag, sym_flag,
      &     real(cl_design), cm_flag, real(cm_design), real(xcg),
      &     real(cp), real(sref), real(cavg), npanels, xc, yc, zc,
      &     nvortices, spacing_flag, load_flag, loads, cd_induced)

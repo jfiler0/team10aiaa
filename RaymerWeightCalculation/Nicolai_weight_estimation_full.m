@@ -1,3 +1,4 @@
+<<<<<<< HEAD:RaymerWeightCalculation/Nicolai_Weights.m
 function output = Nicolai_Weights(console)
 %% Nicolai Chapter 20 Refined Weight Estimate
 
@@ -71,6 +72,10 @@ K_GEO = 1.33;       % duct shape factor. 1.33 if two or more flat sides, 1.0 if 
 % -------------------DO NOT EDIT BELOW THIS-----------------------------
 % --------------- [CHECK WITH XANDER IF YOU DO] ------------------------
 % ----------------------------------------------------------------------
+=======
+%% Nicolai Chapter 20 Refined Weight Estimate
+% Combined from the equations/screenshots you provided
+>>>>>>> 235083e7a9c978098dd0c8d10967886361c01020:RaymerWeightCalculation/Nicolai_weight_estimation_full.m
 % Default setup is for a USN strike fighter / attack aircraft
 %
 % Included:
@@ -86,6 +91,9 @@ K_GEO = 1.33;       % duct shape factor. 1.33 if two or more flat sides, 1.0 if 
 % - Angles entered in degrees are converted internally to radians
 % - Avionics and landing retardation devices are handled as the text indicates
 
+clear; clc;
+format compact;
+
 %% =========================================================
 %  USER SWITCHES
 %  =========================================================
@@ -93,6 +101,22 @@ K_GEO = 1.33;       % duct shape factor. 1.33 if two or more flat sides, 1.0 if 
 run_military_block      = true;   % USN strike fighter / attack / transport equations
 run_light_utility_block = false;   % KEEP OFF; light utility aircraft equations
 
+%% =========================================================
+%  UNIT CONVERSIONS
+%  =========================================================
+ft2m = @(x) x*0.3048;
+m2ft = @(x) x/0.3048;
+deg2rad_local = @(x) x*pi/180;
+
+%% =========================================================
+%  COMMON INPUTS
+%  =========================================================
+
+% Overall aircraft
+W_TO = 55000;          % takeoff weight [lb]
+N    = 9.0*1.5;        % ultimate load factor. Usually max designed g's with 1.5 FS
+M0   = 1.1;            % max Mach number at sea level
+q    = 800;            % max dynamic pressure [lb/ft^2]
 
 % Crew / occupants
 N_CR   = 1;            % number of crew
@@ -103,10 +127,19 @@ N_TRO  = 0;            % troops
 N_BU   = 0;            % crew bunks
 N_FDS  = 0;            % flight deck stations
 
+% Fuselage basic geometry
+L = 50;                % fuselage length [ft]
+H = 9;                 % maximum fuselage height [ft]
+
 % Electronics / avionics
 % W_AU comes from a section in the book on light aicraft which doesn't
 % apply to us. However, the code will break if it's not initialized
 W_AU=0; 
+W_TRON = 2500;   % installed avionics, Eq. (20.81)
+
+% Engine data
+N_E   = 2;             % number of engines
+W_ENG = 3500;          % bare engine weight per engine [lb]
 
 % Pressurization / cabin
 P_c  = 0;              % ultimate cabin pressure [lb/in^2]
@@ -120,7 +153,28 @@ if run_military_block
     %  INPUTS: STRUCTURE
     %  ------------------------------------------------------
 
-    
+    % Wing (USN fighter Eq. 20.1b)
+    K_PIV     = 1.0;           % variable-sweep structural factor. 1.0 fixed wing, 1.175 variable sweep
+    t_c       = 0.08;          % max wing thickness ratio
+    Lambda_LE = 20;            % leading edge sweep [deg]
+    AR        = 4.0;           % wing aspect ratio
+    lambda    = 0.5;           % wing taper ratio
+    S_w       = 1600;  % wing area [ft^2]
+
+    % Horizontal tail
+    S_HT      = 300;  % horizontal tail planform area [ft^2]
+    t_R_HT    = 0.5;           % HT root thickness [ft]
+    cbar_wing = 5.0;           % wing MAC [ft]
+    L_t       = 15.0;          % tail moment arm [ft]
+    b_HT      = 12;       % horizontal tail span [ft]
+
+    % Vertical tail
+    hT_hV     = 0.0;           % h_T/h_V, 1 for T-tail, 0 fuselage mounted HT
+    S_VT      = 150;  % vertical tail area [ft^2]
+    S_r       = 0.3*S_VT;      % rudder area [ft^2]. If unknown, use S_r=0.3*S_v
+    AR_VT     = 1.5;           % VT aspect ratio
+    lambda_V  = 0.4;           % VT taper ratio
+    Lambda_VT = 35;            % VT quarter-chord sweep [deg]
 
     % Fuselage
     K_INL = 1.25;              % Inlets on fuselage structural factor. 1.25 for fuselage inlets, 1.0 otherwise (wing root, etc)
@@ -129,7 +183,14 @@ if run_military_block
     %  INPUTS: PROPULSION / SUBSYSTEMS
     %  ------------------------------------------------------
 
-    
+    % Air induction
+    N_i   = 2;         % number of inlets
+    A_i   = 4.5;       % capture area per inlet [ft^2]
+    L_d   = 8.0;       % subsonic duct length per inlet [ft]
+    L_r   = 3.0;       % ramp length forward of throat per inlet [ft]
+    P_2   = 35;        % max static pressure at compressor face [psia]
+    K_GEO = 1.33;       % duct shape factor. 1.33 if two or more flat sides, 1.0 if round or only 1 flat side
+    M_D   = M0;        % design Mach number
 
     if M_D < 3.0
         K_TE = 1.0; % K_TE is the temperature correction factor
@@ -146,7 +207,8 @@ if run_military_block
     end
 
     % Fuel system
-
+    F_GW = 3000;       % total wing fuel [gal]
+    F_GF = 1500;       % total fuselage fuel [gal]
 
     % Engine controls
     L_f   = L;         % fuselage length [ft]
@@ -181,7 +243,9 @@ if run_military_block
     %  MODES / SELECTIONS
     %  ------------------------------------------------------
 
-    % Air induction selection
+    % Air induction selections
+    use_internal_ducts          = true;
+    use_variable_ramps          = false;
     use_half_round_fixed_spike  = false;
     use_full_round_spike        = false;
     use_trans_expand_spike      = false;
@@ -462,6 +526,7 @@ if run_military_block
 
     % Eq. (20.35)
     W_surface_ctrl_USN = 23.77 * (W_TO * 1e-3)^1.10;
+
     % Eq. (20.36)
     W_surface_ctrl_exec_comm = 56.01 * (W_TO * q * 1e-5)^0.576;
 
@@ -497,6 +562,7 @@ if run_military_block
 
     % Eq. (20.39)
     W_flight_instr = N_PIL * (15.0 + 0.032 * (W_TO * 1e-3));
+
     % Eq. (20.40)
     W_engine_instr_turbine = N_E * (4.80 + 0.006 * (W_TO * 1e-3));
 
@@ -505,6 +571,7 @@ if run_military_block
 
     % Eq. (20.42)
     W_misc_instr = 0.15 * (W_TO * 1e-3);
+
     switch engine_instr_mode
         case 1
             W_engine_instr = W_engine_instr_turbine;
@@ -515,7 +582,7 @@ if run_military_block
         otherwise
             error('Invalid engine_instr_mode.');
     end
-    
+
     W_instruments_total = W_flight_instr + W_engine_instr + W_misc_instr;
 
     %% ------------------------------------------------------
@@ -523,16 +590,16 @@ if run_military_block
     %  ------------------------------------------------------
 
     % Eq. (20.43)
-    W_electrical_USAF = 426.17 * ((W_fuel_system + W_TRON) * 1e-3)^0.510;
+    W_electrical_USAF = 426.17 * ((W_fuel_system * W_TRON) * 1e-3)^0.510;
 
     % Eq. (20.44)
-    W_electrical_USN = 346.98 * ((W_fuel_system + W_TRON) * 1e-3)^0.509;
+    W_electrical_USN = 346.98 * ((W_fuel_system * W_TRON) * 1e-3)^0.509;
 
     % Eq. (20.45)
-    W_electrical_bomber = 185.46 * ((W_fuel_system + W_TRON) * 1e-3)^1.286;
+    W_electrical_bomber = 185.46 * ((W_fuel_system * W_TRON) * 1e-3)^1.286;
 
     % Eq. (20.46)
-    W_electrical_transport = 1162.66 * ((W_fuel_system + W_TRON) * 1e-3)^0.506;
+    W_electrical_transport = 1162.66 * ((W_fuel_system * W_TRON) * 1e-3)^0.506;
 
     switch electrical_mode
         case 1
@@ -540,7 +607,6 @@ if run_military_block
             label_electrical = 'USAF fighter';
         case 2
             W_electrical = W_electrical_USN;
-            output.W_electrical=W_electrical;
             label_electrical = 'USN fighter/attack';
         case 3
             W_electrical = W_electrical_bomber;
@@ -642,10 +708,10 @@ if run_military_block
     %  ------------------------------------------------------
 
     % Eq. (20.65)
-    W_acai_fighter_hi = 201.66 * ((W_TRON + 200 * N_CR) * 1e-3)^0.735;
+    W_acai_fighter_hi = 210.66 * ((W_TRON * 200 * N_CR) * 1e-3)^0.735;
 
     % Eq. (20.66)
-    W_acai_fighter_sub = K_ACAI * ((W_TRON + 200 * N_CR) * 1e-3)^0.538;
+    W_acai_fighter_sub = K_ACAI * ((W_TRON * 200 * N_CR) * 1e-3)^0.538;
 
     % Eq. (20.67)
     W_acai_bomber_transport = K_ACAI * (V_PR * 1e-2)^0.242;
@@ -678,26 +744,17 @@ if run_military_block
     W_avionics = W_TRON;
 
     % Landing retardation devices: chapter references, set manually if desired
+    W_landing_retardation = 250; % estimate comes from Nicolai Figure 10.10
 
     %% ------------------------------------------------------
     %  TOTAL MILITARY BLOCK
     %  ------------------------------------------------------
-    % weight reduction for composites
-    factor_55=composite_percentage/55; % the equations ...
-    % ... for reduction use 55% total aircraft composite - we need to scale down by a factor since we're not at 55%
-    W_wing=W_wing*(1-0.2*factor_55); 
-    W_HT=W_HT*(1-0.25*factor_55);
-    W_VT=W_VT*(1-0.25*factor_55);
-    W_fuselage=W_fuselage*(1-0.1*factor_55);
-    % secondary?
-    W_landing_gear=W_landing_gear*(1-0.08*factor_55);
-    W_air_induction=W_air_induction*(1-0.3*factor_55);
-
     W_total_military = W_wing + W_HT + W_VT + W_fuselage + ...
                        W_landing_gear + W_air_induction + W_fuel_system + ...
                        W_engine_controls + W_start_system + W_propellers + ...
                        W_prop_ctrl + W_surface_controls + W_instruments_total + ...
                        W_electrical + W_furnishings + W_air_conditioning + ...
+<<<<<<< HEAD:RaymerWeightCalculation/Nicolai_Weights.m
                        W_avionics + W_landing_retardation+W_ENG*N_E
     % writing components into the output struct
     output.W_wing=W_wing;
@@ -718,6 +775,9 @@ if run_military_block
     output.W_landing_retardation=W_landing_retardation;
     output.W_engines=W_ENG*N_E;
     output.W_total_empty_weight=W_total_military;
+=======
+                       W_avionics + W_landing_retardation;
+>>>>>>> 235083e7a9c978098dd0c8d10967886361c01020:RaymerWeightCalculation/Nicolai_weight_estimation_full.m
 
 
 
@@ -1034,5 +1094,4 @@ if run_light_utility_block
 
     T_light = table(Component_light, Weight_light_lb);
     disp(T_light);
-end
 end

@@ -1,102 +1,85 @@
 %% awave_example.m
 % Demonstrates calling D2500 (zero-lift wave drag) via runAwave.m
-%
-% Two approaches are shown:
-%   1. Run a pre-written .inp file directly (simplest — use the provided examples)
-%   2. Build an input from a MATLAB struct and run it
-%
-% D2500 always writes results to wavedrag.out in the working directory.
-% runAwave.m handles this automatically and parses the key outputs.
 
-%% ---- Approach 1: Run a provided test case directly ----------------------
-%
-% case1.inp is a delta wing on a simple fuselage with body reshaping.
-% Expected result: CDW ≈ 15.0 (from case1.out, ENTIRE AIRCRAFT CDW)
+%% ---- Case 1: Run case1.inp directly ------------------------------------
+fprintf('=== Case 1: case1.inp (delta wing + fuselage, body reshaping) ===\n');
 
-fprintf('=== Approach 1: Run case1.inp directly ===\n');
-
-% Just pass the path to the .inp file — no setup needed.
 out1 = runAwave(fullfile('Examples', 'case1.inp'));
 
-fprintf('Mach    CDW        D/Q\n');
-for k = 1:numel(out1.CDW)
-    fprintf('%.3f   %.6f   %.4f   (cycle %d)\n', ...
-        out1.Mach(k), out1.CDW(k), out1.DoverQ(k), out1.cycle(k));
+if isempty(out1.CDW)
+    fprintf('  No CDW parsed. Raw output snippet:\n');
+    disp(out1.raw);
+else
+    fprintf('  %-8s %-14s %-14s %s\n', 'Mach', 'CDW', 'D/Q', 'Cycle');
+    for k = 1:numel(out1.CDW)
+        fprintf('  %-8.3f %-14.6f %-14.4f %d\n', ...
+            out1.Mach(k), out1.CDW(k), out1.DoverQ(k), out1.cycle(k));
+    end
+    fprintf('  Final CDW (cycle %d) = %.6f\n\n', out1.cycle(end), out1.CDW(end));
 end
-fprintf('Final CDW (last cycle) = %.6f\n\n', out1.CDW(end));
 
 
-%% ---- Approach 2: Run case2 (multi-Mach) --------------------------------
-%
-% case2.inp is a supersonic transport with 5 Mach conditions:
-%   M2.4, M2.0, M1.6, M1.2, M1.0
-% Expected: CDW decreasing with Mach, zero at M=1.0
-
-fprintf('=== Approach 2: Run case2.inp (multi-Mach) ===\n');
+%% ---- Case 2: case2.inp — multi-Mach sweep ------------------------------
+fprintf('=== Case 2: case2.inp (supersonic transport, M2.4 to M1.0) ===\n');
 
 out2 = runAwave(fullfile('Examples', 'case2.inp'));
 
-fprintf('Mach    CDW\n');
-for k = 1:numel(out2.CDW)
-    fprintf('%.3f   %.6f\n', out2.Mach(k), out2.CDW(k));
+if isempty(out2.CDW)
+    fprintf('  No CDW parsed. Raw output snippet:\n');
+    disp(out2.raw);
+else
+    fprintf('  %-8s %s\n', 'Mach', 'CDW');
+    for k = 1:numel(out2.CDW)
+        fprintf('  %-8.3f %.6f\n', out2.Mach(k), out2.CDW(k));
+    end
+    fprintf('\n');
 end
-fprintf('\n');
 
 
-%% ---- Approach 3: Build input from struct --------------------------------
-%
-% Simple delta wing on a simple axisymmetric fuselage.
-% Matches the spirit of case1 but built programmatically.
-
-fprintf('=== Approach 3: Build from struct ===\n');
+%% ---- Case 3: Build from struct -----------------------------------------
+fprintf('=== Case 3: Build delta-wing input from struct ===\n');
 
 cfg = struct();
 cfg.title = 'SIMPLE DELTA WING - MATLAB GENERATED';
-cfg.REFA  = 16.0;           % reference area (same as case1)
+cfg.REFA  = 16.0;
 
-% Wing geometry
-% XAF: chordwise stations as percent-chord
-cfg.XAF    = [0.0, 50.0, 100.0];   % 3 stations
+% Wing: 3 chordwise stations
+cfg.XAF    = [0.0, 50.0, 100.0];
+cfg.WAFORG = [100.0,  10.0, 0.0, 140.0; ...   % root: xLE y z chord
+              240.0, 150.0, 0.0,   0.0];       % tip
+cfg.WAFORD = [0.0, 2.5, 0.0; ...               % root ordinates (% chord)
+              0.0, 2.5, 0.0];                  % tip  ordinates
 
-% WAFORG: [xLE, y_span, z, chord] per spanwise station
-%   Station 1: root  at (100, 10, 0), chord 140
-%   Station 2: tip   at (240, 150, 0), chord 0  (delta tip)
-cfg.WAFORG = [ ...
-    100.0,  10.0, 0.0, 140.0; ...
-    240.0, 150.0, 0.0,   0.0  ];
-
-% WAFORD: wing ordinates as percent-chord (z/c * 100) at each (station x XAF)
-% Symmetric double-wedge: 2.5% t/c
-cfg.WAFORD = [ ...
-    0.0, 2.5, 0.0; ...   % root
-    0.0, 2.5, 0.0  ];    % tip
-
-% Fuselage (3 segments matching case1)
-% Segment 1: nose cone  x = 0 to 50
+% Fuselage: 3 segments (same as case1)
 cfg.XFUS{1}   = [  0.0,  10.0,  20.0,  30.0,  40.0,  50.0];
-cfg.FUSARD{1} = [  0.00, 40.7, 128.7, 221.7, 289.5, 314.16];
+cfg.FUSARD{1} = [  0.00, 40.70, 128.70, 221.70, 289.50, 314.16];
 
-% Segment 2: constant-section barrel  x = 50 to 250
 cfg.XFUS{2}   = [50.0, 250.0];
 cfg.FUSARD{2} = [314.16, 314.16];
 
-% Segment 3: tail taper  x = 250 to 300
 cfg.XFUS{3}   = [250.0, 260.0, 270.0, 280.0, 290.0, 300.0];
-cfg.FUSARD{3} = [314.16, 289.5, 221.7, 128.7,  40.7,   0.0];
+cfg.FUSARD{3} = [314.16, 289.50, 221.70, 128.70, 40.70, 0.0];
 
-% One Mach condition: analysis only (ICYC=0, no reshaping)
+% Single Mach case — no body reshaping
 cfg.cases(1).Mach   = 1.2;
-cfg.cases(1).NX     = 50;     % integration points along body
-cfg.cases(1).NTHETA = 16;     % azimuthal cutting planes
-cfg.cases(1).ICYC   = 0;      % 0 = analysis only, no body reshaping
+cfg.cases(1).NX     = 50;
+cfg.cases(1).NTHETA = 16;
+cfg.cases(1).ICYC   = 0;   % analysis only, no reshaping cycles
 
-% Write the input file
 inpFile = write_awave_input(cfg, 'awave_generated.inp');
 
-% Run it
+% Show the generated file so we can verify it looks right
+fprintf('--- Generated input file ---\n');
+disp(fileread(inpFile));
+fprintf('----------------------------\n\n');
+
 out3 = runAwave(inpFile);
 
-fprintf('Generated case CDW = %.6f  (case1.out reference: ~14.9999)\n\n', out3.CDW(end));
+if isfile(inpFile), delete(inpFile); end
 
-% Clean up generated file
-delete(inpFile);
+if isempty(out3.CDW)
+    fprintf('  No CDW parsed. Raw output:\n');
+    disp(out3.raw);
+else
+    fprintf('  CDW = %.6f  (case1.out reference: ~15.0)\n\n', out3.CDW(end));
+end

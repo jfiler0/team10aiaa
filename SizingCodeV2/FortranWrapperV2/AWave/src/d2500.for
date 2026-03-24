@@ -76,7 +76,7 @@
 *     V A R I A B L E S                                                *
 ************************************************************************
       INTEGER errCode         ! set by IOSTAT in OPEN statement
-      CHARACTER fileName*80   ! name of the input file
+      CHARACTER fileName*160   ! name of the input file
       INTEGER FLAG    ! =0 if Mach>1; =1 if Mach <1
       INTEGER I       ! just a loop counter
       INTEGER KEY     ! =0 then set to 1 indicating matrix is inverted

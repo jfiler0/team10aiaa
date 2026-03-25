@@ -16,12 +16,12 @@ p.cm_design  = 0.0;
 p.xcg        = geom.fuselage.length.v / 2; % why do they need xcg
 p.cp         = 0.25; % center of pressure for local chord (25%)
 p.sref       = geom.ref_area.v;
-p.cavg       = geom.wing.chord_avg.v;
+p.cavg       = geom.wing.average_chord.v;
 
 p.panels(1) = panelObj(geom.outline.coords.wing(1,:), geom.outline.coords.wing(2,:), geom.outline.coords.wing(5,:), geom.outline.coords.wing(6,:));
 p.panels(2) = panelObj(geom.outline.coords.wing(2,:), geom.outline.coords.wing(3,:), geom.outline.coords.wing(4,:), geom.outline.coords.wing(5,:));
 p.panels(3) = panelObj(geom.outline.coords.elevator(1,:), geom.outline.coords.elevator(2,:), geom.outline.coords.elevator(3,:), geom.outline.coords.elevator(4,:));
-p.panels(4) = panelObj(geom.outline.coords.vtail(1,:), geom.outline.coords.vtail(2,:), geom.outline.coords.vtail(3,:), geom.outline.coords.vtail(4,:));
+p.panels(4) = panelObj(geom.outline.coords.rudder(1,:), geom.outline.coords.rudder(2,:), geom.outline.coords.rudder(3,:), geom.outline.coords.rudder(4,:));
 
 p.npanels = length(p.panels); % Basic VLM
 

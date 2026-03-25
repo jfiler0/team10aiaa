@@ -176,12 +176,12 @@ classdef model_class < handle
                         % TODO: This is not right
                         % Could take CL out but is example of safe_cond_call
                         % sub_fun = @(M, I) M*0 + k1_sub * obj.safe_cond_call('CL', I) .^ 2;
-                        % sup_fun = @(M, I) obj.safe_cond_call('CL', I) .^ 2 .* obj.geom.wing.AR.v .* (M.^2 - 1) ./ (4*obj.geom.wing.AR.v * sqrt(M.^2 - 1) -2) * cosd(obj.geom.wing.le_sweep.v);
+                        % sup_fun = @(M, I) obj.safe_cond_call('CL', I) .^ 2 .* obj.geom.wing.AR.v .* (M.^2 - 1) ./ (4*obj.geom.wing.AR.v * sqrt(M.^2 - 1) -2) * cosd(obj.geom.wing.average_sweep.v);
                         % 
                         % value = obj.transonicMerge(sub_fun, sup_fun);
 
                         sub_fun = @(M, I) M*0 + k1_sub;
-                        sup_fun = @(M, I) obj.geom.wing.AR.v .* (M.^2 - 1) ./ (4*obj.geom.wing.AR.v * sqrt(M.^2 - 1) -2) * cosd(obj.geom.wing.le_sweep.v);
+                        sup_fun = @(M, I) obj.geom.wing.AR.v .* (M.^2 - 1) ./ (4*obj.geom.wing.AR.v * sqrt(M.^2 - 1) -2) * cosd(obj.geom.wing.average_sweep.v);
     
                         k1 = obj.transonicMerge(sub_fun, sup_fun);
 
@@ -221,9 +221,9 @@ classdef model_class < handle
                         sub_fun = @(M, I) M*0 + 0; % Adding M*0 to the front forces it to form a vector
 
                         E_WD = obj.geom.fuselage.E_WD.v;
-                        M_CD0_max = 1/(cosd(obj.geom.wing.le_sweep.v))^0.2;
+                        M_CD0_max = 1/(cosd(obj.geom.wing.average_sweep.v))^0.2;
                         sup_fun = @(M, I) (4.5 * pi / obj.geom.ref_area.v) * ( obj.geom.fuselage.max_area.v / obj.geom.fuselage.length.v ) ^ 2 * ...
-                                E_WD * ( 0.74 + 0.37 * cosd(obj.geom.wing.le_sweep.v) ) * ( 1 - 0.3 * sqrt( M - M_CD0_max ));
+                                E_WD * ( 0.74 + 0.37 * cosd(obj.geom.wing.average_sweep.v) ) * ( 1 - 0.3 * sqrt( M - M_CD0_max ));
 
                         value = obj.transonicMerge(sub_fun, sup_fun);
                                                     

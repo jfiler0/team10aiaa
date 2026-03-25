@@ -17,8 +17,6 @@ perf = performance_class(model);
 
 build_engine_lookup("F110")
 
-% 
-% 
 % perf.model.cond = levelFlightCondition(perf, 0, 0.3, 1);
 % 
 % fprintf("Spot Factor = %.4g\n", perf.model.SpotFactor)

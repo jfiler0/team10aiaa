@@ -193,7 +193,7 @@ classdef model_class < handle
                     case obj.settings.codes.CDi_IDRAG
                         value = zeros([1 obj.cond.Nc.v]);
                         for i = 1:obj.cond.Nc.v
-                            value(i) = fortran_cdi(obj.geom, obj.cond.CL.v(i));
+                            value(i) = fortran_cdi(obj.cond.CL.v(i));
                         end
                         
                     otherwise

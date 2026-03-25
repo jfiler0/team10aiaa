@@ -28,7 +28,7 @@ p.npanels = length(p.panels); % Basic VLM
 p.load_flag = 1;
 % p.loads only needed if input_mode==1
 
-CDi = call_idrag(p);
+CDi = runIdrag(p);
 
 end
 

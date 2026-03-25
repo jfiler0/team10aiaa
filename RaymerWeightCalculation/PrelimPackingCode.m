@@ -1,5 +1,5 @@
 %% Preliminary Packing Code 
-% Ver. 2.0, 3/18/26
+% Ver. 3.0, 3/22/26
 % AOE 4106 Air Vehicle Design / Team 10 - AIAA Strike Fighter / Kevin Xu
 
 % Notes: 
@@ -24,47 +24,54 @@ end
 
 [component_count, cols] = size(datamat); 
 
-%% Initialize 3D-Surface, Make "Crayon Fuselage"
-cone_length = 0.25; %n.d. fuselage lengths
-cone_fineness = 0.25; %n.d.
-cyl_length = 1 - cone_length; %n.d. fuselage lengths
+%% Initialize 3D-Surface, make aircraft
+TR = stlread('TestAssm_Clean_Rough.STL');
+pts = double(TR.Points);
 
-x = linspace(0, cone_length, 50);
-theta = linspace(0, 2*pi, 50);
-[X, T] = meshgrid(x, theta);
+% 1) Find the nose: the vertex with the minimum X coordinate
+[~, nose_idx] = min(pts(:,1));
+nose = pts(nose_idx, :);
+fprintf('Nose point: X=%.2f, Y=%.2f, Z=%.2f (mm)\n', nose(1), nose(2), nose(3));
 
-R = cone_fineness * X;                  % cone radius profile
-Y = R .* cos(T);
-Z = R .* sin(T);
+% 2) Shift all points so nose is exactly at origin
+pts(:,1) = pts(:,1) - nose(1);
+pts(:,2) = pts(:,2) - nose(2);
+pts(:,3) = pts(:,3) - nose(3);
 
-% Cylinder parameters
-r_base = max(max(R));        % radius matches cone base
-x_cyl = linspace(max(x), max(x) + cyl_length, 50);  % starts where cone ends
+% 3) Convert mm to in
+pts = pts * 0.00328084 * 12;
 
-[X_cyl, T_cyl] = meshgrid(x_cyl, theta);
-Y_cyl = r_base .* cos(T_cyl);
-Z_cyl = r_base .* sin(T_cyl);
+% 4) Bake in axis convention: X-aft, Y-port(+), Z-down(+)
+pts(:,2) = -pts(:,2);   
+pts(:,3) = -pts(:,3);   
 
-% Shared surface properties
+% Surface properties
 surf_props = {'FaceColor', [0.2, 0.4, 1.0], ...
-              'FaceAlpha', 0.1, ...
-              'EdgeColor', [0, 0, 0.8], ...
-              'EdgeAlpha', 0.2};
+    'FaceAlpha', 0.1, ...
+    'EdgeColor', [0, 0, 0.8], ...
+    'EdgeAlpha', 0.05};
 
-figure(1)
+% Plot
+figure(1);
 set(gcf, 'Renderer', 'opengl');
 hold on;
-surf(X,     Y,     Z,     surf_props{:});
-surf(X_cyl, Y_cyl, Z_cyl, surf_props{:});
-view(-45, 35.264);
-axis equal; grid on
-set(gca, 'ZDir', 'reverse'); set(gca, 'YDir', 'reverse');
-xlabel('X'); ylabel('Y'); zlabel('Z');
-xl = xlim; yl = ylim; zl = zlim;
-line([xl(1) xl(2)], [0 0],      [0 0],      'Color', 'k', 'LineWidth', 1.5);
-line([0 0],         [yl(1) yl(2)], [0 0],   'Color', 'k', 'LineWidth', 1.5);
-line([0 0],         [0 0],      [zl(1) zl(2)], 'Color', 'k', 'LineWidth', 1.5);
-box off
+trisurf(TR.ConnectivityList, pts(:,1),  pts(:, 2), pts(:,3),  surf_props{:});
+
+ax = gca;
+set(ax, 'ZDir', 'reverse');
+view(45, 20);
+
+axis equal; grid on; box off;
+xlabel('x, inch (+ aft)'); zlabel('y, inch (+ left)'); ylabel('z, inch (+ down)');
+
+% Extremities directly from pts (no extra negations needed)
+x_min = min(pts(:,1)); x_max = max(pts(:,1));
+y_min = min(pts(:,2)); y_max = max(pts(:,2));
+z_min = min(pts(:,3)); z_max = max(pts(:,3));
+
+xlim([x_min-24 x_max+24]);
+ylim([y_min-24 y_max+24]);
+zlim([z_min-24 z_max+24]);
 
 %% Add Components
 % Color of categories, RGB
@@ -88,8 +95,8 @@ for index = 1:component_count
     % Extract component parameters from the datamat table
     componentCat = datamat{index, 1}; % Get the component category
     componentName = datamat{index, 2}; % Get the component name
-    dimensions = datamat{index, 11:13};   % Get the dimensions (dx, dy, dz)
-    centergravloc = datamat{index,14:16};
+    dimensions = datamat{index, 5:7};   % Get the dimensions (dx, dy, dz)
+    centergravloc = datamat{index,8:10};
 
     % Get the color
     color = categories{strcmp(categories(:, 1), componentCat), 2} / 255; % Get the color for the component
@@ -123,23 +130,23 @@ annotation('textbox', [0.02, 0.02, 0.5, 0.08], ...
 
 hold off
 
-%% Ensure that code is constantly running 
-
-last_modified = dir('WeightsCGTable.xlsx').datenum;
-
-while true
-    pause(1);
-    current_modified = dir('WeightsCGTable.xlsx').datenum;
-    
-    if current_modified ~= last_modified
-        last_modified = current_modified;
-        close all;
-        run('PrelimPackingCode.m');
-        return; % new run takes over, this one exits
-    end
-    
-    figure(1);  % bring figure to foreground every second
-end
+%% Ensure that code is constantly running (JEFFREY: If it integrates with your code)
+% 
+% last_modified = dir('WeightsCGTable.xlsx').datenum;
+% 
+% while true
+%     pause(1);
+%     current_modified = dir('WeightsCGTable.xlsx').datenum;
+% 
+%     if current_modified ~= last_modified
+%         last_modified = current_modified;
+%         close all;
+%         run('PrelimPackingCode.m');
+%         return; % new run takes over, this one exits
+%     end
+% 
+%     figure(1);  % bring figure to foreground every second
+% end
 %% Plotbox function
 function plotBox(x0, y0, z0, dx, dy, dz, surf_props, label)
 % x0,y0,z0 = CENTRE of box, dx,dy,dz = dimensions

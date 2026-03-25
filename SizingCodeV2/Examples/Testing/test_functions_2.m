@@ -14,12 +14,12 @@ geom = loadAircraft("f18_superhornet", settings);
 
 model = model_class(settings, geom);
 perf = performance_class(model);
-
-build_engine_lookup("F110")
+% build_engine_lookup("F110")
 
 % 
 % 
-% perf.model.cond = levelFlightCondition(perf, 0, 0.3, 1);
+perf.model.cond = levelFlightCondition(perf, 0, 0.3, 1);
+perf.model.CDi
 % 
 % fprintf("Spot Factor = %.4g\n", perf.model.SpotFactor)
 % 

@@ -38,13 +38,13 @@ function geom = setLoadout(geom, storeNames)
     % Prefill with empty stores to make sure fields are correct
     geom.stores = repmat(readStoreFile("X", storesFolder), [num_stores, 1]); % prefills with a bunch of empty stores
 
-    geom.weights.loaded = json_entry("Loaded Weight", 0, "N", geom, true);
+    geom.weights.loaded = json_entry("Loaded Weight", 0, "N", true);
 
     for i = 1:num_stores
         geom.stores(i) = readStoreFile(storeNames(i), storesFolder);
         
-        geom.stores(i).rack_ypos = json_entry("Rack Y-Position (normalized)", rack_positions(i), "", NaN, true);
-        geom.stores(i).rack_num = json_entry("Rack Number", rack_numbers(i), "", NaN, true);
+        geom.stores(i).rack_ypos = json_entry("Rack Y-Position (normalized)", rack_positions(i), "", true);
+        geom.stores(i).rack_num = json_entry("Rack Number", rack_numbers(i), "", true);
 
         geom.weights.loaded.v = geom.weights.loaded.v + geom.stores(i).weight.v;
     end

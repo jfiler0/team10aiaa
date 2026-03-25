@@ -9,51 +9,56 @@ build_kevin_cad
 
 % INITIAL OBJECTS TO LOAD
 settings = readSettings();
-geom = loadAircraft("kevin_cad", settings);
 % geom = loadAircraft("kevin_cad", settings);
+geom = loadAircraft("f18_superhornet", settings);
+
 model = model_class(settings, geom);
 perf = performance_class(model);
+% build_engine_lookup("F110")
 
+% 
+% 
 perf.model.cond = levelFlightCondition(perf, 0, 0.3, 1);
-
-fprintf("Spot Factor = %.4g\n", perf.model.SpotFactor)
-
-fprintf("Max Mach at 30kf: %.4f\n", compute_max_mach_at_h(perf, 0.5, ft2m(30000)) )
-fprintf("Max Mach at Sea Level: %.4f\n", compute_max_mach_at_h(perf, 0.5, 0) )
-
-[v_land, glide_angle, throttle] = compute_landing_speed(perf, 0);
-fprintf("LANDING: v_land = %.4g kt , glide_angle = %.4g deg , throttle = %.4g\n", ms2kt(v_land), glide_angle, throttle)
-
-
-perf.model.cond = generateCondition(geom, 0, v_land, 1, 0.5, 1);
-fprintf("Two engine landing max climb rate: %.5g ft/min\n", m2ft(perf.ExcessPower) * 60)
-
-% geom_save = geom;
-perf.model.clear_mem(); perf.clear_data();
-perf.model.geom = editGeom(geom,"prop.num_engine", 1, true);
-
-perf.model.cond = generateCondition(geom, 0, v_land, 1, 0.5, 1);
-fprintf("Two engine landing max climb rate: %.5g ft/min\n", m2ft(perf.ExcessPower) * 60)
-
-
-%% RUN A MISSION
-
-% PRELOAD THE MISSION CALCULATOR
-mission_calculator = mission_calculator(perf, settings);
-mission_calculator.record_hist = true;
-mission_calculator.do_print = false;
-tic
-mission_calculator.build_map(); % assembles v, h, W map for key performance info
-toc
-
-mission = readMissionStruct("Air2Air_700nm");
-
-cond = generateCondition(geom, 0, 0.5, 1, 1, 0.3); % the weight here does not actually matter
-tic
-mission_calculator.solve_mission(mission, 0, 150, 1);
-toc
-
-mission_calculator.plot_hist
+perf.model.CDi
+% 
+% fprintf("Spot Factor = %.4g\n", perf.model.SpotFactor)
+% 
+% fprintf("Max Mach at 30kf: %.4f\n", compute_max_mach_at_h(perf, 0.5, ft2m(30000)) )
+% fprintf("Max Mach at Sea Level: %.4f\n", compute_max_mach_at_h(perf, 0.5, 0) )
+% 
+% [v_land, glide_angle, throttle] = compute_landing_speed(perf, 0);
+% fprintf("LANDING: v_land = %.4g kt , glide_angle = %.4g deg , throttle = %.4g\n", ms2kt(v_land), glide_angle, throttle)
+% 
+% 
+% perf.model.cond = generateCondition(geom, 0, v_land, 1, 0.5, 1);
+% fprintf("Two engine landing max climb rate: %.5g ft/min\n", m2ft(perf.ExcessPower) * 60)
+% 
+% % geom_save = geom;
+% perf.model.clear_mem(); perf.clear_data();
+% perf.model.geom = editGeom(geom,"prop.num_engine", 1, true);
+% 
+% perf.model.cond = generateCondition(geom, 0, v_land, 1, 0.5, 1);
+% fprintf("SEROC: %.5g ft/min\n", m2ft(perf.ExcessPower) * 60)
+% 
+% 
+% %% RUN A MISSION
+% 
+% % PRELOAD THE MISSION CALCULATOR
+% mission_calculator = mission_calculator(perf, settings);
+% mission_calculator.record_hist = true;
+% mission_calculator.do_print = false;
+% tic
+% mission_calculator.build_map(); % assembles v, h, W map for key performance info
+% toc
+% 
+% mission = readMissionStruct("Air2Air_700nm");
+% 
+% cond = generateCondition(geom, 0, 0.5, 1, 1, 0.3); % the weight here does not actually matter
+% tic
+% mission_calculator.solve_mission(mission, 0, 150, 1);
+% toc
+% 
+% mission_calculator.plot_hist
 
 %% Next Up: More plots
 

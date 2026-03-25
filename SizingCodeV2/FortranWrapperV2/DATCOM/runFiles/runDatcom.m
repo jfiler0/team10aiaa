@@ -14,7 +14,7 @@ function out = runDatcom(inputFile, opts)
 %
 %   opts fields (all optional):
 %     .exePath  - override exe location if not on MATLAB path
-%     .workDir  - directory for datcom.out  (default: inputFile folder)
+%     .workDir  - directory for datcom.out  (default: same folder as exe)
 %     .keepOut  - true = keep datcom.out after parsing (default: false)
 %
 %   out fields:
@@ -67,7 +67,7 @@ if isempty(exePath)
 end
 exeDir = fileparts(exePath);
 
-% HelperFiles is two levels up from exeDir (Datcom/src/ -> Datcom/ -> repo/ -> HelperFiles/)
+% HelperFiles is one level up from exeDir (DATCOM/ -> repo root -> HelperFiles/)
 helperDir = fullfile(exeDir, '..', '..', 'HelperFiles');
 helperDir = char(java.io.File(helperDir).getCanonicalPath());
 
@@ -78,7 +78,7 @@ helperDir = char(java.io.File(helperDir).getCanonicalPath());
 % -------------------------------------------------------------------------
 workDir = char(opts.workDir);
 if isempty(workDir)
-    workDir = fileparts(inputFile);
+    workDir = exeDir;   % datcom.out lands next to the exe, not in Examples/
 end
 if ~isfolder(workDir), mkdir(workDir); end
 

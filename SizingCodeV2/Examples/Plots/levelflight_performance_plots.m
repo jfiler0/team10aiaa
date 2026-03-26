@@ -8,6 +8,14 @@ function levelflight_performance_plots(perf, N)
     h_vec_long = H(:)';
     M_vec_long = M(:)';
     perf.model.cond = levelFlightCondition(perf, h_vec_long, M_vec_long, W * ones(size(h_vec_long)));
+    disp(perf.model.cond.a.v)
+    kts = zeros(size(H));
+    for i = 1:50
+        for j = 1:50
+            kts(i,j) = M(i,j)*perf.model.cond.a.v(i + 49*(i-1))*1.94384449;
+        end
+    end
+    
 % Create filter for throttle (Cannot be 1) and CL cannot go above 1.4
     filter = max(perf.model.cond.throttle.v - 0.99, perf.model.cond.CL.v - 1.4); % When a filter is less than 0, it is plotted
 if settings.be_imperial
@@ -44,5 +52,7 @@ end
     general_contour("Mach Number", ylabel, "e_osw", "Oswald Efficency", M, ydata, perf.e_osw, filter)
     general_contour("Mach Number", ylabel, "CLa", "Lift Slope", M, ydata, perf.model.CLa, filter)
     general_contour("Mach Number", ylabel, "Throttle", "Throttle", M, ydata, perf.model.cond.throttle.v, filter)
+    general_contour("Airspeed (kts)", ylabel, "Throttle", "Throttle", kts, ydata, perf.model.cond.throttle.v, filter)
+
     perf.model.clear_mem(); perf.clear_data();
 end

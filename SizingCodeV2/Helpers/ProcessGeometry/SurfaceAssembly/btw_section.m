@@ -20,24 +20,32 @@ function sec = btw_section(sec_inner, sec_outer, span_pos, opts)
 
     sec = sec_inner;
 
-    sec.chord_length.v = sec_inner.chord_length.v * (1 - span_pos) + sec_inner.chord_length.v * span_pos;
-    sec.le_x.v = sec_inner.le_x.v * (1 - span_pos) + sec_inner.le_x.v * span_pos;
-    sec.le_y.v = sec_inner.le_y.v * (1 - span_pos) + sec_inner.le_y.v * span_pos;
+    sec.chord_length.v = sec_inner.chord_length.v * (1 - span_pos) + sec_outer.chord_length.v * span_pos;
+
+    % TODO: Get this all working with twist
+
+    sec.le_x.v = sec_inner.le_x.v * (1 - span_pos) + sec_outer.le_x.v * span_pos;
+    sec.le_yp.v = sec_inner.le_yp.v * (1 - span_pos) + sec_outer.le_yp.v * span_pos;
+    % sec.le_z.v = sec_inner.le_z.v * (1 - span_pos) + sec_outer.le_z.v * span_pos;
+
+    sec.te_x.v = sec_inner.te_x.v * (1 - span_pos) + sec_outer.te_x.v * span_pos;
+    sec.te_yp.v = sec_inner.te_yp.v * (1 - span_pos) + sec_outer.te_yp.v * span_pos;
+    % sec.te_z.v = sec_inner.te_z.v * (1 - span_pos) + sec_outer.te_z.v * span_pos;
 
     if isempty(opts.dihedral)
-        sec.dihedral.v = sec_inner.dihedral.v * (1 - span_pos) + sec_inner.dihedral.v * span_pos;
+        sec.dihedral.v = sec_inner.dihedral.v * (1 - span_pos) + sec_outer.dihedral.v * span_pos;
     else
         sec.dihedral.v = opts.dihedral;
     end
 
     if isempty(opts.twist)
-        sec.twist.v = sec_inner.twist.v * (1 - span_pos) + sec_inner.twist.v * span_pos;
+        sec.twist.v = sec_inner.twist.v * (1 - span_pos) + sec_outer.twist.v * span_pos;
     else
         sec.twist.v = opts.twist;
     end
 
     if isempty(opts.tc)
-        sec.tc.v = sec_inner.tc.v * (1 - span_pos) + sec_inner.tc.v * span_pos;
+        sec.tc.v = sec_inner.tc.v * (1 - span_pos) + sec_outer.tc.v * span_pos;
     else
         sec.tc.v = opts.tc;
     end

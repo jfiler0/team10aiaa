@@ -37,7 +37,7 @@ set.WE_model = set.codes.WE_Roskam; % go back to set.codes.WE_Nicolai
 set.WF_max_ratio = 0.5; % WF = WF_ratio * (MTOW - WE)
 
 set.CD0_model = set.codes.CD0_BASIC;
-set.CDi_model = set.codes.CDi_IDRAG; % yay fortran
+set.CDi_model = set.codes.CDi_BASIC_SUBSONIC; % yay fortran
 set.CDw_model = set.codes.CDw_BASIC;
 set.CLa_model = set.codes.CLa_BASIC;
 set.COST_model = set.codes.COST_XANDERSCRIPT;

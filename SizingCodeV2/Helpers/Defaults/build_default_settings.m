@@ -33,7 +33,7 @@ set.TSFC_scaler = 1.25;
 
 set.codes = build_default_codes();
 
-set.WE_model = set.codes.WE_COMPS; % go back to set.codes.WE_Nicolai
+set.WE_model = set.codes.WE_Roskam; % go back to set.codes.WE_Nicolai
 set.WF_max_ratio = 0.5; % WF = WF_ratio * (MTOW - WE)
 
 set.CD0_model = set.codes.CD0_BASIC;

@@ -559,6 +559,7 @@ end
 
 % some real gpt
 function printTableConsole(T)
+    % TODO: Fix so it can print NaN
 
     if isempty(T) || width(T) == 0
         jprint("Empty table.", 0);

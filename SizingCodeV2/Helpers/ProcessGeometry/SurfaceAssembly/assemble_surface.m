@@ -20,6 +20,9 @@ function surf = assemble_surface(sections)
 
         sections(j).te_y.v = prev_y;
         sections(j).te_z.v = prev_z;
+
+        sections(j).le_coords = [sections(j).le_x.v, sections(j).le_y.v, sections(j).le_z.v];
+        sections(j).te_coords = [sections(j).te_x.v, sections(j).te_y.v, sections(j).te_z.v];
     end
 
     surf = struct();

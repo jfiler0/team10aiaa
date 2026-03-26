@@ -148,6 +148,9 @@ classdef model_class < handle
                         
                     case obj.settings.codes.CD0_IGNORE
                         value = 0;
+
+                    case obj.settings.codes.CD0_FRICTION
+                        value = fortran_cd0(obj.geom, obj.cond.M.v, obj.cond.h.v);
                         
                     otherwise
                         error("Code '%i' has no recognized definition for the CD0 model.", code)

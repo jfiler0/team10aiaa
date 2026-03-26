@@ -5,6 +5,7 @@ function codes = build_default_codes()
 
     codes.CD0_BASIC = 101; % uses an empty weight correllation to predict Swet and applys a fixed 
     codes.CD0_IGNORE = 102; % sets CD0 to 0
+    codes.CD0_FRICTION = 103; % Uses FRICTION fortran code
 
     codes.CDw_BASIC = 201;
     codes.CDw_AWAVE = 202;

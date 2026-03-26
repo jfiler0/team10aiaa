@@ -59,16 +59,16 @@ cfg.spacing_flag = spacing_flag;
 cfg.load_flag    = 1;
 cfg.loads        = [];
 
-% ---- debug ----
-fprintf('cfg.sref = %.4f\n', cfg.sref);
-fprintf('cfg.cavg = %.4f\n', cfg.cavg);
-fprintf('cfg.cl_design = %.4f\n', cfg.cl_design);
-fprintf('xc:\n'); disp(cfg.xc)
-fprintf('yc:\n'); disp(cfg.yc)
-fprintf('zc:\n'); disp(cfg.zc)
-fprintf('elevator coords:\n'); disp(geom.outline.coords.elevator)
-fprintf('rudder coords:\n');   disp(geom.outline.coords.rudder)
-% ---------------
+% % ---- debug ----
+% fprintf('cfg.sref = %.4f\n', cfg.sref);
+% fprintf('cfg.cavg = %.4f\n', cfg.cavg);
+% fprintf('cfg.cl_design = %.4f\n', cfg.cl_design);
+% fprintf('xc:\n'); disp(cfg.xc)
+% fprintf('yc:\n'); disp(cfg.yc)
+% fprintf('zc:\n'); disp(cfg.zc)
+% fprintf('elevator coords:\n'); disp(geom.outline.coords.elevator)
+% fprintf('rudder coords:\n');   disp(geom.outline.coords.rudder)
+% % ---------------
 
 out = runIdrag(cfg);
 CDi = out.cd_induced;

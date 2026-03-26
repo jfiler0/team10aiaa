@@ -2,6 +2,8 @@
 % PURPOSE:
 %   Replaces test_functions with the new aircraft class. Demonsrates how to load in all the classes and run basic calls
 
+% TODO: Get real max dynamic pressure
+
 % STARTUP FUNCTIONS
 initialize
 matlabSetup
@@ -16,10 +18,20 @@ model = model_class(settings, geom);
 perf = performance_class(model);
 % build_engine_lookup("F110")
 
-perf.model.cond = levelFlightCondition(perf, 0, 0.8, 1);
+perf.model.cond = levelFlightCondition(perf, [0, 1000, 2000], [0.3, 0.8, 1.5], [1, 1, 1]);
+% perf.model.cond = levelFlightCondition(perf, 1000, 0.5, 1);
+disp("CDi RESULTS")
 CDi = perf.model.CDi
 
-e_osw = perf.model.cond.CL.v ^2 / (pi * perf.model.geom.wing.AR.v * CDi)
+disp("e_osw RESULTS")
+e_osw = perf.model.cond.CL.v .^2 ./ (pi * perf.model.geom.wing.AR.v * CDi)
+
+disp("CD0 RESULTS")
+perf.model.CD0 % base: 0.0139
+% 0.0139    0.0139    0.0139
+
+fprintf("Max Dynamic Pressure: %.4g kPa", compute_max_dynamic_pressure(perf, 1) / 1000 )
+fprintf("\nEsimtated max range: %4g nm", m2nm(estimate_max_range(perf, 1)) )
 
 % 
 % fprintf("Spot Factor = %.4g\n", perf.model.SpotFactor)

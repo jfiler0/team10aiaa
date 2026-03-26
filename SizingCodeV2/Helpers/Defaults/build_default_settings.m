@@ -29,15 +29,15 @@ set.SpotFactor_scaler = 1;
 
 set.COST_scaler = 1;
 set.TA_scaler = 1;
-set.TSFC_scaler = 1.25;
+set.TSFC_scaler = 3;
 
 set.codes = build_default_codes();
 
 set.WE_model = set.codes.WE_COMPS; % go back to set.codes.WE_Nicolai
 set.WF_max_ratio = 0.5; % WF = WF_ratio * (MTOW - WE)
 
-set.CD0_model = set.codes.CD0_BASIC;
-set.CDi_model = set.codes.CDi_IDRAG; % yay fortran CDi_BASIC_SUBSONIC CDi_IDRAG
+set.CD0_model = set.codes.CD0_BASIC; % CD0_FRICTION CD0_BASIC
+set.CDi_model = set.codes.CDi_BASIC_SUBSONIC; % yay fortran CDi_BASIC_SUBSONIC CDi_IDRAG
 set.CDw_model = set.codes.CDw_BASIC;
 set.CLa_model = set.codes.CLa_BASIC;
 set.COST_model = set.codes.COST_XANDERSCRIPT;

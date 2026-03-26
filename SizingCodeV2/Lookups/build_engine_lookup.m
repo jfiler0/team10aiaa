@@ -1,13 +1,12 @@
 function interpObj = build_engine_lookup(engine_name)
-    % Function looks in NPSS_Sweeps for a file (engine_name).mat
-    % Throws an error if it does not exist
-    % Otherwise returns a gridded interpolant object for (altitude (m), Mach Number, Throttle)
-        % Note that here throttle is 0-0.9, 0.9-1 (afterburner) and needs to vary linearly with throttle
-        % The throttle to thrust must be linear in both regimes (but can have different slopes)
-        % This requires some processing in this function to convert from NPSS 0-150
-    % The interpolant object is stored in models.mem and is created if it does not exist
 
-    funcDir = fileparts(mfilename('fullpath'));
+% initially written by a human then improved with claude
+
+% Builds a spline-based lookup for (Mach, Altitude, Throttle) -> Thrust / TSFC
+% Throttle is normalized: 0–0.9 = dry, 0.9–1.0 = afterburner (linear in each regime)
+% Supports vector/matrix inputs via griddedInterpolant
+
+    funcDir      = fileparts(mfilename('fullpath'));
     sweepFilePath = fullfile(funcDir, "NPSS_Sweeps", engine_name + '.mat');
 
     if ~isfile(sweepFilePath)
@@ -15,27 +14,72 @@ function interpObj = build_engine_lookup(engine_name)
     end
 
     sweepFile = load(sweepFilePath);
+    data      = sweepFile.DataTable;
 
-    data = sweepFile.DataTable;
-
+    % ------------------------------------------------------------------ %
+    %  Step 1 — Compute normalised throttle for every data point          %
+    % ------------------------------------------------------------------ %
     max_military = data.PLA == 100;
-    max_ab = data.PLA == 150;
+    max_ab       = data.PLA == 150;
 
-    max_thrust_mil = scatteredInterpolant(data.("Mach Number")(max_military), data.("Altitude")(max_military), data.("Thrust")(max_military));
-    max_thrust_ab = scatteredInterpolant(data.("Mach Number")(max_ab), data.("Altitude")(max_ab), data.("Thrust")(max_ab));
+    % Natural-neighbour scattered interpolants for mil / AB reference thrust
+    F_mil = scatteredInterpolant( ...
+        data.("Mach Number")(max_military), ...
+        data.Altitude(max_military), ...
+        data.Thrust(max_military), 'natural', 'linear');
 
-    data.throttle = zeros(size(data.PLA));
+    F_ab = scatteredInterpolant( ...
+        data.("Mach Number")(max_ab), ...
+        data.Altitude(max_ab), ...
+        data.Thrust(max_ab), 'natural', 'linear');
 
-    max_thrust_ab(1, 0)
+    mach = data.("Mach Number");
+    alt  = data.Altitude;
 
-    for i = 1:height(data)
-        mil_thrust = max_thrust_mil( data.("Mach Number")(i), data.Altitude(i) );
-        if(data.PLA(i) <= 100)
-            data.throttle(i) = data.Thrust(i) / mil_thrust;
-        else
-            data.throttle(i) = ( data.Thrust(i) - mil_thrust ) / ( max_thrust_ab( data.("Mach Number")(i), data.Altitude(i) )  - mil_thrust );
-        end
-    end
+    mil_thrust = F_mil(mach, alt);
+    ab_thrust  = F_ab(mach, alt);
 
-    data
+    dry_mask = data.PLA <= 100;
+    data.throttle = zeros(height(data), 1);
+    data.throttle( dry_mask) = 0.9 .* data.Thrust( dry_mask) ./ mil_thrust( dry_mask);
+    data.throttle(~dry_mask) = 0.9 + 0.1 .* ...
+        (data.Thrust(~dry_mask) - mil_thrust(~dry_mask)) ./ ...
+        (ab_thrust(~dry_mask)   - mil_thrust(~dry_mask));
+
+    % ------------------------------------------------------------------ %
+    %  Step 2 — Scattered interpolants (natural) to fill the broken grid  %
+    % ------------------------------------------------------------------ %
+    F_thrust_sc = scatteredInterpolant(mach, alt, data.throttle, data.Thrust, 'natural', 'linear');
+    F_tsfc_sc   = scatteredInterpolant(mach, alt, data.throttle, data.TSFC,   'natural', 'linear');
+
+    % ------------------------------------------------------------------ %
+    %  Step 3 — Resample onto a clean regular grid                        %
+    % ------------------------------------------------------------------ %
+    n_mach     = 60;
+    n_alt      = 60;
+    n_throttle = 40;
+
+    mach_vec     = linspace(min(mach),           max(mach),           n_mach);
+    alt_vec      = linspace(min(alt),            max(alt),            n_alt);
+    throttle_vec = linspace(0,                   1,                   n_throttle);
+
+    [M, A, T] = ndgrid(mach_vec, alt_vec, throttle_vec);
+
+    thrust_grid = F_thrust_sc(M, A, T);
+    tsfc_grid   = F_tsfc_sc(M, A, T);
+
+    % ------------------------------------------------------------------ %
+    %  Step 4 — 3-D Gaussian smoothing to remove noise                   %
+    %  Sigma of 1 grid-cell; tune up if the surface still looks rough    %
+    % ------------------------------------------------------------------ %
+    sigma = 1.0;
+    thrust_grid = imgaussfilt3(thrust_grid, sigma);
+    tsfc_grid   = imgaussfilt3(tsfc_grid,   sigma);
+
+    % ------------------------------------------------------------------ %
+    %  Step 5 — Spline griddedInterpolant (supports vector inputs)       %
+    % ------------------------------------------------------------------ %
+    interpObj      = struct();
+    interpObj.TA   = griddedInterpolant({mach_vec, alt_vec, throttle_vec}, thrust_grid, 'spline');
+    interpObj.TSFC = griddedInterpolant({mach_vec, alt_vec, throttle_vec}, tsfc_grid,   'spline');
 end

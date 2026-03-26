@@ -33,6 +33,30 @@ perf.model.CD0 % base: 0.0139
 fprintf("Max Dynamic Pressure: %.4g kPa", compute_max_dynamic_pressure(perf, 1) / 1000 )
 fprintf("\nEsimtated max range: %4g nm", m2nm(estimate_max_range(perf, 1)) )
 
+interpObj = build_engine_lookup("F110")
+
+% interpObj.TA(1.5, 0, 0.5)
+% Define sweep parameters
+mach_vec    = linspace(0, 2,  50);
+throttle_vec = linspace(0, 1, 50);
+altitude     = 0;   % meters — change as needed
+
+[MACH, THROTTLE] = meshgrid(mach_vec, throttle_vec);
+
+% Evaluate thrust across the grid
+THRUST = arrayfun(@(m, t) interpObj.TA(m, altitude, t), MACH, THROTTLE);
+
+% Plot
+figure;
+surf(MACH, THROTTLE, THRUST, 'EdgeColor', 'none');
+colormap(jet);
+colorbar;
+xlabel('Mach Number');
+ylabel('Throttle');
+zlabel('Thrust (N)');
+title(sprintf('F110 Thrust — Altitude = %.0f m', altitude));
+view(135, 30);
+
 % 
 % fprintf("Spot Factor = %.4g\n", perf.model.SpotFactor)
 % 

@@ -16,7 +16,7 @@ model = model_class(settings, geom);
 perf = performance_class(model);
 % build_engine_lookup("F110")
 
-perf.model.cond = levelFlightCondition(perf, 0, 0.5, 1);
+perf.model.cond = levelFlightCondition(perf, 0, 0.8, 1);
 CDi = perf.model.CDi
 
 e_osw = perf.model.cond.CL.v ^2 / (pi * perf.model.geom.wing.AR.v * CDi)

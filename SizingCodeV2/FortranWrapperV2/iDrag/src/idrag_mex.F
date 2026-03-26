@@ -42,7 +42,7 @@ c----- idrag_core is the computation engine (no file I/O)
 
 c----- hard limits (must match idrag_core.f parameter statements)
       integer npanels_max, nvortices_max
-      parameter (npanels_max=5, nvortices_max=200)
+      parameter (npanels_max=20, nvortices_max=200)
 
 c----- scalar inputs
       integer input_mode, sym_flag, cm_flag, npanels, load_flag
@@ -98,7 +98,7 @@ c======================================================================
       npanels    = int(mxGetScalar(prhs(10)))
 
       if (npanels .lt. 1 .or. npanels .gt. npanels_max) then
-         call mexErrMsgTxt('idrag_mex: npanels must be 1..5.')
+         call mexErrMsgTxt('idrag_mex: npanels must be 1..20.')
       endif
 
 c======================================================================

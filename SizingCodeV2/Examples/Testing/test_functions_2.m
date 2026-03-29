@@ -5,9 +5,9 @@
 % TODO: Get real max dynamic pressure
 
 % STARTUP FUNCTIONS
-% initialize
-% matlabSetup
-% build_kevin_cad
+initialize
+matlabSetup
+build_kevin_cad
 
 % INITIAL OBJECTS TO LOAD
 build_default_settings
@@ -29,10 +29,10 @@ e_osw = perf.model.cond.CL.v .^2 ./ (pi * perf.model.geom.wing.AR.v * CDi)
 
 disp("CD0 RESULTS")
 perf.model.CD0 % base: 0.0139
-% 0.0139    0.0139    0.0139
+% 0.0139    0.0139    0.0139 < e_osw
 
-fprintf("Max Dynamic Pressure: %.4g kPa\n", compute_max_dynamic_pressure(perf, 1) / 1000 )
-fprintf("Esimtated max range: %4g nm\n", m2nm(estimate_max_range(perf, 1)) )
+% fprintf("Max Dynamic Pressure: %.4g kPa\n", compute_max_dynamic_pressure(perf, 1) / 1000 )
+% fprintf("Esimtated max range: %4g nm\n", m2nm(estimate_max_range(perf, 1)) )
 
 %% PROP MODEL TESTING
 

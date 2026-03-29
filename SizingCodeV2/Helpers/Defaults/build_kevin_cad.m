@@ -44,6 +44,7 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
     sec5 = btw_section(sec1, sec6, 0.9);
     
     plane.wing = assemble_surface([sec0, sec1, sec2, sec3, sec4, sec5, sec6]);
+    % plane.wing = assemble_surface([sec0, sec1, sec6]);
 
 % ELEVATOR DEFENITION
     root_chord = 0.17 * plane.fuselage.length.v;
@@ -55,6 +56,7 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
     sec1 = btw_section(sec0, sec2, 0.1, flap_length=1, control_name="Elevator"); % Full Flying
     
     plane.elevator = assemble_surface([sec0, sec1, sec2]);
+    % plane.elevator = assemble_surface([sec0, sec2]);
 
 % VTAIL DEFENITION
     root_chord = in2m(79.02);
@@ -67,6 +69,7 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
     sec2 = btw_section(sec0, sec3, 0.9);
     
     plane.rudder = assemble_surface([sec0, sec1, sec2, sec3]);
+    % plane.rudder = assemble_surface([sec0, sec3]);
 
 plane.type = json_entry("Raymer Aircraft Type", "Jet fighter", "s"); % for coefficent lookups
 plane.weights.raymer.A = json_entry("Raymer A Coeff", getRaymerCoefficents(plane.type.v, 1), "");

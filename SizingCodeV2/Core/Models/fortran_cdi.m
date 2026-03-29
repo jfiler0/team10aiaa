@@ -40,6 +40,29 @@ for i = 1:npanels
     spacing_flag(i) = panels(i).spacing_flag;
 end
 
+% % ------------------------------------------------------------------ %
+% %  Debug: plot panels                                                  %
+% % ------------------------------------------------------------------ %
+% figure; hold on; grid on; axis equal;
+% xlabel('x'); ylabel('y'); zlabel('z');
+% title('Panel Layout Debug');
+% view(3);
+% 
+% for i = 1:npanels
+%     % Close the quadrilateral by repeating the first corner
+%     px = xc(i, [1 2 3 4 1]);
+%     py = yc(i, [1 2 3 4 1]);
+%     pz = zc(i, [1 2 3 4 1]);
+%     fill3(px, py, pz, 'cyan', 'FaceAlpha', 0.3, 'EdgeColor', 'blue');
+% 
+%     % Label each panel at its centroid
+%     cx = mean(xc(i,:));
+%     cy = mean(yc(i,:));
+%     cz = mean(zc(i,:));
+%     text(cx, cy, cz, sprintf('%d', i), 'FontSize', 8, ...
+%         'HorizontalAlignment', 'center', 'Color', 'red');
+% end
+
 cfg              = struct();
 cfg.input_mode   = 0;
 cfg.sym_flag     = 1;

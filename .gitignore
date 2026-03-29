@@ -6,4 +6,4 @@ Sizing/concepts_tabulations.xlsx
 
 *.mat
 
-SizingCodeV2/FortranWrapperV2/iDrag/src/idrag_mex.mexw64
+/SizingCodeV2/FortranWrapperV2/iDrag/src/idrag_mex.mexw64

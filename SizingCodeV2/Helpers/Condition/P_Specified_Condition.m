@@ -27,9 +27,9 @@ function cond = P_Specified_Condition(perf, EP, h, MV, W)
 
     cant_level = (ab_max_thrust - thrust_req) .* perf.model.cond.vel.v / perf.model.settings.g_const - EP < 0;
     mil_power = (mil_max_thrust - thrust_req) .* perf.model.cond.vel.v / perf.model.settings.g_const - EP > 0;
-    ab_on = ~cant_level & ~mil_power;
+    ab_on = ~cant_level & ~mil_power; % ab_on = ~cant_level & ~mil_power;
 
-    throttle = one_vec;
+    throttle = one_vec; % note this means all cant_level is set to 1
 
     throttle_mil_power = 0.9 * thrust_req ./ mil_max_thrust;
     throttle(mil_power) = throttle_mil_power(mil_power);
@@ -38,7 +38,7 @@ function cond = P_Specified_Condition(perf, EP, h, MV, W)
     throttle(ab_on) = throttle_ab_on(ab_on);
 
     cond = addCondThrottle(perf.model.cond, throttle);
-
     perf.model.cond = cond;
+
     perf.model.clear_mem(); perf.clear_data();
 end

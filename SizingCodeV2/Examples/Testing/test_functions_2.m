@@ -5,14 +5,15 @@
 % TODO: Get real max dynamic pressure
 
 % STARTUP FUNCTIONS
-initialize
-matlabSetup
-build_kevin_cad
+% initialize
+% matlabSetup
+% build_kevin_cad
 
 % INITIAL OBJECTS TO LOAD
+build_default_settings
 settings = readSettings();
 % geom = loadAircraft("kevin_cad", settings);
-geom = loadAircraft("f18_superhornet", settings);
+geom = loadAircraft("kevin_cad", settings);
 
 model = model_class(settings, geom);
 perf = performance_class(model);
@@ -30,34 +31,78 @@ disp("CD0 RESULTS")
 perf.model.CD0 % base: 0.0139
 % 0.0139    0.0139    0.0139
 
-fprintf("Max Dynamic Pressure: %.4g kPa", compute_max_dynamic_pressure(perf, 1) / 1000 )
-fprintf("\nEsimtated max range: %4g nm", m2nm(estimate_max_range(perf, 1)) )
+fprintf("Max Dynamic Pressure: %.4g kPa\n", compute_max_dynamic_pressure(perf, 1) / 1000 )
+fprintf("Esimtated max range: %4g nm\n", m2nm(estimate_max_range(perf, 1)) )
 
-interpObj = build_engine_lookup("F110")
+%% PROP MODEL TESTING
 
-% interpObj.TA(1.5, 0, 0.5)
-% Define sweep parameters
-mach_vec    = linspace(0, 2,  50);
-throttle_vec = linspace(0, 1, 50);
-altitude     = 0;   % meters — change as needed
-
-[MACH, THROTTLE] = meshgrid(mach_vec, throttle_vec);
-
-% Evaluate thrust across the grid
-THRUST = arrayfun(@(m, t) interpObj.TA(m, altitude, t), MACH, THROTTLE);
-
-% Plot
-figure;
-surf(MACH, THROTTLE, THRUST, 'EdgeColor', 'none');
-colormap(jet);
-colorbar;
-xlabel('Mach Number');
-ylabel('Throttle');
-zlabel('Thrust (N)');
-title(sprintf('F110 Thrust — Altitude = %.0f m', altitude));
-view(135, 30);
-
+% load_engine_lookup("F110", true);
 % 
+% % % Define sweep parameters
+% mach_vec    = linspace(0, 2,  150);
+% alt_vec = linspace(0, 10000, 150); % m
+% throttle = 1;
+% 
+% [MACH, ALT] = meshgrid(mach_vec, alt_vec);
+% THROTTLE = throttle * ones(size(MACH));
+% 
+% one_vec = ones(size(MACH(:)));
+% cond = generateCondition(geom, ALT(:)', MACH(:)', one_vec', one_vec', THROTTLE(:)' );
+% 
+% settings.PROP_model = set.codes.PROP_NPSS; % PROP_BASIC PROP_NPSS
+% geom = loadAircraft("kevin_cad", settings);
+% model = model_class(settings, geom);
+% perf = performance_class(model);
+% perf.model.cond = cond;
+% 
+% thrust_long = perf.TA;
+% THRUST_NPSS = reshape(thrust_long', size(MACH));
+% 
+% settings.PROP_model = set.codes.PROP_BASIC; % PROP_BASIC PROP_NPSS
+% geom = loadAircraft("kevin_cad", settings);
+% model = model_class(settings, geom);
+% perf = performance_class(model);
+% perf.model.cond = cond;
+% 
+% thrust_long = perf.TA;
+% THRUST_BASIC = reshape(thrust_long', size(MACH));
+% 
+% figure;
+% surf(MACH, ALT, THRUST_BASIC, 'EdgeColor', 'none');
+% colormap(jet);
+% colorbar;
+% xlabel('Mach Number');
+% ylabel('Altitude [m]');
+% zlabel('Thrust [N]');
+% title(sprintf('F110 Thrust BASIC - Thorttle = %.0f m', throttle));
+% view(135, 30);
+% 
+% figure;
+% surf(MACH, ALT, THRUST_NPSS, 'EdgeColor', 'none');
+% colormap(jet);
+% colorbar;
+% xlabel('Mach Number');
+% ylabel('Altitude [m]');
+% zlabel('Thrust [N]');
+% title(sprintf('F110 Thrust NPSS - Thorttle = %.0f m', throttle));
+% view(135, 30);
+% 
+% figure;
+% surf(MACH, ALT, 100*(THRUST_NPSS-THRUST_BASIC)./THRUST_BASIC, 'EdgeColor', 'none');
+% colormap(jet);
+% colorbar;
+% xlabel('Mach Number');
+% ylabel('Altitude [m]');
+% zlabel('100 * (NPSS - BASIC)/BASIC (perc)');
+% title(sprintf('NPSS vs BASIC Prediction - Thorttle = %.0f m', throttle));
+% view(135, 30);
+% zlim([-20 300])
+% clim([-20 300])
+
+%% OLD
+
+% max_performance_plots(perf,50);
+
 % fprintf("Spot Factor = %.4g\n", perf.model.SpotFactor)
 % 
 % fprintf("Max Mach at 30kf: %.4f\n", compute_max_mach_at_h(perf, 0.5, ft2m(30000)) )

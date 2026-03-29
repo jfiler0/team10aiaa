@@ -26,7 +26,7 @@ function output = RoskamWeightCalculator(geom, perf)
 % this is where the value is getting better
 
 % Step 1: List all of the known weights
-W_empty = 32081; % approximate weight of other fighter aircraft empty weight
+W_empty = geom.weights.mtow.v * geom.weights.raymer.A.v * N2lb(geom.weights.mtow.v)^geom.weights.raymer.C.v;
 W_fuel = 15000; % from our code estimates
 W_payload = 10000; % from RFP
 W_crew = 200; % guess
@@ -44,8 +44,6 @@ lambda_LE = deg2rad(geom.wing.average_sweep.v); % leading edge sweep angle of th
 taper_ratio = geom.wing.taper_ratio.v;
 A = geom.wing.AR.v; % wing aspect ratio
 S = m2ft(m2ft(geom.wing.area.v)); % wing area
-
-
 
 %horizontal tail
 S_h = m2ft(m2ft(geom.elevator.area.v)); % horizontal tail area (m^2)

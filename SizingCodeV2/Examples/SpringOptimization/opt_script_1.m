@@ -25,3 +25,5 @@ xs = fminunc(fun, X0, opts)
 [~, output] = objective1(xs, geom, settings);
 
 [v_land, glide_angle, ~] = compute_landing_speed(output.perf, 1)
+
+ms2kt(v_land)

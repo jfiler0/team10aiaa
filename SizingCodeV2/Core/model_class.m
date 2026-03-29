@@ -148,6 +148,9 @@ classdef model_class < handle
                         
                     case obj.settings.codes.CD0_IGNORE
                         value = 0;
+
+                    case obj.settings.codes.CD0_FRICTION
+                        value = fortran_cd0(obj.geom, obj.cond.M.v, obj.cond.h.v);
                         
                     otherwise
                         error("Code '%i' has no recognized definition for the CD0 model.", code)
@@ -170,15 +173,11 @@ classdef model_class < handle
             function value = compute_CDi_value(obj, code)
                 switch code
                     case obj.settings.codes.CDi_BASIC_SUBSONIC
-                        e_osw = 0.85;
-                        k1_sub = 1 / (pi * e_osw * obj.geom.wing.AR.v);
 
-                        % TODO: This is not right
-                        % Could take CL out but is example of safe_cond_call
-                        % sub_fun = @(M, I) M*0 + k1_sub * obj.safe_cond_call('CL', I) .^ 2;
-                        % sup_fun = @(M, I) obj.safe_cond_call('CL', I) .^ 2 .* obj.geom.wing.AR.v .* (M.^2 - 1) ./ (4*obj.geom.wing.AR.v * sqrt(M.^2 - 1) -2) * cosd(obj.geom.wing.average_sweep.v);
-                        % 
-                        % value = obj.transonicMerge(sub_fun, sup_fun);
+                        e_osw = 4.61 * (1 - 0.045 * (obj.geom.wing.AR.v)^0.68 ) * cosd(obj.geom.wing.average_sweep.v)^0.15 - 3.1;
+                        e_osw = min(e_osw, 0.85); % Since at low aspect ratios it starts to make no sense
+
+                        k1_sub = 1 / (pi * e_osw * obj.geom.wing.AR.v);
 
                         sub_fun = @(M, I) M*0 + k1_sub;
                         sup_fun = @(M, I) obj.geom.wing.AR.v .* (M.^2 - 1) ./ (4*obj.geom.wing.AR.v * sqrt(M.^2 - 1) -2) * cosd(obj.geom.wing.average_sweep.v);
@@ -359,6 +358,18 @@ classdef model_class < handle
                         alpha(less_than_0) = 0;
 
                         PROP = [TA; TSFC; alpha];
+
+                    case obj.settings.codes.PROP_NPSS
+                        if ~isfield(obj.mem, 'prop_interp')
+                            obj.mem.prop_interp = load_engine_lookup(obj.geom.prop.engine.v);
+                        end
+
+                        TA = obj.mem.prop_interp.TA(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
+                        TSFC = obj.mem.prop_interp.TSFC(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
+
+                        alpha = zeros(size(TA)); % TODO: Do we really need alpha
+
+                        PROP = [TA * obj.geom.prop.num_engine.v; TSFC; alpha];
                         
                     otherwise
                         error("Code '%i' has no recognized definition for the COST model.", code)

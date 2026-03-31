@@ -13,9 +13,9 @@ X0 = 1; % no scale applied - just evaluate base design
 fun = @(X) objective1(X, geom, settings);
 
 opts = optimoptions('fminunc', ...
-    'StepTolerance',      1e-5,  ... % default 1e-6 — coarser steps given noisy inner loops
-    'FunctionTolerance',  1e-5,  ... % default 1e-6
-    'OptimalityTolerance',1e-6,  ... % default 1e-6 — KKT gradient condition
+    'StepTolerance',      1e-4,  ... % default 1e-6 — coarser steps given noisy inner loops
+    'FunctionTolerance',  1e-4,  ... % default 1e-6
+    'OptimalityTolerance',1e-5,  ... % default 1e-6 — KKT gradient condition
     'FiniteDifferenceStepSize', 1e-4, ... % default sqrt(eps) ≈ 1.5e-8 — much larger for nested solvers
     'MaxFunctionEvaluations', 500, ...
     'Display', 'iter');

@@ -19,5 +19,3 @@ A = geom.wing.AR.v;
 LMD = geom.wing.average_qrtr_chd_sweep.v;
 
 perf.model.cond = levelFlightCondition(perf, 0, 0.4, 1);
-
-model.CLa

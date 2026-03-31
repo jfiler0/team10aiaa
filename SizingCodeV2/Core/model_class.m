@@ -358,6 +358,18 @@ classdef model_class < handle
                         alpha(less_than_0) = 0;
 
                         PROP = [TA; TSFC; alpha];
+
+                    case obj.settings.codes.PROP_NPSS
+                        if ~isfield(obj.mem, 'prop_interp')
+                            obj.mem.prop_interp = load_engine_lookup(obj.geom.prop.engine.v);
+                        end
+
+                        TA = obj.mem.prop_interp.TA(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
+                        TSFC = obj.mem.prop_interp.TSFC(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
+
+                        alpha = zeros(size(TA)); % TODO: Do we really need alpha
+
+                        PROP = [TA * obj.geom.prop.num_engine.v; TSFC; alpha];
                         
                     otherwise
                         error("Code '%i' has no recognized definition for the COST model.", code)

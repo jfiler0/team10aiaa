@@ -44,6 +44,7 @@ function surf = assemble_surface(sections)
     surf.average_sweep = json_entry("Average LE Sweep", 0, "deg", true); % filled in a 
     surf.average_te_sweep = json_entry("Average TESweep", 0, "deg", true); % filled in a sec
     surf.average_qrtr_chd_sweep = json_entry("Average Quarer Chord Sweep", 0, "deg", true); % filled in a sec
+    surf.qrtr_chd_x = json_entry("Quarter Chord X Position", 0, "m", true);
     surf.average_tc = json_entry("Average t/c Ratio", 0, "", true); % filled in a sec
 
     num_panels = length(sections)-1;
@@ -58,6 +59,7 @@ function surf = assemble_surface(sections)
         surf.average_sweep.v = surf.average_sweep.v + sweep * area;
         surf.average_te_sweep.v = surf.average_te_sweep.v + te_sweep * area;
         surf.average_qrtr_chd_sweep.v = surf.average_qrtr_chd_sweep.v + qrtr_chd_sweep * area;
+        surf.qrtr_chd_x.v = surf.qrtr_chd_x.v + sections(1).qrtr_chd_coords(1) * area;
         surf.average_tc.v = surf.average_tc.v + 0.5 * ( sections(i+1).tc.v + sections(i).tc.v ) * area;
     end
 
@@ -65,6 +67,7 @@ function surf = assemble_surface(sections)
     surf.average_sweep.v = surf.average_sweep.v / surf.area.v;
     surf.average_te_sweep.v = surf.average_te_sweep.v / surf.area.v;
     surf.average_qrtr_chd_sweep.v = surf.average_qrtr_chd_sweep.v / surf.area.v;
+    surf.qrtr_chd_x.v = surf.qrtr_chd_x.v / surf.area.v;
     surf.average_tc.v = surf.average_tc.v / surf.area.v;
 
     % TODO: Get trailing edge and 1/4 chord sweep angles

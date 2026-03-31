@@ -33,8 +33,11 @@ function geom = processGeometryWeight(geom, settings)
 
             % iterate here
 
-            weight_comps = struct(); % set this to your list of components
-            WE = 1000; % Need to make this something
+            output = RoskamWeightCalculator(geom, perf);
+
+            weight_comps = output; % set this to your list of components
+            disp('huzzah')
+            
 
     end
 

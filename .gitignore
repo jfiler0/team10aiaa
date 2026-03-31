@@ -4,4 +4,4 @@ Sizing/concepts_tabulations.xlsx
 
 *.json
 
-*.mat
+/SizingCodeV2/FortranWrapperV2/iDrag/src/idrag_mex.mexw64

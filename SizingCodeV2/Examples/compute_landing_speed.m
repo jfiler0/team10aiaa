@@ -6,7 +6,7 @@ function [v_land, glide_angle, throttle] = compute_landing_speed(perf, W)
     
     % Optimize
     options = optimset('Display', 'off');
-    v_land = fminsearch(objective, 200, options);
+    v_land = fminsearch(objective, 100, options);
     
     [~, glide_angle, throttle] = obj(perf, v_land, W);
 end

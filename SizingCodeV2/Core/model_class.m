@@ -251,8 +251,22 @@ classdef model_class < handle
                 switch code
                     case obj.settings.codes.CLa_BASIC
 
-                        sub_fun = @(M, I) deg2rad( 2*pi./sqrt(1-M.^2) );
-                        sup_fun = @(M, I) deg2rad( 4./sqrt(M.^2-1) );
+                        sub_fun = @(M, I) deg2rad( 2*pi./sqrt(1-M.^2) ); % flat plate with prandtl-gluaret
+                        sup_fun = @(M, I) deg2rad( 4./sqrt(M.^2-1) ); % ideal supersonic
+
+                        value = obj.transonicMerge(sub_fun, sup_fun);
+
+                    case obj.settings.codes.CLa_RAYMER % compensates for chaning wing sweep
+
+                        fuse_area_est = 0.5 * obj.geom.fuselage.length.v * obj.geom.fuselage.diameter.v / obj.geom.ref_area.v;
+                        A_ratio = (2 * obj.geom.wing.area.v + fuse_area_est) / obj.geom.ref_area.v;
+                        A = obj.geom.wing.AR.v;
+
+                        beta = @(M) 1-M*M;
+                        eta = @(M) 2*pi * beta(M) / (2*pi);
+
+                        sub_fun = @(M, I) A_ratio * 2 * pi * (2*A) / ( 2 + sqrt(4 + A^2 * beta(M)^2 * ( 1 + tand(obj.geom.wing.average_qrtr_chd_sweep.v)^2 / beta(M)^2 ) / eta(M)^2) );
+                        sup_fun = @(M, I) deg2rad( 4./sqrt(M.^2-1) ); % ideal supersonic
 
                         value = obj.transonicMerge(sub_fun, sup_fun);
                         

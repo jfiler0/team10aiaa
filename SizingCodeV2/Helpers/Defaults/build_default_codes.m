@@ -18,6 +18,7 @@ function codes = build_default_codes()
     codes.CDi_IDRAG = 403; % using the fortran code
 
     codes.CLa_BASIC = 501;
+    codes.CLa_RAYMER = 502;
 
     codes.COST_BASIC = 601;
     codes.COST_XANDERSCRIPT = 602;

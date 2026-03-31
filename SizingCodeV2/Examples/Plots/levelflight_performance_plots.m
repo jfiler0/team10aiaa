@@ -3,7 +3,7 @@ function levelflight_performance_plots(perf, N)
     perf.model.clear_mem(); perf.clear_data();
     W = 1;
     h_vec = linspace(0, ft2m(50000), N);
-    M_vec = linspace(0.3, 2, N);
+    M_vec = linspace(0.1, 2, N);
     [M, H] = meshgrid(M_vec, h_vec);
     h_vec_long = H(:)';
     M_vec_long = M(:)';

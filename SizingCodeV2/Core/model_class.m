@@ -262,7 +262,7 @@ classdef model_class < handle
                         A_ratio = (2 * obj.geom.wing.area.v + fuse_area_est) / obj.geom.ref_area.v;
                         A = obj.geom.wing.AR.v;
 
-                        beta = @(M) 1-M*M;
+                        beta = @(M) 1-M.*M;
                         eta = @(M) 2*pi * beta(M) / (2*pi);
 
                         sub_fun = @(M, I) A_ratio * 2 * pi * (2*A) / ( 2 + sqrt(4 + A^2 * beta(M)^2 * ( 1 + tand(obj.geom.wing.average_qrtr_chd_sweep.v)^2 / beta(M)^2 ) / eta(M)^2) );

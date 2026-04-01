@@ -11,4 +11,5 @@ function geom = updateGeom(geom, settings)
         % Currently empty - placeholder for future improvement to speed up derived variable recalculation
     geom = generateGeometryOutline(geom);
         % Used for plots and AVL/idrag input. Surface sections and outlines
+    geom.settings = settings; % i guess we can save this
 end

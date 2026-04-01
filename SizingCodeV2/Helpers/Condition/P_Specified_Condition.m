@@ -1,4 +1,12 @@
-function cond = P_Specified_Condition(perf, EP, h, MV, W)
+function cond = P_Specified_Condition(perf, EP, h, MV, W, MV_decleration)
+    arguments
+        perf 
+        EP 
+        h 
+        MV 
+        W 
+        MV_decleration = perf.model.settings.codes.MV_DEC_UNKOWN
+    end
 
     % EP -> array of target excess power for each flight condition
 
@@ -12,7 +20,7 @@ function cond = P_Specified_Condition(perf, EP, h, MV, W)
     if ~isstruct(perf.model.cond)
         perf.model.cond = buildDefaultCondStruct();
     end
-    perf.model.cond = generateCondition(perf.model.geom, h, MV, one_vec, W, one_vec, perf.model.cond);
+    perf.model.cond = generateCondition(perf.model.geom, h, MV, one_vec, W, one_vec, perf.model.cond, MV_decleration);
    
     drag = perf.Drag;
 

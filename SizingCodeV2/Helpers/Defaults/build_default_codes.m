@@ -45,4 +45,8 @@ function codes = build_default_codes()
     codes.WE_COMPS = 52; % builds up all the component weights and adds
     codes.WE_Nicolai = 53;
     codes.WE_Roskam = 54;
+
+    codes.MV_DEC_UNKOWN = 2001; % for added stability in optimization, generateCondition now has an input that allows changing how the MV (mach or velocity) argument is handled
+    codes.MV_DEC_VEL = 2001;
+    codes.MV_DEC_MACH = 2001;
 end

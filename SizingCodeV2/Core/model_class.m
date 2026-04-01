@@ -5,6 +5,7 @@ classdef model_class < handle
         cond
         
         mem
+        prop_interp = NaN;
     end
     
     methods
@@ -374,12 +375,12 @@ classdef model_class < handle
                         PROP = [TA; TSFC; alpha];
 
                     case obj.settings.codes.PROP_NPSS
-                        if ~isfield(obj.mem, 'prop_interp')
-                            obj.mem.prop_interp = load_engine_lookup(obj.geom.prop.engine.v);
+                        if ~isstruct(obj.prop_interp)
+                            obj.prop_interp = load_engine_lookup(obj.geom.prop.engine.v);
                         end
 
-                        TA = obj.mem.prop_interp.TA(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
-                        TSFC = obj.mem.prop_interp.TSFC(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
+                        TA = obj.prop_interp.TA(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
+                        TSFC = obj.prop_interp.TSFC(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
 
                         alpha = zeros(size(TA)); % TODO: Do we really need alpha
 

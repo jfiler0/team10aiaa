@@ -1,33 +1,44 @@
+% claude added some stability modifications. Nvm. fuck claude ill do this myself
 function [v_land, glide_angle, throttle] = compute_landing_speed(perf, W)
-    % Landing info
+    v0  = 50; % strting guess
 
-    % Define objective function
-    objective = @(v) obj(perf, v, W);
+    landing_descent_rate = ft2m(20);
     
-    % Optimize
-    options = optimset('Display', 'off');
-    v_land = fminsearch(objective, 100, options);
+    flap_inc    = 1.3;
+    aoa_limit = 10;
+
+    err = 1;
+    tol = 1E-6;
+    i_limit = 20; i = 0;
+
+    v = v0;
     
-    [~, glide_angle, throttle] = obj(perf, v_land, W);
-end
+    while err > tol
+        i = i + 1;
 
-function [out, glide_angle, throttle] = obj(perf, v, W)
-    landing_descent_rate = ft2m(20); % 20ft/s descent rate max
-    aoa_limit = 8; % 8 degree AOA limit
+        if(v < landing_descent_rate)
+            warning("Landing velocity iteration is less than descent rate. That makes no sense. Exiting loop.")
+            break;
+        end
+    
+        cond = P_Specified_Condition(perf, -landing_descent_rate, 0, v, W, perf.model.settings.codes.MV_DEC_VEL);
+        perf.model.cond = cond;
 
-    cond = P_Specified_Condition(perf, -landing_descent_rate, 0, v, W);
-    perf.model.cond = cond;
+        CLa = perf.model.CLa * pi/180;
+        % alpha = ( cond.W.v / cosd(glide_angle) ) / ( flap_inc * CLa * cond.qinf.v * perf.model.geom.ref_area.v );
+        % alpha = ( cond.W.v / cosd(glide_angle) ) / ( flap_inc * CLa * 0.5 * cond.rho.v * cond.vel.v^2 * perf.model.geom.ref_area.v );
 
-    glide_angle = asind(landing_descent_rate/v);
+        glide_angle = asind(landing_descent_rate / v);
+        v_next = sqrt( ( cond.W.v / cosd(glide_angle) ) / ( flap_inc * aoa_limit * CLa * 0.5 * cond.rho.v * perf.model.geom.ref_area.v ) );
 
-    flap_inc = 1.6;
+        err = abs(v_next - v)/v;
+        v = v_next;
+    end
 
-    % TODO: How to get AOA using lift slope properly
-    alpha = fzero(@(alpha) cond.W.v/cosd(alpha - glide_angle) - flap_inc * perf.model.CLa * alpha * cond.qinf.v * perf.model.geom.ref_area.v, aoa_limit );
+    if i == i_limit
+        warning("Landing speed search hit iteration limit.")
+    end
 
-    n = 1 / cosd(alpha - glide_angle);
+    v_land = v;
     throttle = cond.throttle.v;
-
-    R = 100;
-    out = v / 100 + R * max([alpha/aoa_limit - 1, cond.throttle.v / 1 - 1, 0]);
 end

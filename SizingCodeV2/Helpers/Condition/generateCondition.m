@@ -6,7 +6,7 @@ function cond = generateCondition(geom, h, M_vel, n, W, throttle, sample_cond, M
         n 
         W 
         throttle 
-        sample_cond 
+        sample_cond = buildDefaultCondStruct();
         MV_decleration = geom.settings.codes.MV_DEC_UNKOWN % standard is to check magnitude to decide what to do
     end
     % specify either altitude and mach or altitude and velocity (tells which it is from magnitude)
@@ -23,11 +23,6 @@ function cond = generateCondition(geom, h, M_vel, n, W, throttle, sample_cond, M
     % Keeping things as .v so that units / names can be added later if needed
 
     % buildDefaultCondStruct is pretty slow. It is faster to provide an existing struct copy and overwrite it
-    if nargin < 7
-        cond = buildDefaultCondStruct();
-    else
-        cond = sample_cond;
-    end
 
     cond.h.v = h;
 

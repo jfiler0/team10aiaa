@@ -15,6 +15,3 @@ sm = linspace(-0.3,0.3,100);
 
 % Stability Requirement
 % SHSW_stability = 
-
-
-

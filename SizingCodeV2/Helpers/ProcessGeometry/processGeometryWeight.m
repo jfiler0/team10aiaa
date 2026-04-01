@@ -13,7 +13,6 @@ function geom = processGeometryWeight(geom, settings)
             weight_comps = getRaymerWeightStruct(geom);
             
         case settings.codes.WE_Nicolai
-            settings = readSettings();
             model = model_class(settings, geom);
             perf = performance_class(model);
 
@@ -23,7 +22,6 @@ function geom = processGeometryWeight(geom, settings)
             WE = 1000; % Need to make this something
 
         case settings.codes.WE_Roskam
-            settings = readSettings();
             model = model_class(settings, geom);
             perf = performance_class(model);
 

@@ -84,6 +84,8 @@ plane.racks = [-1 -0.7 -0.5 -0.2 0.2 0.5 0.7 1]; % spanwise position of the rack
 % plane.stores = []; % clean confiuration
 
 plane = setLoadout(plane, ["AIM-9X" "" "" "" "" "" "" "AIM-9X"]);
+% 
+% plane.airfoil = json_entry("Airfoil Code", "NACAXXX", "s")
 
 writeAircraftFile(plane);
     % Writes the actual file generally. This also means the location only needs to be changed in one place

@@ -9,7 +9,7 @@ function [obj, output] = objective1(X, model, base_geom)
     %% STEP 1: Modify geom according the X design vector
     geom = base_geom;
     geom.wing = scale_surface(geom.wing, X(1), [geom.wing.qrtr_chd_x.v, geom.wing.le_y.v]);
-    geom = updateGeom(geom, model.settings);
+    geom = updateGeom(geom, model.settings, false);
     model.geom = geom;
 
     %% STEP 2: Create needed classes

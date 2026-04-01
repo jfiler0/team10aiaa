@@ -1,7 +1,15 @@
-function geom = updateGeom(geom, settings)
-    geom = updatePropulsionInfo(geom); 
-        % Gets the needed propulsion parameters needed for the Prop model. May require further modification 
-        % if a more advanced prop model is used. Currently references the engine lookup using an engine defenition in the geometry file
+function geom = updateGeom(geom, settings, update_prop)
+    arguments
+        geom 
+        settings 
+        update_prop = true
+    end
+
+    if update_prop % updating the propulsion system is the most expensive call here as it must read a csv file. This can be disabled for already loaded geometries for faster optimization
+        geom = updatePropulsionInfo(geom); 
+            % Gets the needed propulsion parameters needed for the Prop model. May require further modification 
+            % if a more advanced prop model is used. Currently references the engine lookup using an engine defenition in the geometry file
+    end
     geom = processGeometryDerived(geom); 
         % Primary update function which calculates derived variables and assigns them for the first time
         % Quite a bit of reduancy in this function which could be improved

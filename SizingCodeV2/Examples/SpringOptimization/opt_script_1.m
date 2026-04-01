@@ -1,13 +1,13 @@
-initialize
-matlabSetup
-build_kevin_cad
+
+% initialize
+% matlabSetup
+% build_kevin_cad
 
 % INITIAL OBJECTS TO LOAD
 build_default_settings
 settings = readSettings();
-geom = loadAircraft("kevin_cad", settings);
+geom = loadAircraft("kevin_cad", settings); % note that this included loading prop which is why it is disabled in the loop
 model = model_class(settings, geom);
-
 
 X0 = 1; % no scale applied - just evaluate base design
 % [obj, output] = objective1(X0, geom, settings);

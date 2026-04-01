@@ -8,8 +8,8 @@ function [v_land, glide_angle, throttle] = compute_landing_speed(perf, W)
     aoa_limit = 10;
 
     err = 1;
-    tol = 1E-6;
-    i_limit = 20; i = 0;
+    tol = 1E-5;
+    i_limit = 30; i = 0;
 
     v = v0;
     

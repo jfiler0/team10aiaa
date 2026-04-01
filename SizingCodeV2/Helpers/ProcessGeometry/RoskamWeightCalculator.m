@@ -26,7 +26,7 @@ function output = RoskamWeightCalculator(geom, perf)
 % this is where the value is getting better
 
 % Step 1: List all of the known weights
-W_empty = N2lb(geom.weights.mtow.v * geom.weights.raymer.A.v * N2lb(geom.weights.mtow.v)^geom.weights.raymer.C.v);
+W_empty = geom.weights.mtow.v * geom.weights.raymer.A.v * N2lb(geom.weights.mtow.v)^geom.weights.raymer.C.v;
 % W_fuel = 15000; % from our code estimates
 % W_payload = 10000; % from RFP
 % W_crew = 200; % guess
@@ -283,7 +283,7 @@ output.W_fur = lb2N(W_fur); % furnishings
 output.W_aux = lb2N(W_aux); % auxilliary gear
 % output.W_ops = lb2N(W_ops); % operational items
 output.W_arm = lb2N(10000); % armmaments weights
-output.W_empty_new = lb2N(W_empty_new);
+% output.W_empty_new = lb2N(W_empty_new);
 
 
 

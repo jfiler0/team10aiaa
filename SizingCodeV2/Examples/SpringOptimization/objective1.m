@@ -35,5 +35,6 @@ function [obj, output] = objective1(X, model, base_geom)
 
     output = struct();
     output.perf = perf;
+    output.geom = geom;
 
 end

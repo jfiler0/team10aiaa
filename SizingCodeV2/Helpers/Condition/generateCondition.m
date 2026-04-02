@@ -6,9 +6,36 @@ function cond = generateCondition(geom, h, M_vel, n, W, throttle, sample_cond, M
         n 
         W 
         throttle 
-        sample_cond = buildDefaultCondStruct();
+        sample_cond = struct(); % this still counts as empty
         MV_decleration = geom.settings.codes.MV_DEC_UNKOWN % standard is to check magnitude to decide what to do
     end
+    
+    % set of checks to pattern scalers to arrays
+    lengths = [length(h) length(M_vel) length(n) length(W) length(throttle)];
+    n_cond = max(lengths);
+
+    if n_cond ~= min(lengths)% we need to do some checks or throw an error
+        for i = 1:5
+            if lengths(i) ~= n_cond % this is the right length
+                if lengths(lengths(i) > 1) % it is not a scaler
+                    error("Condition input at position %i is not a scaler and does not match the maximum input vector length.", i)
+                end
+                switch i
+                    case 1
+                        h = h * ones([1 n_cond]);
+                    case 2
+                        M_vel = M_vel * ones([1 n_cond]);
+                    case 3
+                        n = n * ones([1 n_cond]);
+                    case 4
+                        W = W * ones([1 n_cond]);
+                    case 5
+                        throttle = throttle * ones([1 n_cond]);
+                end
+            end
+        end
+    end
+    
     % specify either altitude and mach or altitude and velocity (tells which it is from magnitude)
 
     % n -> load factor for Cl calculation. 1 is level flight.
@@ -23,6 +50,11 @@ function cond = generateCondition(geom, h, M_vel, n, W, throttle, sample_cond, M
     % Keeping things as .v so that units / names can be added later if needed
 
     % buildDefaultCondStruct is pretty slow. It is faster to provide an existing struct copy and overwrite it
+    if isempty(sample_cond) % trigger to build
+        cond = buildDefaultCondStruct();
+    else
+        cond = sample_cond;
+    end
 
     cond.h.v = h;
 

@@ -27,7 +27,7 @@ function struct = json_entry(name, value, units, derived_override)
         struct.d = derived_override; % Having derived_override is needed for the default condition struct
         struct.eval = 0;
         struct.v = value;
-    elseif isa(value, 'string')
+     elseif isa(value, 'string')
         % if ~isstruct(geom)
         %     error('json_entry was called with no defined geom (not enough arguments)')
         % end

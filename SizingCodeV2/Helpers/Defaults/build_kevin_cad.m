@@ -57,9 +57,10 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
     
     plane.elevator = assemble_surface([sec0, sec1, sec2]);
     % plane.elevator = assemble_surface([sec0, sec2]);
-    plane.elevator.airfoil = json_entry("Airfoil Section", "NACA0009", "");
-    plane.elevator.airfoil.liftslope = json_entry("Section Lift Slope", 2*pi, "1/rad");
-    plane.elevator.liftslope = plane.elevator.airfoil.liftslope/(1 + plane.elevator.airfoil.liftslope/(pi*plane.elevator.AR));
+    plane.elevator.airfoil = json_entry("Airfoil Section", "NACA0009", "s");
+    % plane.elevator.airfoil.liftslope = json_entry("Section Lift Slope", 2*pi, "1/rad");
+    % plane.elevator.liftslope = plane.elevator.airfoil.liftslope.v/(1 + plane.elevator.airfoil.liftslope.v/(pi*plane.elevator.AR.v));
+    % plane.depsdalpha = 2*plane.CLa/(pi*plane.wing.AR.v);
 % VTAIL DEFENITION
     root_chord = in2m(79.02);
     tip_chord = in2m(98.62) * 0.4705;

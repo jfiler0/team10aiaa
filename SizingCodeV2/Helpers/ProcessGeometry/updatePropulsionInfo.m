@@ -4,7 +4,6 @@ function geom = updatePropulsionInfo(geom)
     % In the future, we can add more columns to the excel file if more advanced models require more inputs
 
     % In the current configuration, there is no intention to allow changing of engine type during optimization. It must be done manually
-
     engine_lookup = readtable("engine_lookup.xlsx");
 
     engine_name = upper(geom.prop.engine.v); % reminder that .v is needed to get "value"

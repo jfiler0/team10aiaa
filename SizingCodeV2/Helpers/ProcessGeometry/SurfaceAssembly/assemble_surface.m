@@ -11,11 +11,13 @@ function surf = assemble_surface(sections)
     prev_z = 0;
     for j = 1:length(sections)
         % loop through the sections to correct XYZ coordinates to the body using local dihedral
-        sections(j).le_y.v = prev_y + (sections(j).le_yp.v - prev_yp) * cosd(sections(j).dihedral.v);
-        sections(j).le_z.v = prev_z + (sections(j).le_yp.v - prev_yp) * sind(sections(j).dihedral.v);
+        sections(j).le_y.v = sections(j).le_y.v + sections(j).offset(1);
+        sections(j).le_y.v = prev_y + (sections(j).le_yp.v - prev_yp) * cosd(sections(j).dihedral.v) + sections(j).offset(2);
+        sections(j).le_z.v = prev_z + (sections(j).le_yp.v - prev_yp) * sind(sections(j).dihedral.v) +sections(j).offset(3);
+        sections(j).le_z.v
 
         prev_y = sections(j).le_y.v;
-        prev_yp = sections(j).le_yp.v;
+        prev_yp = sections(j).le_yp.v; % this is relative to the surface axis and does not change with dihedral
         prev_z = sections(j).le_z.v;
 
         sections(j).te_y.v = prev_y;

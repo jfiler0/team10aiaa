@@ -33,7 +33,7 @@ classdef TestingScript < matlab.unittest.TestCase
         end
         function verifyCombatRadius(testCase)
             combat_radius = getComposerVal("Fuselage", "CombatRadius");
-            testCase.verifyGreaterThan(combat_radius, ft2m(500));
+            testCase.verifyGreaterThan(combat_radius, ft2m(699));
         end
     end
 end

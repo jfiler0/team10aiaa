@@ -36,4 +36,6 @@ fprintf("Max Rate of Climb Sealevel (mil) (M0.5) (empty): 12fpm. Code: %.2f\n", 
 perf.model.clear_mem(); perf.clear_data(); perf.model.cond = generateCondition(geom, 0, 0.5, 1, W, 1);
 fprintf("Max Rate of Climb Sealevel (AB) (M0.5) (empty): 44fpm. Code: %.2f\n", m2ft(perf.ExcessPower)*60/1000);
 
-plot_performance(geom, perf, 50)
+% plot_performance(geom, perf, 50)
+
+displayAircraftGeom(geom)

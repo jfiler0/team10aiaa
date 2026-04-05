@@ -1,4 +1,3 @@
-
 % initialize
 % matlabSetup
 % build_kevin_cad
@@ -28,3 +27,4 @@ xs = fminsearch(fun, X0, opts);
 
 fprintf("Scale wings by a factor of %.3f to get a landing speed of %.4f kt (against the cosntraint of 145). Process took %.3f sec", xs(1), ms2kt(v_land), toc)
 
+displayAircraftGeom(output.geom)

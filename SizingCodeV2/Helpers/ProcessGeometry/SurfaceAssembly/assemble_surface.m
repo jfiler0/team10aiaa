@@ -11,11 +11,12 @@ function surf = assemble_surface(sections)
     prev_z = 0;
     for j = 1:length(sections)
         % loop through the sections to correct XYZ coordinates to the body using local dihedral
-        sections(j).le_y.v = prev_y + (sections(j).le_yp.v - prev_yp) * cosd(sections(j).dihedral.v);
-        sections(j).le_z.v = prev_z + (sections(j).le_yp.v - prev_yp) * sind(sections(j).dihedral.v);
+        sections(j).le_y.v = sections(j).le_y.v + sections(j).offset(1);
+        sections(j).le_y.v = prev_y + (sections(j).le_yp.v - prev_yp) * cosd(sections(j).dihedral.v) + sections(j).offset(2);
+        sections(j).le_z.v = prev_z + (sections(j).le_yp.v - prev_yp) * sind(sections(j).dihedral.v) +sections(j).offset(3);
 
         prev_y = sections(j).le_y.v;
-        prev_yp = sections(j).le_yp.v;
+        prev_yp = sections(j).le_yp.v; % this is relative to the surface axis and does not change with dihedral
         prev_z = sections(j).le_z.v;
 
         sections(j).te_y.v = prev_y;
@@ -44,15 +45,22 @@ function surf = assemble_surface(sections)
     surf.average_sweep = json_entry("Average LE Sweep", 0, "deg", true); % filled in a 
     surf.average_te_sweep = json_entry("Average TESweep", 0, "deg", true); % filled in a sec
     surf.average_qrtr_chd_sweep = json_entry("Average Quarer Chord Sweep", 0, "deg", true); % filled in a sec
-    surf.qrtr_chd_x = json_entry("Quarter Chord X Position", 0, "m", true);
+    surf.qrtr_chd_x = json_entry("Quarter Chord X Position", 0, "m", true); % filled in a sec
     surf.average_tc = json_entry("Average t/c Ratio", 0, "", true); % filled in a sec
+    surf.x_cp = json_entry("Surface CP X Pos from LE", 0, "", true); % filled in a sec
 
     num_panels = length(sections)-1;
     for i = 1:num_panels
-        area = 0.5 * (sections(i+1).le_y.v - sections(i).le_y.v)*( sections(i+1).chord_length.v + sections(i).chord_length.v );
-        sweep = atan2d( sections(i+1).le_x.v - sections(i).le_x.v, sections(i+1).le_y.v - sections(i).le_y.v );
+        height = sections(i+1).le_y.v - sections(i).le_y.v;
+
+        area = 0.5 * height *( sections(i+1).chord_length.v + sections(i).chord_length.v );
+        sweep = atan2d( sections(i+1).le_x.v - sections(i).le_x.v, height );
         te_sweep = atan2d( sections(i+1).te_x.v - sections(i).te_x.v, sections(i+1).te_y.v - sections(i).te_y.v );
         qrtr_chd_sweep = atan2d( sections(i+1).qrtr_chd_coords(1) - sections(i).qrtr_chd_coords(1), sections(i+1).qrtr_chd_coords(2) - sections(i).qrtr_chd_coords(2) );
+        
+        % calculating the center of pressure using appendices etkin&reid. Note this is initially from le of the sections
+        taper = sections(i+1).chord_length.v / sections(i).chord_length.v;
+        x_cp = sections(i).le_x.v + height * (1/3) + (1 + 2*taper) * tand(qrtr_chd_sweep) / (1 + taper);
 
         surf.area.v = surf.area.v + area;
         surf.average_chord.v = surf.average_chord.v + 0.5 * ( sections(i+1).chord_length.v + sections(i).chord_length.v ) * area;
@@ -61,6 +69,7 @@ function surf = assemble_surface(sections)
         surf.average_qrtr_chd_sweep.v = surf.average_qrtr_chd_sweep.v + qrtr_chd_sweep * area;
         surf.qrtr_chd_x.v = surf.qrtr_chd_x.v + sections(1).qrtr_chd_coords(1) * area;
         surf.average_tc.v = surf.average_tc.v + 0.5 * ( sections(i+1).tc.v + sections(i).tc.v ) * area;
+        surf.x_cp.v = surf.x_cp.v + x_cp*area;
     end
 
     surf.average_chord.v = surf.average_chord.v / surf.area.v;
@@ -69,6 +78,7 @@ function surf = assemble_surface(sections)
     surf.average_qrtr_chd_sweep.v = surf.average_qrtr_chd_sweep.v / surf.area.v;
     surf.qrtr_chd_x.v = surf.qrtr_chd_x.v / surf.area.v;
     surf.average_tc.v = surf.average_tc.v / surf.area.v;
+    surf.x_cp.v = surf.x_cp.v / surf.area.v;
 
     % TODO: Get trailing edge and 1/4 chord sweep angles
     % TODO: Get 1/4 chord root position

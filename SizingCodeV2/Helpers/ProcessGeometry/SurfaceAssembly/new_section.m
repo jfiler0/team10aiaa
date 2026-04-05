@@ -12,6 +12,7 @@ function sec = new_section(chord_length, le_x, le_y, opts)
         opts.flap_length double = 0 % normalized by chord length. If 0 there is no flap
         opts.tc double = 0.04
         opts.control_name string = ""
+        opts.offset (1,3) double = [0 0 0] % needs to be three elements long
             % When integrated in a wing, the flap extends to the next section. If the section is the tip, any flaps are not consdered
     end
 
@@ -35,4 +36,6 @@ function sec = new_section(chord_length, le_x, le_y, opts)
     sec.flap_length = json_entry("Flap Length", opts.flap_length, "");
     sec.tc = json_entry("T/C - Thickness", opts.tc, "");
     sec.control_name = json_entry("Control Name", opts.control_name, "s");
+
+    sec.offset = opts.offset; % this is just a vector which is added to the section when build in assemble_surface for more flexibility
 end

@@ -27,7 +27,7 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
 % MAIN WING DEFENITION - only the inboard side of the flap must be defined
     wing_le_x = 4.280;
     lerx_root = 9.41;
-    sec0 = new_section(lerx_root, wing_le_x, 0.297, tc=0.06, dihedral=-1.764);
+    sec0 = new_section(lerx_root, wing_le_x, 0.297, tc=0.06, dihedral=-1.764, offset=[0 0 0.4]);
     sec1 = new_section(4.507, lerx_root+wing_le_x-4.507, 0.297 + 1.509, tc=0.04, dihedral=-1.764);
     sec6 = new_section(1.686, lerx_root+wing_le_x-1.686 - 0.25, 4.518 + 0.297 + 1.509, tc=0.02, dihedral=-1.764);
     
@@ -42,7 +42,7 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
     plane.wing = assemble_surface([sec0, sec1, sec2, sec3, sec4, sec5, sec6]);
 
 % ELEVATOR DEFENITION
-    sec0 = new_section(3.234, 13.622, 0.328, tc=0.04);
+    sec0 = new_section(3.234, 13.622, 0.328, tc=0.04, offset=[0 0 -0.2]);
     sec2 = new_section(1.55, 1.55 + 2 + 13.622, 0.328+3.26190, tc=0.03);
     
     % Flap
@@ -51,8 +51,8 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
     plane.elevator = assemble_surface([sec0, sec1, sec2]);
 
 % VTAIL DEFENITION
-    sec0 = new_section(3.2, 12.5, 1, tc=0.04, dihedral=68.84, offset=[0 0.5 0]);
-    sec3 = new_section(1.02, 1.5 + 1.5 + 12.162, 0.5+3.212, tc=0.03, dihedral=68.84);
+    sec0 = new_section(3.2, 12.5, 1, tc=0.04, dihedral=68.84, offset=[0 0.5 -0.6], twist=-2);
+    sec3 = new_section(1.02, 1.5 + 1.5 + 12.162, 0.5+3.212, tc=0.03, dihedral=68.84, twist=-2);
     
     % Flap
     sec1 = btw_section(sec0, sec3, 0.1, flap_length=0.15, control_name="Rudder"); % vtail

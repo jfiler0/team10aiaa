@@ -4,21 +4,21 @@ function sec = new_section(chord_length, le_x, le_y, opts)
         chord_length double % m
 
         % NOTE: These are inputted as essentially the local coordinates. (y is down the surface). Later it is converted back to body coords with z included
-        le_x double % m
-        le_y double % m
+        le_x double % m -> relative to the aircraft nose
+        le_y double % m -> relative to the centerline (XZ plane)
 
-        opts.dihedral double = 0 % deg
-        opts.twist double = 0 % deg
+        opts.dihedral double = 0 % deg -> this stays relative to horizontal (XY plane)
+        opts.twist double = 0 % deg -> applies to each section and does NOT stack. It is only applied for the .outline for an input to FORTRAN codes. It is not actually applied the x,y,z coords of the final sections. They stay untwisted
+            % applied about the 1/4 chord
         opts.flap_length double = 0 % normalized by chord length. If 0 there is no flap
-        opts.tc double = 0.04
-        opts.control_name string = ""
-        opts.offset (1,3) double = [0 0 0] % needs to be three elements long
             % When integrated in a wing, the flap extends to the next section. If the section is the tip, any flaps are not consdered
+        opts.tc double = 0.04 % thickness of the section
+        opts.control_name string = ""
+        opts.offset (1,3) double = [0 0 0] % needs to be three elements long. X, Y, Z. This offset stacks with each section. An initial offset applies to all sections after.
+
     end
 
     sec = struct();
-
-    % TODO: Fix wing dihedral positions
 
     sec.chord_length = json_entry("Length", chord_length, "m");
     sec.le_x = json_entry("Leading Edge X Position", le_x, "m");

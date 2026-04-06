@@ -24,6 +24,7 @@ Might want some checks for resonable values
     - compare the f18 model
 - FORTRAN? idrag?
 - link with simulation (stability derivatives) (not as important)  -> how to get this in the loop
+-Add twisting and incidence angles to surfaces
 	- control power required to make turns
 - improve store drag estimation
 - better flap -> max cl model

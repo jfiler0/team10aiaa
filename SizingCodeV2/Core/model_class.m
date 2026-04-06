@@ -259,7 +259,7 @@ classdef model_class < handle
 
                     case obj.settings.codes.CLa_RAYMER % compensates for chaning wing sweep
 
-                        fuse_area_est = 0.5 * obj.geom.fuselage.length.v * obj.geom.fuselage.diameter.v / obj.geom.ref_area.v;
+                        fuse_area_est = 0.5 * obj.geom.fuselage.length.v * obj.geom.fuselage.diameter.v;
                         A_ratio = (2 * obj.geom.wing.area.v + fuse_area_est) / obj.geom.ref_area.v;
                         A = obj.geom.wing.AR.v;
 

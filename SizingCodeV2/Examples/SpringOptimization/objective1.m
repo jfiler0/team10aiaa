@@ -26,7 +26,6 @@ function [obj, output] = objective1(X, model, base_geom)
         % could constrain glide_angle
 
     g1 = ms2kt(v_land)/145 - 1;
-    % g1
 
     %% STEP 5: Apply penalities and return obj
     R = 100;

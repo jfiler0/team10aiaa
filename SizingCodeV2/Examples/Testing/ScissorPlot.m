@@ -43,3 +43,5 @@ legend('Stability Limit','Control Limit');
 xlabel('x_cg - x_ac normalized');
 ylabel('SH/SW');
 
+%% Test 
+displayAircraftGeom(geom)

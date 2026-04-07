@@ -40,6 +40,7 @@ currentMach    = NaN;
 currentRe      = NaN;
 currentSref    = NaN;
 inCoeffTable   = false;
+inAuxSection   = false;   % true when inside AUXILIARY AND PARTIAL OUTPUT block
 colNames       = {'Alpha','CD','CL','CM','CN','CA','XCP', ...
                   'CLA','CMA','CYB','CNB','CLB'};
 rowBuffer      = [];
@@ -50,12 +51,15 @@ while k <= nlines
     tline = strtrim(line);
 
     % ------------------------------------------------------------------
-    %  CASEID title line (from CASEID card)
-    %  Appears in output as e.g.:
-    %    "                    ASYMMETRIC (CAMBERED) BODY SOLUTION..."
-    %  Look for configuration description header then grab the title
+    %  Detect auxiliary output section — skip its coefficient tables
+    %  to avoid duplicating the main results
     % ------------------------------------------------------------------
-    if contains(line, 'CHARACTERISTICS AT ANGLE OF ATTACK')
+    if contains(line, 'AUXILIARY AND PARTIAL OUTPUT')
+        inAuxSection = true;
+    end
+    if contains(line, 'CHARACTERISTICS AT ANGLE OF ATTACK') && ...
+       ~contains(line, 'AUXILIARY')
+        inAuxSection = false;
         % Title is 2 lines below this header (skip blank)
         if k+3 <= nlines
             titleLine = strtrim(char(lines(k+3)));
@@ -91,7 +95,7 @@ while k <= nlines
     %  Column header line — marks start of a coefficient table
     %  "0 ALPHA     CD       CL       CM       CN       CA       XCP ..."
     % ------------------------------------------------------------------
-    if contains(line, 'ALPHA') && contains(line, 'CD') && ...
+    if ~inAuxSection && contains(line, 'ALPHA') && contains(line, 'CD') && ...
        contains(line, 'CL')    && contains(line, 'CM')
         % Save previous block if any
         if inCoeffTable && ~isempty(rowBuffer)
@@ -109,8 +113,15 @@ while k <= nlines
     %  First token is alpha (numeric).  NDM / ****** handled as NaN.
     % ------------------------------------------------------------------
     if inCoeffTable
-        % Blank line or new section header — end this table
-        if isempty(tline) || startsWith(tline, '1') || startsWith(tline, '0***')
+        % Detect lines that end the coefficient table:
+        %   downwash section (Q/QINF, EPSLON), ANALYSIS TERMINATED,
+        %   DATCOM form-feed ('1' or '1 text', NOT '12.0', '16.0'),
+        %   blank lines, or 0*** warnings
+        isDownwash = contains(line, 'Q/QINF') || contains(line, 'EPSLON') || ...
+                     contains(line, 'ANALYSIS TERMINATED');
+        isFormFeed = strcmp(tline, '1') || ...
+                     (startsWith(tline, '1') && ~isempty(regexp(tline, '^1\s', 'once')));
+        if isempty(tline) || isFormFeed || startsWith(tline, '0***') || isDownwash
             if ~isempty(rowBuffer)
                 tables(end+1) = makeTableEntry(currentTitle, currentMach, ...  %#ok<AGROW>
                     currentRe, currentSref, rowBuffer, colNames);

@@ -27,12 +27,14 @@ function output = RoskamWeightCalculator(geom, perf)
 
 % Step 1: List all of the known weights
 W_empty = geom.weights.mtow.v * geom.weights.raymer.A.v * N2lb(geom.weights.mtow.v)^geom.weights.raymer.C.v;
-W_fuel = 15000; % from our code estimates
-W_payload = 10000; % from RFP
-W_crew = 200; % guess
-W_tfo = 300; % trapped fuel and oil weight
-TOGW = W_empty + W_fuel+W_payload+W_crew+W_tfo; % initial guess, where we want the aircraft to be at.
-GW = TOGW * 0.95 ; % flight design gross weight
+% W_fuel = 15000; % from our code estimates
+% W_payload = 10000; % from RFP
+% W_crew = 200; % guess
+% W_tfo = 300; % trapped fuel and oil weight
+% TOGW = W_empty + W_fuel+W_payload+W_crew+W_tfo; % initial guess, where we want the aircraft to be at.
+% GW = TOGW * 0.95 ; % flight design gross weight
+TOGW = N2lb(geom.weights.mtow.v);
+GW = 0.95 * TOGW;
 
 %% List all Inputs for each equation you desire to use
 
@@ -244,9 +246,9 @@ W_feq = W_fc + W_hps + W_els + W_iae + W_api + W_ox + W_apu + W_fur + W_bc + W_a
 W_empty_new = W_struct+W_feq+W_pwr;
 
 % display new empty weight
-disp(['New Empty Weight: ', num2str(W_empty_new), ' lbs']);
+% disp(['New Empty Weight: ', num2str(W_empty_new), ' lbs']);
 
-TOGW_new =  W_empty_new + W_fuel+W_payload+W_crew+W_tfo; % new TOGW
+% TOGW_new =  W_empty_new + W_fuel+W_payload+W_crew+W_tfo; % new TOGW
 
 %% Form output struct
 
@@ -281,7 +283,7 @@ output.W_fur = lb2N(W_fur); % furnishings
 output.W_aux = lb2N(W_aux); % auxilliary gear
 % output.W_ops = lb2N(W_ops); % operational items
 output.W_arm = lb2N(10000); % armmaments weights
-output.W_empty_new = lb2N(W_empty_new);
+% output.W_empty_new = lb2N(W_empty_new);
 
 
 

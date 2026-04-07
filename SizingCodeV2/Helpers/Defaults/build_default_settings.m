@@ -33,15 +33,15 @@ set.TSFC_scaler = 1;
 
 set.codes = build_default_codes();
 
-set.WE_model = set.codes.WE_RAYMER; % go back to set.codes.WE_Nicolai
+set.WE_model = set.codes.WE_Roskam; % go back to set.codes.WE_Nicolai
 set.WF_max_ratio = 0.5; % WF = WF_ratio * (MTOW - WE)
 
 set.CD0_model = set.codes.CD0_FRICTION; % CD0_BASIC CD0_FRICTION
 set.CDi_model = set.codes.CDi_IDRAG; % CDi_BASIC_SUBSONIC CDi_IDRAG
 set.CDw_model = set.codes.CDw_BASIC;
-set.CLa_model = set.codes.CLa_BASIC;
+set.CLa_model = set.codes.CLa_RAYMER;
 set.COST_model = set.codes.COST_XANDERSCRIPT;
-set.PROP_model = set.codes.PROP_NPSS; % PROP_BASIC PROP_NPSS
+set.PROP_model = set.codes.PROP_BASIC; % PROP_BASIC PROP_NPSS
 set.CDp_model = set.codes.CDp_CONST;
 set.SpotFactor_model = set.codes.SpotFactor_BASIC;
 

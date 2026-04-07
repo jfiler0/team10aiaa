@@ -5,6 +5,7 @@ classdef model_class < handle
         cond
         
         mem
+        prop_interp = NaN;
     end
     
     methods
@@ -251,8 +252,22 @@ classdef model_class < handle
                 switch code
                     case obj.settings.codes.CLa_BASIC
 
-                        sub_fun = @(M, I) deg2rad( 2*pi./sqrt(1-M.^2) );
-                        sup_fun = @(M, I) deg2rad( 4./sqrt(M.^2-1) );
+                        sub_fun = @(M, I) deg2rad( 2*pi./sqrt(1-M.^2) ); % flat plate with prandtl-gluaret
+                        sup_fun = @(M, I) deg2rad( 4./sqrt(M.^2-1) ); % ideal supersonic
+
+                        value = obj.transonicMerge(sub_fun, sup_fun);
+
+                    case obj.settings.codes.CLa_RAYMER % compensates for chaning wing sweep
+
+                        fuse_area_est = 0.5 * obj.geom.fuselage.length.v * obj.geom.fuselage.diameter.v;
+                        A_ratio = (2 * obj.geom.wing.area.v + fuse_area_est) / obj.geom.ref_area.v;
+                        A = obj.geom.wing.AR.v;
+
+                        beta = @(M) 1-M.*M;
+                        eta = @(M) 2*pi * beta(M) / (2*pi);
+
+                        sub_fun = @(M, I) A_ratio * 2 * pi * (2*A) ./ ( 2 + sqrt(4 + A^2 * beta(M).^2 .* ( 1 + tand(obj.geom.wing.average_qrtr_chd_sweep.v)^2 ./ beta(M).^2 ) ./ eta(M).^2) );
+                        sup_fun = @(M, I) deg2rad( 4./sqrt(M.^2-1) ); % ideal supersonic
 
                         value = obj.transonicMerge(sub_fun, sup_fun);
                         
@@ -360,12 +375,12 @@ classdef model_class < handle
                         PROP = [TA; TSFC; alpha];
 
                     case obj.settings.codes.PROP_NPSS
-                        if ~isfield(obj.mem, 'prop_interp')
-                            obj.mem.prop_interp = load_engine_lookup(obj.geom.prop.engine.v);
+                        if ~isstruct(obj.prop_interp)
+                            obj.prop_interp = load_engine_lookup(obj.geom.prop.engine.v);
                         end
 
-                        TA = obj.mem.prop_interp.TA(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
-                        TSFC = obj.mem.prop_interp.TSFC(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
+                        TA = obj.prop_interp.TA(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
+                        TSFC = obj.prop_interp.TSFC(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
 
                         alpha = zeros(size(TA)); % TODO: Do we really need alpha
 

@@ -1,7 +1,5 @@
 function displayAircraftGeom(geom)
 
-
-
 figure; hold on; axis equal; grid on;
 
 drawSurface(geom.outline.coords.fuseage,   [0.6 0.6 0.6], FaceAlpha=0.5, Label='Fuselage');
@@ -11,8 +9,6 @@ drawSurface(geom.outline.coords.rudder,     [0.3 0.7 0.3], FaceAlpha=0.4, Label=
 
 xlabel('x (m)'); ylabel('y (m)');
 title('Aircraft Layout');
-
-
 
 end
 

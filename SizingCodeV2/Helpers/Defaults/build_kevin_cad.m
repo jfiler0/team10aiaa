@@ -77,7 +77,10 @@ sec6 = new_section(tip_chord, xle_tip, ytip, tc=0.02);
     
     plane.elevator = assemble_surface([sec0, sec1, sec2]);
     % plane.elevator = assemble_surface([sec0, sec2]);
-
+    plane.elevator.airfoil = json_entry("Airfoil Section", "NACA0009", "s");
+    % plane.elevator.airfoil.liftslope = json_entry("Section Lift Slope", 2*pi, "1/rad");
+    % plane.elevator.liftslope = plane.elevator.airfoil.liftslope.v/(1 + plane.elevator.airfoil.liftslope.v/(pi*plane.elevator.AR.v));
+    % plane.depsdalpha = 2*plane.CLa/(pi*plane.wing.AR.v);
 % VTAIL DEFENITION
     root_chord = in2m(79.02);
     tip_chord = in2m(98.62) * 0.4705;
@@ -102,6 +105,8 @@ plane.racks = [-1 -0.7 -0.5 -0.2 0.2 0.5 0.7 1]; % spanwise position of the rack
 % plane.stores = []; % clean confiuration
 
 plane = setLoadout(plane, ["AIM-9X" "" "" "" "" "" "" "AIM-9X"]);
+% 
+% plane.airfoil = json_entry("Airfoil Code", "NACAXXX", "s")
 
 writeAircraftFile(plane);
     % Writes the actual file generally. This also means the location only needs to be changed in one place

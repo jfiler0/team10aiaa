@@ -1,6 +1,6 @@
-% initialize
-% matlabSetup
-% build_kevin_cad
+initialize
+matlabSetup
+build_kevin_cad % editing this geometry as it already holds to most constraints
 
 % INITIAL OBJECTS TO LOAD
 build_default_settings
@@ -8,10 +8,15 @@ settings = readSettings();
 geom = loadAircraft("kevin_cad", settings); % note that this included loading prop which is why it is disabled in the loop
 model = model_class(settings, geom);
 
-X0 = 1; % no scale applied - just evaluate base design
+ % X(1) - MTOW (N)
+% X(2) - Wing Root Chord (m)
+% X(3) - Wing Span (m)
+% X(4) - Wing Sweep (deg)
+
+X0 = [lb2N(60000) 3.5 14 30];
 % [obj, output] = objective1(X0, geom, settings);
 
-fun = @(X) objective1(X, model, geom);
+fun = @(X) objective2(X, model, geom);
 
 opts = optimset('Display',       'iter', ...
                 'TolX',          1e-3,   ...
@@ -21,7 +26,7 @@ opts = optimset('Display',       'iter', ...
 tic
 xs = fminsearch(fun, X0, opts);
 
-[~, output] = objective1(xs, model, geom);
+[~, output] = objective2(xs, model, geom);
 
 [v_land, glide_angle, ~] = compute_landing_speed(output.perf, 1);
 

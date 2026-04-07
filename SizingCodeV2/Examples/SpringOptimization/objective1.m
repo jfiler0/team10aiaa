@@ -1,4 +1,5 @@
-function [obj, output] = objective1(X, geom, settings)
+function [obj, output] = objective1(X, model, base_geom)
+    model.clear_mem();
     % X -> Design Vector - for this just one variable
     % geom -> Saved to not need to reimport settings and build json_entry every time (acts as base reference)
 
@@ -6,11 +7,12 @@ function [obj, output] = objective1(X, geom, settings)
     % output -> a struct storing info about constraints and design information for plotting purposes
     
     %% STEP 1: Modify geom according the X design vector
+    geom = base_geom;
     geom.wing = scale_surface(geom.wing, X(1), [geom.wing.qrtr_chd_x.v, geom.wing.le_y.v]);
-    geom = updateGeom(geom, settings);
+    geom = updateGeom(geom, model.settings, false);
+    model.geom = geom;
 
     %% STEP 2: Create needed classes
-    model = model_class(settings, geom);
     perf = performance_class(model);
     cond = levelFlightCondition(perf, 0, 0.5, 1); % M0.5, sea level, MTOW
         % setting a starting condition just so it is happy
@@ -28,9 +30,10 @@ function [obj, output] = objective1(X, geom, settings)
     %% STEP 5: Apply penalities and return obj
     R = 100;
 
-    obj = cost + R * max([0, g1]);
+    obj = cost / 100 + R * max([0, g1]); % diving cost serves to normalize it closer to 1 
 
     output = struct();
     output.perf = perf;
+    output.geom = geom;
 
 end

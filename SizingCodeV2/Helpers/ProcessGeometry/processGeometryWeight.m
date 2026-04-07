@@ -1,6 +1,8 @@
 function geom = processGeometryWeight(geom, settings)
     % apply a weight model to compute the empty weight
 
+    WE = NaN; % if this still NaN, it sums comp weights to get NaN
+
     switch settings.WE_model
         case settings.codes.WE_RAYMER
             WE = geom.weights.mtow.v * geom.weights.raymer.A.v * N2lb(geom.weights.mtow.v)^geom.weights.raymer.C.v;
@@ -9,15 +11,8 @@ function geom = processGeometryWeight(geom, settings)
 
         case settings.codes.WE_COMPS
             weight_comps = getRaymerWeightStruct(geom);
-            fn = fieldnames(weight_comps);  % get all field names
-            total = 0;
-            for i = 1:numel(fn)
-                total = total + weight_comps.(fn{i});
-            end
-            WE = total;
             
         case settings.codes.WE_Nicolai
-            settings = readSettings();
             model = model_class(settings, geom);
             perf = performance_class(model);
 
@@ -27,18 +22,21 @@ function geom = processGeometryWeight(geom, settings)
             WE = 1000; % Need to make this something
 
         case settings.codes.WE_Roskam
-            settings = readSettings();
             model = model_class(settings, geom);
             perf = performance_class(model);
-
-            % iterate here
 
             output = RoskamWeightCalculator(geom, perf);
 
             weight_comps = output; % set this to your list of components
-            disp('huzzah')
-            
+    end
 
+    if isnan(WE)
+        fn = fieldnames(weight_comps);  % get all field names
+        total = 0;
+        for i = 1:numel(fn)
+            total = total + weight_comps.(fn{i});
+        end
+        WE = total;
     end
 
     % Usally, we enter derived equations as a string. This can be fixed later. Easier to just used derived override here

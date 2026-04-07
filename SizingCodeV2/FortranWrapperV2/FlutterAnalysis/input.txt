@@ -1,0 +1,78 @@
+
+
+INPUT GUIDE TO FLUTTER                                     \flutter\input.txt
+
+All of the input to flutter is contained in a single namelist &NAM1.
+There is no published input guide for this program, but many of the
+variables may be deduced from the NACA document.
+
+My best guesses are as follows:
+
+      NAMELIST/NAM1/
+
+VARIABLE DIM  CONTENTS
+a       (51)
+ac      (6)
+acn     (51)
+alph    (51,6) 
+alphc   (6,6)
+alphs   (6)
+as       -
+b       (51)
+bc      (6)
+brl      -
+bs       -
+clan    (51)
+d1k      -
+d2k      -
+d3k      -
+dalph   (51,6)
+dh      (51,6)
+ent     (51)
+eps      - 
+eta     (51) 
+etac    (6)
+etas     - 
+ga      (6) 
+gh      (6)
+gs       - 
+h       (51,6) 
+hc      (6,6)
+hs      (6)
+jmax     - 
+k1       - (real)
+lower    - (real)
+mach     -     Mach number (real)
+mr      (51) (real) 
+msubn    - (real)
+n        - (integer)
+nc       - vibration mode input code
+            =0 vibration modes are input
+            not =0 to compute vibration modes
+
+nev      - (integer)
+nn       - (integer)
+nopt1    - 
+nopt2    - 
+nopts    - 
+nplot    - 
+npr1     - 
+npr2     -    if npr2 is not equal to zero, print elements of determinant
+npr3     - 
+nu       - 
+nv       - 
+ra      (51) 
+tabfg   (100)
+tabk    (100)
+tanlea         tangent of leading edge sweep angle 
+uc      (6) 
+upper    - 
+ur       - 
+us       - 
+wa      (6) 
+wh      (6)
+wingno   - 
+ws       - 
+xa      (51) 
+xc      (6)
+xs       - 

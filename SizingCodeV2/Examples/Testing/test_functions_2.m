@@ -19,7 +19,9 @@ model = model_class(settings, geom);
 perf = performance_class(model);
 % build_engine_lookup("F110")
 
-perf.model.cond = levelFlightCondition(perf, [0, 1000, 2000], [0.3, 0.8, 1.5], [1, 1, 1]);
+displayAircraftGeom(geom)
+
+perf.model.cond = levelFlightCondition(perf, [0, 10000], [0.95, 1.7], [1, 1]);
 % perf.model.cond = levelFlightCondition(perf, 1000, 0.5, 1);
 disp("CDi RESULTS")
 CDi = perf.model.CDi

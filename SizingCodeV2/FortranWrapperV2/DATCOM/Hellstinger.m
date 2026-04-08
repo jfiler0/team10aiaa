@@ -70,7 +70,7 @@ c.caseid = 'GENERIC SUPERSONIC FIGHTER - BASELINE';
 
 % Flight conditions: 4 Mach numbers, 9 alpha points each
 c.fltcon.nmach  = 4;
-c.fltcon.mach   = [0.3, 0.9, 1.4, 2.0];
+c.fltcon.mach   = [0.6, 0.9, 1.4, 2.0];
 c.fltcon.nalpha = 9;
 c.fltcon.alschd = [-4, -2, 0, 2, 4, 8, 12, 16, 20];
 c.fltcon.rnnub  = [2.5e6, 3.8e6, 6.0e6, 9.5e6];
@@ -214,21 +214,28 @@ eps0 = 2*model.cond.CL.v/(pi*model.geom.wing.AR.v);
 CLH = CLalphH*-eps0;
 
 zEng = 0.167386; %m
+x_cg_empty = 0.647*model.geom.fuselage.length.v;
+x_cg_full = 0.617*model.geom.fuselage.length.v;
 
-CMW = 0; % might need to change later?
-CME = -model.cond.throttle.v*0.25*model.geom.prop.T0_NoAB.v*zEng/(model.cond.qinf.v*model.geom.wing.area.v*model.geom.wing.average_chord.v);
+CMW = model.cond.CL.v*(x_cg_empty - model.geom.wing.x_cp.v)/(model.cond.qinf.v*model.geom.wing.area.v*model.geom.wing.average_chord.v); 
+CME = model.cond.throttle.v*0.25*model.geom.prop.T0_NoAB.v*zEng/(model.cond.qinf.v*model.geom.wing.area.v*model.geom.wing.average_chord.v);
 
 % Stability Requirement
-SHSW_stability = model.CLa.*xcg_ac_norm./(CLalphH*etaH*(1-depsdalpha).*(l_h./model.geom.wing.average_chord.v -xcg_ac_norm));
+SHSW_stability = @(xcg_ac_norm) model.CLa.*xcg_ac_norm./(CLalphH*etaH*(1-depsdalpha).*(l_h./model.geom.wing.average_chord.v));
 
 % Control Requirement
-SHSW_control = (model.cond.CL.v.*xcg_ac_norm./(CLH*etaH*l_h/model.geom.wing.average_chord.v)).*xcg_ac_norm + (CMW + CME)/(CLH*etaH*l_h/model.geom.wing.average_chord.v);
+SHSW_control = @(xcg_ac_norm) (model.cond.CL.v.*xcg_ac_norm./(CLH*etaH*l_h/model.geom.wing.average_chord.v)) + (CMW + CME)/(CLH*etaH*l_h/model.geom.wing.average_chord.v);
 
 figure;
 
-plot(SHSW_stability, xcg_ac_norm,'r');
+plot(xcg_ac_norm, SHSW_stability(xcg_ac_norm),'r');
 hold on
-plot(SHSW_control, xcg_ac_norm, 'g');
+plot(xcg_ac_norm, SHSW_control(xcg_ac_norm),'g');
+
+Xcgfull_norm = (x_cg_full - model.geom.wing.x_cp.v)/model.geom.wing.average_chord.v;
+Xcgempty_norm = (x_cg_empty - model.geom.wing.x_cp.v)/model.geom.wing.average_chord.v;
+plot(Xcgfull_norm, SHSW_control(Xcgfull_norm),'o',MarkerFaceColor='k')
+plot(Xcgempty_norm, SHSW_control(Xcgempty_norm),'o',MarkerFaceColor='k')
 %xline(0,'k','LineWidth',4)
 legend('Stability Limit','Control Limit');
 xlabel('x_cg - x_ac normalized');

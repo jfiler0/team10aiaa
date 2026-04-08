@@ -40,9 +40,10 @@ function geom = processGeometryWeight(geom, settings)
     end
 
     % Usally, we enter derived equations as a string. This can be fixed later. Easier to just used derived override here
-    geom.weights.empty = json_entry("Empty Weight", WE, "N", true);
+    geom.weights.empty = json_entry("Empty Weight", WE, "N", true); % this is with no stores
     geom.weights.max_fuel_weight = json_entry("Max Fuel Weight", settings.WF_max_ratio * (geom.weights.mtow.v - geom.weights.empty.v), "N", true);
-    geom.weights.loaded = json_entry("Loaded Weight", 0, "N", true);
+    geom.weights.loaded = json_entry("Loaded Weight", 0, "N", true); % set with setLoadout
+    geom.weights.ext_max_fuel_weight = json_entry("External Tank Max Fuel Weight", 0, "N", true); % set with setLoadout
     geom.weights.components = weight_comps;
     
     % TODO: How to compute usable fuel weight

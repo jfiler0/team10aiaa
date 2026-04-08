@@ -20,10 +20,10 @@ plane.fuselage.E_WD = json_entry("Fuselage Wave Drag Efficency", 2.2, "");
 plane.input.g_limit = json_entry("Structural G-Limit", 7.5, "");
 plane.input.kloc = json_entry("KLOC", 5000, "");
 plane.input.fold_ratio = json_entry("Fold Ratio", 0, ""); % there is no fold right now
+plane.input.WF_ratio = json_entry("WF Ratio", 0.6119, "");  % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
 
 plane.weights.mtow = json_entry("Max Takeoff Weight", lb2N(79081), "N");
 plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
-
 
 % MAIN WING DEFENITION - only the inboard side of the flap must be defined
     

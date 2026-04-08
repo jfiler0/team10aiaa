@@ -7,14 +7,16 @@ settings = readSettings();
 
 geom = loadAircraft("f18_superhornet", settings);
 geom =  setLoadout(geom, ["AIM-9X" "" "" "" "" "" "" "AIM-9X"]);
+geom_strike =  setLoadout(geom, ["AIM-9X" "MK-83" "MK-83" "FPU-12" "FPU-12" "MK-83" "MK-83" "AIM-9X"]);
 % geom =  setLoadout(geom, ["AIM-9X" "" "FPU-12" "" "" "FPU-12" "" "AIM-9X"]);
 
 model = model_class(settings, geom);
 perf = performance_class(model);
 
-fprintf("F18 listed empty weight: ~32000 lb. Code value: %.0f\n", N2lb(geom.weights.empty.v))
-fprintf("F18 listed mtow weight: ~50000 lb. Code value: %.0f\n", N2lb(geom.weights.mtow.v))
-fprintf("F18 listed internal fuel weight: ~ lb. Code value: %.0f\n", N2lb(geom.weights.max_fuel_weight.v))
+fprintf("F18 listed empty weight: 30564 lb. Code value: %.0f\n", N2lb(geom.weights.empty.v))
+fprintf("F18 listed mtow weight: 66000 lb. Code value: %.0f\n", N2lb(geom.weights.mtow.v))
+fprintf("F18 listed internal fuel weight: 14850 lb. Code value: %.0f\n", N2lb(geom.weights.max_fuel_weight.v))
+fprintf("F18 combat empty weight (stores but no fuel)/mtow ~39,351lb / 60,729lb. Code: %.0f (empty) / %.0f (mtow)\n", N2lb(weightRatio(0, geom_strike)), N2lb(weightRatio(1, geom_strike)))
 
 
 [v_land_mtow, glide_angle] = compute_landing_speed(perf, 1);
@@ -46,7 +48,7 @@ fprintf("Max Rate of Climb Sealevel (AB) (M0.5) (empty): 44fpm. Code: %.2f\n", m
 % levelflight_performance_plots(perf,50)
 
 % plot_performance(geom, perf, 50)
-% max_performance_plots(perf, 50)
+max_performance_plots(perf, 50)
 % displayAircraftGeom(geom)
 
 % % PRELOAD THE MISSION CALCULATOR

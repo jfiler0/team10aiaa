@@ -334,25 +334,24 @@ classdef model_class < handle
                         % gives TA, TSFC, and alpha for military (first row) and max ab (second row)
                     
                         % thrust still scales linearly with throttle
-                        TA = TA(1) .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TA(2) - TA(1) );
+                        TA = TA(1, :) .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TA(2, :) - TA(1, :) );
 
                         % tsfc is a hook with there being a set min from 0 - 0.9. From 0.9-1 it is linear between max ab and military
-                        TSFC_min_throttle = 0.4; % min occurs at 60% throttle -> BIG INPUT TO HOW EFFICENT THE ENGINE IS
+                        TSFC_min_throttle = 0.4; % min occurs at 40% throttle -> BIG INPUT TO HOW EFFICENT THE ENGINE IS
                         throttle = obj.cond.throttle.v;
                         ab_fil = throttle > 0.9; % obj.cond.mil_throttle.v  should be 1
                         mil_fil = ~ab_fil;
                         
-                        TSFC_mil = TSFC(1);
-                        TSFC_ab = TSFC(2);
+                        TSFC_mil = TSFC(1, :);
+                        TSFC_ab = TSFC(2, :);
                         TSFC = zeros(size(TA)); % get the right size
 
-                        TSFC(ab_fil) = TSFC_mil + obj.cond.ab_throttle.v(ab_fil) .* ( TSFC_ab - TSFC_mil );
+                        TSFC(ab_fil) = TSFC_mil(ab_fil) + obj.cond.ab_throttle.v(ab_fil) .* ( TSFC_ab(ab_fil) - TSFC_mil(ab_fil) );
 
                         TSFC_scaler = 0.3722 * (throttle / TSFC_min_throttle).^2 - 0.742 * (throttle / TSFC_min_throttle) + 1.37; % this is right as TSFC reltive to the min throttle
                         TSFC_scaler = TSFC_scaler / ( 0.3722 * (0.9 / TSFC_min_throttle).^2 - 0.742 * (0.9 / TSFC_min_throttle) + 1.37 ); % this converts to relative to the military throttle 0.9
 
-                        TSFC(mil_fil) = TSFC_mil * TSFC_scaler(mil_fil);
-
+                        TSFC(mil_fil) = TSFC_mil(mil_fil) .* TSFC_scaler(mil_fil);
 
                     case obj.settings.codes.PROP_NPSS
                         if ~isstruct(obj.prop_interp)

@@ -13,8 +13,6 @@ build_kevin_cad;
 build_sample_missions();
 build_atmosphere_lookup(-5000, ft2m(100000), 500); % Refresh atmosphere lookup
 
-
-
 clear; % since the main file should not inherit anything from these calls
 
 disp("Good to go!")

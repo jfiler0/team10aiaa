@@ -4,7 +4,7 @@ function [v_land, glide_angle, throttle] = compute_landing_speed(perf, W)
 
     landing_descent_rate = ft2m(20);
     
-    flap_inc    = 1.35;
+    flap_inc    = 1.25;
     aoa_limit = 10;
 
     err = 1;

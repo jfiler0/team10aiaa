@@ -80,7 +80,7 @@ c///////////////////////////////////////////////////////////////////////
      & nvortices,spacing_flag,load_flag,loads,cd_induced)
 
       integer npanels_max, nvortices_max, nconstraints, unit_write
-      parameter(npanels_max=20, nvortices_max=400, nconstraints=2,
+      parameter(npanels_max=20, nvortices_max=200, nconstraints=2,
      & unit_write=11)
 
       character*72 outfile, title
@@ -273,7 +273,7 @@ c///////////////////////////////////////////////////////////////////////
      & nvortices_tot,y,z,theta,s,sp,c,cavg,xle,a,abar,b)
 
       integer npanels_max, nvortices_max, nconstraints
-      parameter(npanels_max=20,nvortices_max=400,nconstraints=2)
+      parameter(npanels_max=20,nvortices_max=200,nconstraints=2)
 
       integer i, j, nvortices_tot, cm_flag, sym_flag
       real pi, yp, zp, y(npanels_max*nvortices_max), r1, r2, a1,

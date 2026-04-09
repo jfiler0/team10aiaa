@@ -1,23 +1,29 @@
 function CDi = fortran_cdi(geom, CL)
 %FORTRAN_CDI  Compute induced drag coefficient via the idrag MEX solver.
-%
-%  Wing panels are built from geom.wing.sections.
-%  The LERX (innermost) panel is excluded — it destabilises the multi-panel
-%  influence matrix due to extreme chord/span ratio mismatch.
-%  Only the outer wing panel(s) are passed to idrag.
 
-persistent conv_done   % convergence sweep runs once per MATLAB session
-
-%% --- Build panels from geom -------------------------------------------
-w      = makePanelsFromSurface(geom.wing);
+w = makePanelsFromSurface(geom.wing);
+e = makePanelsFromSurface(geom.elevator);
 r = makePanelsFromSurface(geom.rudder);
- e = makePanelsFromSurface(geom.elevator);
-panels = [w, r, e];
 
-% Drop innermost panel (LERX) if more than one panel exists
-if numel(panels) > 1
-    panels = panels(2:end);
-end
+panels = [w, e, r];
+
+% w = geom.outline.coords.wing;
+% % row 1  = root  LE  (6.00,  1.0)
+% % row 2  = break LE  (7.93,  2.0)
+% % row 7  = tip   LE  (11.31, 7.0)
+% % row 8  = tip   TE  (13.00, 7.0)
+% % row 9  = break TE  (13.00, 2.0)
+% % row 14 = root  TE  (13.00, 1.0)
+% panels(1) = makePanel(w(1,:), w(2,:),  w(9,:),  w(14,:)); % wing root->break
+% panels(2) = makePanel(w(2,:), w(7,:),  w(8,:),  w(9,:));  % wing break->tip
+% 
+% e = geom.outline.coords.elevator;
+% % row 1 = root LE, row 3 = tip LE, row 4 = tip TE, row 5 = root TE
+% panels(3) = makePanel(e(1,:), e(3,:), e(4,:), e(5,:));
+% 
+% r = geom.outline.coords.rudder;
+% % row 1 = root LE, row 4 = tip LE, row 5 = tip TE, row 6 = root TE
+% panels(4) = makePanel(r(1,:), r(4,:), r(5,:), r(6,:));
 
 npanels      = numel(panels);
 xc           = zeros(npanels, 4);
@@ -34,35 +40,29 @@ for i = 1:npanels
     spacing_flag(i) = panels(i).spacing_flag;
 end
 
-% Shift y so root is at 0, force cavg consistent with panel geometry
-y_root          = min(yc(:));
-yc              = yc - y_root;
-b_semi          = max(yc(:));
-cavg_consistent = geom.ref_area.v / (2 * b_semi);
-AR              = (2 * b_semi)^2 / geom.ref_area.v;
+% % ------------------------------------------------------------------ %
+% %  Debug: plot panels                                                  %
+% % ------------------------------------------------------------------ %
+% figure; hold on; grid on; axis equal;
+% xlabel('x'); ylabel('y'); zlabel('z');
+% title('Panel Layout Debug');
+% view(3);
+% 
+% for i = 1:npanels
+%     % Close the quadrilateral by repeating the first corner
+%     px = xc(i, [1 2 3 4 1]);
+%     py = yc(i, [1 2 3 4 1]);
+%     pz = zc(i, [1 2 3 4 1]);
+%     fill3(px, py, pz, 'cyan', 'FaceAlpha', 0.3, 'EdgeColor', 'blue');
+% 
+%     % Label each panel at its centroid
+%     cx = mean(xc(i,:));
+%     cy = mean(yc(i,:));
+%     cz = mean(zc(i,:));
+%     text(cx, cy, cz, sprintf('%d', i), 'FontSize', 8, ...
+%         'HorizontalAlignment', 'center', 'Color', 'red');
+% end
 
-%% --- Geometry diagnostic (runs every call) ----------------------------
-fprintf('\n--- fortran_cdi geometry ---\n');
-fprintf('  geom.ref_area   = %.4f m^2\n', geom.ref_area.v);
-fprintf('  geom.wing.AR    = %.4f\n',      geom.wing.AR.v);
-fprintf('  geom.cavg       = %.4f m\n',    geom.wing.average_chord.v);
-fprintf('  npanels used    = %d  (LERX dropped if >1 existed)\n', npanels);
-fprintf('  b_semi (panels) = %.4f m\n',    b_semi);
-fprintf('  cavg_consistent = %.4f m  (= sref / 2*b_semi)\n', cavg_consistent);
-fprintf('  AR (panels)     = %.4f\n',      AR);
-fprintf('  bref check      = %.4f  (= sref/cavg, should = 2*b_semi=%.4f)\n', ...
-    geom.ref_area.v / cavg_consistent, 2*b_semi);
-fprintf('  Wing sections from geom:\n');
-for i = 1:length(geom.wing.sections)
-    s = geom.wing.sections(i);
-    chord = s.te_coords(1) - s.le_coords(1);
-    fprintf('    [%d] y=%.3f  LE=%.3f  TE=%.3f  chord=%.3f m\n', ...
-        i, s.le_coords(2), s.le_coords(1), s.te_coords(1), chord);
-end
-fprintf('  Panel xc after shift:\n'); disp(xc)
-fprintf('  Panel yc after shift:\n'); disp(yc)
-
-%% --- Build cfg --------------------------------------------------------
 cfg              = struct();
 cfg.input_mode   = 0;
 cfg.sym_flag     = 1;
@@ -72,7 +72,7 @@ cfg.cm_design    = 0.0;
 cfg.xcg          = geom.fuselage.length.v / 2;
 cfg.cp           = 0.25;
 cfg.sref         = geom.ref_area.v;
-cfg.cavg         = cavg_consistent;
+cfg.cavg         = geom.wing.average_chord.v;
 cfg.npanels      = npanels;
 cfg.xc           = xc;
 cfg.yc           = yc;
@@ -82,87 +82,34 @@ cfg.spacing_flag = spacing_flag;
 cfg.load_flag    = 1;
 cfg.loads        = [];
 
-% %% --- nv convergence sweep (runs once per session) ---------------------
-% if isempty(conv_done)
-%     nv_vals = 10:10:400;
-%     fprintf('\n  nv convergence (%d panel(s), CL=%.1f fixed, AR=%.3f):\n', ...
-%         npanels, CL, AR);
-%     fprintf('  %-6s  %-14s  %-10s  %-10s\n', 'nv', 'CDi', 'e_oswald', 'delta_e');
-%     e_prev = NaN;
-%     cfg.cl_design = CL;
-%     for nv = nv_vals
-%         cfg.nvortices = nv * ones(npanels, 1);
-%         o      = runIdrag(cfg);
-%         CDi_nv = abs(o.cd_induced);
-%         e_nv   = CL^2 / (pi * AR * CDi_nv);
-%         delta  = abs(e_nv - e_prev);
-%         if isnan(e_prev)
-%             fprintf('  %-6d  %-14.6f  %-10.4f  %-10s\n', nv, CDi_nv, e_nv, '—');
-%         else
-%             fprintf('  %-6d  %-14.6f  %-10.4f  %-10.5f\n', nv, CDi_nv, e_nv, delta);
-%         end
-%         e_prev = e_nv;
-%     end
-%     fprintf('\n');
-%     % Restore
-%     cfg.cl_design = CL;
-%     cfg.nvortices = nvortices;
-%     conv_done = true;
-% end
+% % ---- debug ----
+% fprintf('cfg.sref = %.4f\n', cfg.sref);
+% fprintf('cfg.cavg = %.4f\n', cfg.cavg);
+% fprintf('cfg.cl_design = %.4f\n', cfg.cl_design);
+% fprintf('xc:\n'); disp(cfg.xc)
+% fprintf('yc:\n'); disp(cfg.yc)
+% fprintf('zc:\n'); disp(cfg.zc)
+% fprintf('elevator coords:\n'); disp(geom.outline.coords.elevator)
+% fprintf('rudder coords:\n');   disp(geom.outline.coords.rudder)
+% % ---------------
 
-%% --- Production run ---------------------------------------------------
 out = runIdrag(cfg);
-CDi = abs(out.cd_induced);
+CDi = out.cd_induced;
 end
-
 
 function panels = makePanelsFromSurface(surface)
-%MAKEPANELSFROMSURFACE  Build valid panels from consecutive wing sections.
-%  Clips panels where the TE becomes forward-swept (chord <= 0 at tip).
-
-ns       = length(surface.sections);
-panelIdx = 0;
-
-for i = 1:(ns-1)
-    s1 = surface.sections(i);
-    s2 = surface.sections(i+1);
-
-    % Always make s1 the inboard section
-    if s1.le_coords(2) > s2.le_coords(2)
-        [s1, s2] = deal(s2, s1);
-    end
-
-    root_chord = s1.te_coords(1) - s1.le_coords(1);
-    tip_chord  = s2.te_coords(1) - s2.le_coords(1);
-
-    if root_chord <= 0
-        continue
-    end
-
-    if tip_chord <= 0
-        % Clip to where chord = 0
-        t_zero   = root_chord / (root_chord - tip_chord);
-        y_zero   = s1.le_coords(2) + t_zero*(s2.le_coords(2) - s1.le_coords(2));
-        xle_zero = s1.le_coords(1) + t_zero*(s2.le_coords(1) - s1.le_coords(1));
-        z_zero   = s1.le_coords(3) + t_zero*(s2.le_coords(3) - s1.le_coords(3));
-        P2 = [xle_zero, y_zero, z_zero];
-        P3 = P2;
-        panelIdx = panelIdx + 1;
-        panels(panelIdx) = makePanel(s1.le_coords, P2, P3, s1.te_coords);
-    else
-        panelIdx = panelIdx + 1;
-        panels(panelIdx) = makePanel(s1.le_coords, s2.le_coords, ...
-                                     s2.te_coords,  s1.te_coords);
+    % Look through each section in the surface to build a panel
+    for i = 1:(length(surface.sections)-1)
+        panels(i) = makePanel(surface.sections(i).le_coords, surface.sections(i+1).le_coords, surface.sections(i+1).te_coords, surface.sections(i).te_coords);
     end
 end
-end
-
 
 function obj = makePanel(P1, P2, P3, P4)
 %MAKEPANEL  [root-LE, tip-LE, tip-TE, root-TE]
-    obj.nvortices    = 160;   % production value — see convergence sweep output
-    obj.spacing_flag = 3;     % end-compressed (cosine spacing)
+    obj.nvortices    = 40;
+    obj.spacing_flag = 3;
     obj.xc = [P1(1), P2(1), P3(1), P4(1)];
     obj.yc = [P1(2), P2(2), P3(2), P4(2)];
     obj.zc = [P1(3), P2(3), P3(3), P4(3)];
 end
+

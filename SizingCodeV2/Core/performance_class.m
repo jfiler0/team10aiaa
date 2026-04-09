@@ -75,14 +75,6 @@ classdef performance_class < handle % <--- Inheriting from handle allows in-plac
                 out = out(2,:);
             end
         end
-        function out = alpha(obj)
-            if obj.hasData('alpha')
-                out = obj.data.('alpha');
-            else
-                out = obj.model.PROP;
-                out = out(3, :);
-            end
-        end
         function out = mdotf(obj)
             % kg/s
             out = obj.TA .* obj.TSFC;

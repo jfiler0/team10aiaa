@@ -12,6 +12,7 @@ function codes = build_default_codes()
     
     codes.PROP_BASIC = 301;
     codes.PROP_NPSS = 302;
+    codes.PROP_HOOK = 303;
 
     codes.CDi_BASIC_SUBSONIC = 401;
     codes.CDi_IGNORE = 402;
@@ -23,7 +24,7 @@ function codes = build_default_codes()
     codes.COST_BASIC = 601;
     codes.COST_XANDERSCRIPT = 602;
 
-    codes.PROP_BASIC = 701;
+    % 700 is still free
 
     codes.CDp_CONST = 801; % payload drag -> all payloads have the same CD0
     codes.CDp_IGNORE = 802;

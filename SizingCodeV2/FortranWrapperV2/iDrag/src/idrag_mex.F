@@ -42,7 +42,7 @@ c----- idrag_core is the computation engine (no file I/O)
 
 c----- hard limits (must match idrag_core.f parameter statements)
       integer npanels_max, nvortices_max
-      parameter (npanels_max=20, nvortices_max=400)
+      parameter (npanels_max=20, nvortices_max=200)
 
 c----- scalar inputs
       integer input_mode, sym_flag, cm_flag, npanels, load_flag
@@ -169,7 +169,7 @@ c======================================================================
          nvortices(i) = int(tmp(i))
          if (nvortices(i).lt.1 .or. nvortices(i).gt.nvortices_max) then
             call mexErrMsgTxt(
-     &      'idrag_mex: each nvortices(i) must be 1..400.')
+     &      'idrag_mex: each nvortices(i) must be 1..200.')
          endif
       enddo
       do i = npanels+1, npanels_max

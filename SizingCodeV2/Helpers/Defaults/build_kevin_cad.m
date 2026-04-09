@@ -20,41 +20,21 @@ plane.fuselage.E_WD = json_entry("Fuselage Wave Drag Efficency", 2.2, "");
 plane.input.g_limit = json_entry("Structural G-Limit", 7.5, "");
 plane.input.kloc = json_entry("KLOC", 5000, "");
 plane.input.fold_ratio = json_entry("Fold Ratio", 0, ""); % there is no fold right now
+plane.input.WF_ratio = json_entry("WF Ratio", 0.6119, "");  % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
 
 plane.weights.mtow = json_entry("Max Takeoff Weight", lb2N(79081), "N");
 plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
 
-
 % MAIN WING DEFENITION - only the inboard side of the flap must be defined
-lerx_root = 7;
-wing_root = in2m(174.1);
-tip_chord = 0.14 * wing_root;
+    
+    lerx_root = 7;
+    wing_root = in2m(174.1);
+    wing_le_x = 0.45 * plane.fuselage.length.v - lerx_root + wing_root;
 
-y0 = 0.5;                 % inboard/LERX section
-y1 = 2.0;                 % actual wing root section
-ytip = in2m(426.5)/2;     % tip semispan
-
-% Keep your outer wing LE logic
-wing_le_x = 0.45 * plane.fuselage.length.v - lerx_root + wing_root;
-
-% Root and tip section geometry
-xle_root = wing_le_x + lerx_root - wing_root;
-xte_root = xle_root + wing_root;
-
-xle_tip = xle_root + sind(25)*(ytip - y1);
-xte_tip = xle_tip + tip_chord;
-
-% Trailing-edge slope from root to tip
-m_te = (xte_tip - xte_root) / (ytip - y1);
-
-% Enforce same TE angle inward to fuselage-side section
-xte_y0 = xte_root + m_te*(y0 - y1);
-xle_y0 = xte_y0 - lerx_root;
-
-% Sections
-sec0 = new_section(lerx_root, xle_y0, y0, tc=0.06);
-sec1 = new_section(wing_root, xle_root, y1, tc=0.04);
-sec6 = new_section(tip_chord, xle_tip, ytip, tc=0.02);
+    sec0 = new_section(lerx_root, wing_le_x, 1, tc=0.06);
+    sec1 = new_section(in2m(174.1), wing_le_x + lerx_root - wing_root, 2, tc=0.04);
+    sec6 = new_section(0.14 * in2m(174.1), wing_le_x + lerx_root - wing_root + sind(25)*(in2m(426.5)/2 - 2), in2m(426.5)/2, tc=0.02);
+    
     % MAIN FLAP
     sec2 = btw_section(sec1, sec6, 0.1, flap_length=0.2, control_name="Main Flap");
     sec3 = btw_section(sec1, sec6, 0.5);
@@ -63,8 +43,8 @@ sec6 = new_section(tip_chord, xle_tip, ytip, tc=0.02);
     sec4 = btw_section(sec1, sec6, 0.6, flap_length=0.1, control_name="Aileron");
     sec5 = btw_section(sec1, sec6, 0.9);
     
-    % plane.wing = assemble_surface([sec0, sec1, sec2, sec3, sec4, sec5, sec6]);
-    plane.wing = assemble_surface([sec0, sec1, sec6]);
+    plane.wing = assemble_surface([sec0, sec1, sec2, sec3, sec4, sec5, sec6]);
+    % plane.wing = assemble_surface([sec0, sec1, sec6]);
 
 % ELEVATOR DEFENITION
     root_chord = 0.17 * plane.fuselage.length.v;
@@ -77,10 +57,7 @@ sec6 = new_section(tip_chord, xle_tip, ytip, tc=0.02);
     
     plane.elevator = assemble_surface([sec0, sec1, sec2]);
     % plane.elevator = assemble_surface([sec0, sec2]);
-    plane.elevator.airfoil = json_entry("Airfoil Section", "NACA0009", "s");
-    % plane.elevator.airfoil.liftslope = json_entry("Section Lift Slope", 2*pi, "1/rad");
-    % plane.elevator.liftslope = plane.elevator.airfoil.liftslope.v/(1 + plane.elevator.airfoil.liftslope.v/(pi*plane.elevator.AR.v));
-    % plane.depsdalpha = 2*plane.CLa/(pi*plane.wing.AR.v);
+
 % VTAIL DEFENITION
     root_chord = in2m(79.02);
     tip_chord = in2m(98.62) * 0.4705;

@@ -1,4 +1,4 @@
-function interpObj = build_engine_lookup(sweepFilePath)
+function [interpObj, devObj] = build_engine_lookup(sweepFilePath)
 % Builds a lookup for (Mach, Altitude, Throttle) -> Thrust / TSFC
 %
 % Thrust: piecewise-linear in throttle (exact by construction), spline in Mach/Alt
@@ -99,6 +99,21 @@ function interpObj = build_engine_lookup(sweepFilePath)
     % ------------------------------------------------------------------ %
     interpObj.TA   = @(m, a, t) query_thrust(m, a, t, I_T_idle, I_T_mil, I_T_ab);
     interpObj.TSFC = @(m, a, t) query_tsfc(  m, a, t, tsfc_slices, throttle_knots);
+
+    devObj = struct();
+
+    devObj.npss.mach = mach; % mach inputs from npss
+    devObj.npss.alt = alt; % altitude inputs from npss (in m)
+    devObj.npss.pla = pla; % throttle inputs from npss (0-150)
+    devObj.npss.thrust = thrust; % thrust output from npss (N)
+    devObj.npss.tsfc = data.TSFC; % tsfc output from npss (kg.N/s)
+
+    devObj.npss.thrust_smooth = thrust_smooth; % gaussian smoothing applied
+    devObj.npss.tsfc_smooth = tsfc_smooth; % gaussian smoothing applied
+
+    devObj.gridded.mach = mach_vec; % new machs to interp to
+    devObj.gridded.alt = alt_vec; % new machs to interp to
+    
 end
 
 

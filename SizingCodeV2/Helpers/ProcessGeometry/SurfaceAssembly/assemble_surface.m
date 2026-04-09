@@ -47,7 +47,7 @@ function surf = assemble_surface(sections)
     surf.average_qrtr_chd_sweep = json_entry("Average Quarer Chord Sweep", 0, "deg", true); % filled in a sec
     surf.qrtr_chd_x = json_entry("Quarter Chord X Position", 0, "m", true); % filled in a sec
     surf.average_tc = json_entry("Average t/c Ratio", 0, "", true); % filled in a sec
-    surf.x_cp = json_entry("Surface CP X Pos from LE", 0, "", true); % filled in a sec
+    surf.x_cp = json_entry("Surface CP X Pos from nose", 0, "", true); % filled in a sec
 
     num_panels = length(sections)-1;
     for i = 1:num_panels

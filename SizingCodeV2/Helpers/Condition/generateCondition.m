@@ -100,9 +100,10 @@ function cond = generateCondition(geom, h, M_vel, n, W, throttle, sample_cond, M
         error("Cannot have a mixed weight vector of 0-1 and above 1.")
     else
         % The user wants a linear scale between WE and MTOW
+        % Compute the current weight as a ratio 0-1. Goes from empty+payload empty weight to empty+payload empty weight+fuel weights
         cond.W.v = weightRatio(W, geom);
     end
-
+    
     cond.n.v = n;
     cond.Lift.v = cond.W.v .* cond.n.v;
     cond.CL.v = cond.Lift.v ./ (geom.ref_area.v * cond.qinf.v);

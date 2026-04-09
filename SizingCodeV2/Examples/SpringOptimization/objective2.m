@@ -56,7 +56,7 @@ function [obj, output] = objective2(X, model, base_geom)
 
     g1 = ms2kt(v_land)/145 - 1;
 
-    % next: mission range constraint to keep weight from falling
+    % next: mission range constraint to keep weight from falling. can I get the estimate to properly get close
 
     % then max mach for wing dimensions
 

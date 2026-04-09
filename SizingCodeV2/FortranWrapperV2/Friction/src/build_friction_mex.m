@@ -71,7 +71,7 @@ try
         'trans', {0.0,     0.0,    0.0,    0.0   } ...
     );
     caseDef.conds = [1.2, 35.0];
-    out = run_Friction(caseDef);
+    out = runFriction(caseDef);
     disp(out.table);
     fprintf('Smoke test PASSED.\n\n');
 catch ME2

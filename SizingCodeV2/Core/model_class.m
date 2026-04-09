@@ -322,73 +322,59 @@ classdef model_class < handle
             % Note that TA is scaled
             function PROP = compute_PROP_value(obj, code)
                 switch code
-                    case obj.settings.codes.PROP_BASIC
-                        T_SL  = 288.15; %deg K
-                        P_SL = 101330; % Pa
-                        gamma = 1.4; 
-                        TR = 1; % Note: Throttle Ratio ~1 for Fighter Aircraft (Sarojini + Mattingly)
-                        
-                        % Static and stagnation correction ratios
-                        theta = obj.cond.T.v/T_SL; delta = obj.cond.P.v/P_SL; 
-                        
-                        theta_0 = theta .* (1 + (gamma-1)/2 * obj.cond.M.v.^2);
-                        delta_0 = delta .* (1 + (gamma-1)/2 * obj.cond.M.v.^2).^(gamma/(gamma-1));
-                        
-                        % Lapse Ratios for Low-bypass Turbofans (See Mattingly, Aircraft Engine Design, 2e)
-                        % Vectorized version using logical indexing - Thanks Claude
-                        
-                        % This was needed as the best cruise appears to end up on this boundary and the kink is bad
-                        blend_width = 0.15;  % tune this — wider = smoother but less faithful to Mattingly
-                        t_blend = 1 ./ (1 + exp(-20/blend_width * (theta_0 - TR)));  % smooth 0->1 around TR
-                        
-                        alpha_dry_low  = delta_0 * 0.6;
-                        alpha_dry_high = 0.6 * delta_0 .* (1 - 3.8 * (theta_0 - TR) ./ theta_0);
-                        alpha_dry      = (1 - t_blend) .* alpha_dry_low + t_blend .* alpha_dry_high;
-                        
-                        alpha_AB_low   = delta_0 * 1.0;
-                        alpha_AB_high  = delta_0 .* (1 - 3.5 * (theta_0 - TR) ./ theta_0);
-                        alpha_AB       = (1 - t_blend) .* alpha_AB_low + t_blend .* alpha_AB_high;
-                        
-                        % Thrusts (by definition of lapse rate)
-                        F_th_mil = obj.geom.prop.T0_NoAB.v * alpha_dry; % (whatever unit thrust was passed with)
-                        F_th_AB = obj.geom.prop.T0_AB.v * alpha_AB; % (whatever unit thrust was passed with)
-                        
-                        TSFC_mil = (0.9 + 0.30 * obj.cond.M.v) .* sqrt(theta); %hour^-1; Mattingly Eq.3.55a (No, these are lbm/lbf*hr)
-                        TSFC_AB = (1.6 + 0.27 * obj.cond.M.v) .* sqrt(theta); %hour^-1; Mattingly Eq.3.55b (No, these are lbm/lbf*hr)
+                    case obj.settings.codes.PROP_BASIC % scaled throttle as linear on TSFC
+                        [TA, TSFC] = max_prop_info(obj.cond, obj.geom.prop.T0_NoAB.v, obj.geom.prop.T0_AB.v); % no longer tracking alpha
+                        % gives TA, TSFC, and alpha for military (first row) and max ab (second row)
                     
-                        TA = F_th_mil .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( F_th_AB - F_th_mil );
-                        TSFC = TSFC_mil .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TSFC_AB - TSFC_mil );
-                        TSFC = lbmlbfhr_2_kgNs(TSFC); % Since the regression was not in metric units
+                        TA = TA(1) .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TA(2) - TA(1) );
+                        TSFC = TSFC(1) .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TSFC(2) - TSFC(1) );
+
+                    case obj.settings.codes.PROP_HOOK % estimate of the power hook nonlinear tsfc/throttle: https://www.fzt.haw-hamburg.de/pers/Scholz/arbeiten/TextBensel.pdf
+                        [TA, TSFC] = max_prop_info(obj.cond, obj.geom.prop.T0_NoAB.v, obj.geom.prop.T0_AB.v); % no longer tracking alpha
+                        % gives TA, TSFC, and alpha for military (first row) and max ab (second row)
                     
-                        % Added in the max check and zeroing since it got weird for high mach at sea level
-                        alpha = max(alpha_dry + obj.cond.ab_throttle.v .* (alpha_AB - alpha_dry), 0);
+                        % thrust still scales linearly with throttle
+                        TA = TA(1, :) .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TA(2, :) - TA(1, :) );
 
-                        TA(alpha == 0) = 0; % if alpha was set to 0, TA should be 0 too
-                    
-                        TA = TA * obj.settings.TA_scaler;
-                        TSFC = TSFC * obj.settings.TSFC_scaler;
+                        % tsfc is a hook with there being a set min from 0 - 0.9. From 0.9-1 it is linear between max ab and military
+                        TSFC_min_throttle = 0.4; % min occurs at 40% throttle -> BIG INPUT TO HOW EFFICENT THE ENGINE IS
+                        throttle = obj.cond.throttle.v;
+                        ab_fil = throttle > 0.9; % obj.cond.mil_throttle.v  should be 1
+                        mil_fil = ~ab_fil;
+                        
+                        TSFC_mil = TSFC(1, :);
+                        TSFC_ab = TSFC(2, :);
+                        TSFC = zeros(size(TA)); % get the right size
 
-                        less_than_0 = TA < 0;
-                        TA(less_than_0) = 0;
-                        alpha(less_than_0) = 0;
+                        TSFC(ab_fil) = TSFC_mil(ab_fil) + obj.cond.ab_throttle.v(ab_fil) .* ( TSFC_ab(ab_fil) - TSFC_mil(ab_fil) );
 
-                        PROP = [TA; TSFC; alpha];
+                        TSFC_scaler = 0.3722 * (throttle / TSFC_min_throttle).^2 - 0.742 * (throttle / TSFC_min_throttle) + 1.37; % this is right as TSFC reltive to the min throttle
+                        TSFC_scaler = TSFC_scaler / ( 0.3722 * (0.9 / TSFC_min_throttle).^2 - 0.742 * (0.9 / TSFC_min_throttle) + 1.37 ); % this converts to relative to the military throttle 0.9
+
+                        TSFC(mil_fil) = TSFC_mil(mil_fil) .* TSFC_scaler(mil_fil);
 
                     case obj.settings.codes.PROP_NPSS
                         if ~isstruct(obj.prop_interp)
                             obj.prop_interp = load_engine_lookup(obj.geom.prop.engine.v);
                         end
 
-                        TA = obj.prop_interp.TA(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
+                        TA = obj.prop_interp.TA(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v* obj.geom.prop.num_engine.v);
                         TSFC = obj.prop_interp.TSFC(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
-
-                        alpha = zeros(size(TA)); % TODO: Do we really need alpha
-
-                        PROP = [TA * obj.geom.prop.num_engine.v; TSFC; alpha];
                         
                     otherwise
                         error("Code '%i' has no recognized definition for the COST model.", code)
                 end
+
+                % seperating out the checks since they are the same across models
+
+                TA = TA * obj.settings.TA_scaler;
+                TSFC = TSFC * obj.settings.TSFC_scaler;
+
+                less_than_0 = TA < 0;
+                TA(less_than_0) = 0;
+                alpha(less_than_0) = 0;
+
+                PROP = [TA; TSFC];
             end
         
         function CDp = CDp(obj, override, code)
@@ -412,6 +398,7 @@ classdef model_class < handle
                             store = obj.geom.stores(i);
                             value = value + store.frontal_area.v * obj.settings.CDp_CONST_CD / obj.geom.ref_area.v;
                         end
+                        value = 0;
                     case obj.settings.codes.CDp_IGNORE
                         value = 0;
 

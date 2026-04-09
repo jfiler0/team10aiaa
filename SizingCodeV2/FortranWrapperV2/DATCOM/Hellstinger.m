@@ -70,7 +70,7 @@ c.caseid = 'GENERIC SUPERSONIC FIGHTER - BASELINE';
 
 % Flight conditions: 4 Mach numbers, 9 alpha points each
 c.fltcon.nmach  = 4;
-c.fltcon.mach   = [0.6, 0.9, 1.4, 2.0];
+c.fltcon.mach   = [0.61, 0.9, 1.4, 2.0];
 c.fltcon.nalpha = 9;
 c.fltcon.alschd = [-4, -2, 0, 2, 4, 8, 12, 16, 20];
 c.fltcon.rnnub  = [2.5e6, 3.8e6, 6.0e6, 9.5e6];
@@ -201,6 +201,34 @@ if ~isempty(t.data) && ~all(isnan(t.data.CL))
     sgtitle(sprintf('%s  M=%.1f', t.caseTitle, t.Mach));
 end
 
+%% X_ac_wb generation
+% Wing AC (fraction of root chord from apex, then convert to fuse station)
+lambda   = model.geom.wing.tip_chord.v / model.geom.wing.root_chord.v;
+AR_w     = model.geom.wing.AR.v;
+LambdaLE = deg2rad(model.geom.wing.average_sweep.v);  % LE sweep in rad
+
+xac_wing_frac = 0.25 + (tan(LambdaLE)/4) * (1 + 2*lambda) / ((1 + lambda) * AR_w);
+x_ac_w = model.geom.wing.apex_x.v + xac_wing_frac * model.geom.wing.root_chord.v;
+
+% Wing lift curve slope (Helmbold/DATCOM)
+clalpha_w = 2*pi;
+CLalpha_w = clalpha_w / (1 + clalpha_w/(pi*AR_w));
+
+% Body lift curve slope (DATCOM slender body approx)
+% Munk factor K2 ~ 0.9 for typical fuselage fineness ratios
+K2         = 0.9;
+S_Bmax     = pi*(model.geom.fuselage.max_radius.v)^2;  % max cross-section area
+CLalpha_B  = 2 * K2 * S_Bmax / model.geom.wing.area.v; % per radian
+
+% Wing-body combined slope (using your existing model value)
+CLalpha_wb = model.CLa;
+
+% Body AC: for slender fuselage approximately at 25% body length
+% More accurate: use Munk integral, but 25% is standard first estimate
+x_ac_B = 0.25 * model.geom.fuselage.length.v;
+
+% Combined wing-body AC (area-weighted)
+x_ac_wb = (x_ac_w * CLalpha_w + x_ac_B * CLalpha_B) / CLalpha_wb;
 %% Scissor Plot Generation
 
 clalphH = 2*pi;
@@ -232,8 +260,8 @@ plot(xcg_ac_norm, SHSW_stability(xcg_ac_norm),'r');
 hold on
 plot(xcg_ac_norm, SHSW_control(xcg_ac_norm),'g');
 
-Xcgfull_norm = (x_cg_full - model.geom.wing.x_cp.v)/model.geom.wing.average_chord.v;
-Xcgempty_norm = (x_cg_empty - model.geom.wing.x_cp.v)/model.geom.wing.average_chord.v;
+Xcgfull_norm = (x_cg_full - x_ac_wb)/model.geom.wing.average_chord.v;
+Xcgempty_norm = (x_cg_empty - x_ac_wb)/model.geom.wing.average_chord.v;
 plot(Xcgfull_norm, SHSW_control(Xcgfull_norm),'o',MarkerFaceColor='k')
 plot(Xcgempty_norm, SHSW_control(Xcgempty_norm),'o',MarkerFaceColor='k')
 %xline(0,'k','LineWidth',4)

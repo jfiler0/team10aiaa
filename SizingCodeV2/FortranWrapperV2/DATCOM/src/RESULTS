@@ -1,0 +1,155 @@
+Title="VLM Planform Output"
+variables=x,y,z
+zone t="Section 1",i=9,j=6,f=point
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+zone t="CONTROL POINTS"
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN   0.00000       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+zone t="NORMAL VECTORS"
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+       NaN       NaN       NaN
+     NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+     NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+     NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+     NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+     NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+     NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+     NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+     NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN       NaN
+     NaN       NaN       NaN       NaN       NaN   1.00000   1.00000   1.00000   1.00000   1.00000
+     NaN       NaN       NaN       NaN       NaN   1.00000   1.00000   1.00000   1.00000   1.00000
+     NaN       NaN       NaN       NaN       NaN   1.00000   1.00000   1.00000   1.00000   1.00000
+     NaN       NaN       NaN       NaN       NaN   1.00000   1.00000   1.00000   1.00000   1.00000
+     NaN       NaN       NaN       NaN       NaN   1.00000   1.00000   1.00000   1.00000   1.00000
+     NaN       NaN       NaN       NaN       NaN   1.00000   1.00000   1.00000   1.00000   1.00000
+     NaN       NaN       NaN       NaN       NaN   1.00000   1.00000   1.00000   1.00000   1.00000
+     NaN       NaN       NaN       NaN       NaN   1.00000   1.00000   1.00000   1.00000   1.00000

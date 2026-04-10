@@ -362,7 +362,18 @@ classdef model_class < handle
                             obj.prop_interp = load_engine_lookup(obj.geom.prop.engine.v);
                         end
 
-                        TA = obj.prop_interp.TA(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v* obj.geom.prop.num_engine.v);
+                        TA = obj.prop_interp.TA(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v) * obj.geom.prop.num_engine.v; % NUM ENGINE
+                        TSFC = obj.prop_interp.TSFC(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
+
+                    case obj.settings.codes.PROP_HYBRID
+                        [TA, ~] = max_prop_info(obj.cond, obj.geom.prop.T0_NoAB.v, obj.geom.prop.T0_AB.v); % no longer tracking alpha
+                        % gives TA, TSFC, and alpha for military (first row) and max ab (second row)
+                    
+                        TA = TA(1) .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TA(2) - TA(1) );
+
+                        if ~isstruct(obj.prop_interp)
+                            obj.prop_interp = load_engine_lookup(obj.geom.prop.engine.v);
+                        end
                         TSFC = obj.prop_interp.TSFC(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
                         
                     otherwise
@@ -376,7 +387,6 @@ classdef model_class < handle
 
                 less_than_0 = TA < 0;
                 TA(less_than_0) = 0;
-                alpha(less_than_0) = 0;
 
                 PROP = [TA; TSFC];
             end

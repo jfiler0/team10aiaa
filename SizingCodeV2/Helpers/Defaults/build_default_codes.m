@@ -13,6 +13,7 @@ function codes = build_default_codes()
     codes.PROP_BASIC = 301;
     codes.PROP_NPSS = 302;
     codes.PROP_HOOK = 303;
+    codes.PROP_HYBRID = 304; % uses PROP_BASIC for thrust prediction and PROP_NPSS for TSFC
 
     codes.CDi_BASIC_SUBSONIC = 401;
     codes.CDi_IGNORE = 402;

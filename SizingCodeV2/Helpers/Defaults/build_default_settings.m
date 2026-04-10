@@ -30,7 +30,7 @@ set.SpotFactor_scaler = 1;
 
 set.COST_scaler = 1;
 set.TA_scaler = 1;
-set.TSFC_scaler = 1;
+set.TSFC_scaler = 1.65;
 
 set.codes = build_default_codes();
 
@@ -41,7 +41,7 @@ set.CDi_model = set.codes.CDi_BASIC_SUBSONIC; % CDi_BASIC_SUBSONIC CDi_IDRAG
 set.CDw_model = set.codes.CDw_BASIC;
 set.CLa_model = set.codes.CLa_RAYMER;
 set.COST_model = set.codes.COST_XANDERSCRIPT;
-set.PROP_model = set.codes.PROP_HOOK; % PROP_BASIC PROP_NPSS PROP_HOOK
+set.PROP_model = set.codes.PROP_HYBRID; % PROP_BASIC PROP_NPSS PROP_HOOK PROP_HYBRID
 set.CDp_model = set.codes.CDp_CONST;
 set.SpotFactor_model = set.codes.SpotFactor_BASIC;
 

@@ -219,21 +219,23 @@ x_ac_w = m2ft(model.geom.wing.le_x.v) + xac_wing_frac * m2ft(model.geom.wing.roo
 clalpha_w = 2*pi;
 CLalpha_w = clalpha_w / (1 + clalpha_w/(pi*AR_w));
 
+
 % Body lift curve slope (DATCOM slender body approx)
 % Munk factor K2 ~ 0.9 for typical fuselage fineness ratios
 K2         = 0.9;
-S_Bmax     = m2ft(m2ft(model.geom.fuselage.max_area.v));  % max cross-section area
-CLalpha_B  = 2 * K2 * S_Bmax / m2ft(m2ft(model.geom.wing.area.v)); % per radian
+ft_per_m      = 3.28084;
+S_Bmax     = model.geom.fuselage.max_area.v*ft_per_m^2;  % max cross-section area
+CLalpha_B  = 2 * K2 * S_Bmax / (model.geom.wing.area.v*ft_per_m^2); % per radian
 
 % Wing-body combined slope (using your existing model value)
-CLalpha_wb = model.CLa;
+CLalpha_wb = model.CLa
 
 % Body AC: for slender fuselage approximately at 25% body length
 % More accurate: use Munk integral, but 25% is standard first estimate
 x_ac_B = 0.25 * m2ft(model.geom.fuselage.length.v);
 
 % Combined wing-body AC (area-weighted)
-x_ac_wb = (x_ac_w * CLalpha_w + x_ac_B * CLalpha_B) / CLalpha_wb;
+x_ac_wb = (x_ac_w * CLalpha_w + x_ac_B * CLalpha_B) / (CLalpha_B + CLalpha_w);
 
 %% Downwash Gradient DATCOM estimation
 AR      = model.geom.wing.AR.v;
@@ -254,7 +256,7 @@ clalphH = 2*pi; %/rad
 CLalphH = clalphH/(1 + clalphH/(pi*model.geom.elevator.AR.v)); %/rad
 etaH  = 0.86; % Assume middle of the road 
 l_h = m2ft(model.geom.elevator.qrtr_chd_x.v - model.geom.wing.qrtr_chd_x.v);
-xcg_ac_norm = linspace(-1,1,100);
+xcg_ac_norm = linspace(-0.3,0.3,100);
 
 eps0 = 2*model.cond.CL.v/(pi*model.geom.wing.AR.v); %rad
 CLH = CLalphH*(-eps0);

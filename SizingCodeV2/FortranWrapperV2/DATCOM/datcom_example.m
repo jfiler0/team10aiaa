@@ -6,12 +6,10 @@
 % for wing + horizontal tail + vertical tail.  Body contribution can be
 % added later once fuselage cross-section data is available from kevin_cad.
 
-<<<<<<< HEAD
 %% ---- Startup -----------------------------------------------------------
 initialize
 matlabSetup
 build_kevin_cad
-=======
 %% ---- Case 1: Run EX1.INP directly --------------------------------------
 % Body-alone configuration, four flow regimes (subsonic -> hypersonic).
 % No struct needed — pass the .INP file straight to runDatcom.
@@ -31,7 +29,6 @@ for k = 1:numel(out1.tables)
         disp(t.data)
     end
 end
->>>>>>> f47c74a7d3144a6e76e57a5e2a1d4051a455b480
 
 build_default_settings
 settings = readSettings();
@@ -100,13 +97,10 @@ machDATCOM = [0.60, 0.80, 0.90, 1.20, 1.40, 1.60, 2.00];
 reDATCOM   = [2.0e6, 3.0e6, 3.8e6, 5.5e6, 6.5e6, 7.5e6, 9.5e6];
 nMach      = numel(machDATCOM);
 
-<<<<<<< HEAD
 assert(nMach <= 20, 'DATCOM NMACH limit is 20.');
-=======
     subplot(1,3,3);
     plot(t.data.Alpha, t.data.CM, 'k-o', 'LineWidth', 1.5);
     xlabel('\alpha (deg)'); ylabel('C_M'); title('Pitch Moment'); grid on;
->>>>>>> f47c74a7d3144a6e76e57a5e2a1d4051a455b480
 
 % CLa from model at each Mach
 cLa = zeros(1, nMach);
@@ -247,7 +241,6 @@ if numel(outDATCOM.tables) > 0
     outDATCOM.tables = outDATCOM.tables(uIdx);
 end
 
-<<<<<<< HEAD
 fprintf('\n=== DATCOM (M >= %.2f, wing+tail only) ===\n', VLM_LIMIT);
 for k = 1:numel(outDATCOM.tables)
     t = outDATCOM.tables(k);
@@ -343,6 +336,5 @@ end
 function s = ternary(cond, a, b)
 if cond, s = a; else, s = b; end
 end
-=======
+
 if isfile(inpFile), delete(inpFile); end
->>>>>>> f47c74a7d3144a6e76e57a5e2a1d4051a455b480

@@ -1,0 +1,117 @@
+# Aircraft Name:
+Test Aircraft
+
+# Mach
+0.5
+# iYsym  iZsym  Zsym
+0        0      0.0
+# Sref  Cref  Bref
+1.0     1.0   1.0
+# Xref  Yref  Zref
+0.0     0.0   1.0
+# CDp
+0.02
+
+#--------------------------------------------------
+SURFACE
+MainWing
+
+# Nchordwise  Cspace  Nspanwise  Sspace
+12            1.0     26         -1.1
+COMPONENT
+0
+YDUPLICATE
+0.0
+SCALE
+1.0  1.0  1.0
+TRANSLATE
+0.0  0.0  0.0
+ANGLE
+0.0
+SECTION
+# Xle  Yle        Zle  Chord  Ainc
+4.451  0.9440697  0.0  8.619  0.0
+
+SECTION
+# Xle      Yle        Zle         Chord   Ainc
+8.5897059  2.1490697  -0.0420539  4.3932  0.0
+CONTROL
+flap  1.000  0.200  0.000  1.000  0.000 1.0
+
+SECTION
+# Xle      Yle        Zle         Chord  Ainc
+9.4742646  3.9565697  -0.1051347  3.378  0.0
+
+SECTION
+# Xle       Yle        Zle         Chord   Ainc
+10.6536763  6.3665697  -0.1892425  2.0244  0.0
+CONTROL
+aileron  1.000  0.100  0.000  1.000  0.000 -1.0
+
+SECTION
+# Xle       Yle        Zle         Chord  Ainc
+10.9485293  6.9690697  -0.2102695  1.686  0.0
+
+
+#--------------------------------------------------
+SURFACE
+Elevator
+
+# Nchordwise  Cspace  Nspanwise  Sspace
+12            1.0     26         -1.1
+COMPONENT
+0
+YDUPLICATE
+0.0
+SCALE
+1.0  1.0  1.0
+TRANSLATE
+0.0  0.0  0.0
+ANGLE
+0.0
+SECTION
+# Xle  Yle   Zle  Chord  Ainc
+15.54  0.89  0.0  2.0    0.0
+CONTROL
+elevator  1.000  0.150  0.000  1.000  0.000 1.0
+
+SECTION
+# Xle       Yle   Zle         Chord  Ainc
+16.2740737  2.39  -0.1307336  1.0    0.0
+
+
+#--------------------------------------------------
+SURFACE
+VTail
+
+# Nchordwise  Cspace  Nspanwise  Sspace
+12            1.0     26         -1.1
+COMPONENT
+0
+YDUPLICATE
+0.0
+SCALE
+1.0  1.0  1.0
+TRANSLATE
+0.0  0.0  0.0
+ANGLE
+0.0
+SECTION
+# Xle  Yle    Zle        Chord  Ainc
+15.54  0.445  0.7707626  2.0    0.0
+CONTROL
+rudder  1.000  0.150  0.000  1.000  0.000 1.0
+
+SECTION
+# Xle       Yle    Zle        Chord  Ainc
+16.2740737  1.195  2.0698007  1.0    0.0
+
+
+#--------------------------------------------------
+BODY
+Fuselage
+15  1.0
+TRANSLATE
+0.0  0.0  0.0
+BFIL
+fuse.dat

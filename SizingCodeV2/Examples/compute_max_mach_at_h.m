@@ -6,7 +6,7 @@ function M_opt = compute_max_mach_at_h(perf, W, h)
     
     % Optimize
     options = optimset('Display', 'off');
-    M_opt = fminsearch(objective, 0.5, options);
+    M_opt = fminsearch(objective, 1.2, options);
 end
 
 function out = obj(perf, h, M, W)

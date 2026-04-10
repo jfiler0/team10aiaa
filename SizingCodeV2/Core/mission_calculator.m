@@ -102,10 +102,87 @@ classdef mission_calculator < handle
             perf.clear_data();
         end
 
-        function [W_end, total_distance] = solve_mission(obj, mission, h0, v0, fuel_weight_start)
+        % function [W_end, total_distance] = solve_mission_simple(obj, mission, fuel_weight_start)
+        %     % based on simplifications and assuming the aicraft is at the best conditions it can be at
+        % 
+        %     obj.t = 0;
+        %     obj.d = 0;
+        %     obj.h = h0;
+        %     obj.v = v0;
+        %     obj.W = obj.perf.model.geom.weights.empty.v + ...
+        %         obj.perf.model.geom.weights.loaded.v + ...
+        %         fuel_weight_start * obj.perf.model.geom.weights.max_fuel_weight.v;
+        % 
+        %     for i = 1:length(mission.data)
+        %         obj.solve_section_simple(mission.data(i));
+        %     end
+        % 
+        %     W_end = obj.W;
+        %     total_distance = obj.d;
+        % end
+        % 
+        % function solve_section_simple(obj, segment)
+        %     % Any solve needs to have the altitude, velocity, and time/distance. That will then be saved
+        % 
+        %     if strcmp(segement.type, 'FIXED_WF') % easy just apply the scaler
+        %         obj.W = obj.W * segment.WFi;
+        %         dt = segment.time;
+        %     else % there will be some type of constraint involved
+        % 
+        %         N = 10; % the number of times to divide up a section
+        %         h_vec = []; % list of altitude to hit
+        % 
+        %         fun = obj.getFun(segment);
+        % 
+        %         if( ~isnan(segment.h_start) && ~isnan(segment.h_end) ) % both are already specified
+        %             h_vec = linspace(segment.h_start, segment.end, N);
+        %         elseif( ~isnan(segment.h_start) ) % only the start is specfied (constant)
+        %             h_vec = segment.h_start * ones([N 1]);
+        %         elseif( ~isnan(segment.h_end)) % the end is
+        % 
+        %         if obj.h ~= segment.h_start
+        % 
+        %         end
+        % 
+        %         switch segment.type
+        %             case 'CRUISE'
+        %                 S = di / segment.distance.v;
+        %             case 'LOITER'
+        %                 S = ti / (segment.time.v * 60 ); % converting from minutes to seconds here
+        %             case 'COMBAT'
+        %                 S = ti / (segment.time.v * 60 ); % converting from minutes to seconds here
+        %             otherwise
+        %                 error("Given mission type: %i is not a defined type.", type)
+        %         end
+        % 
+        % 
+        %         obj.d = obj.d + obj.v * dt; % tracking global distance
+        %         obj.t = obj.t + dt; % tracking global time
+        % 
+        %         if obj.record_hist
+        %             obj.hist.h(end+1)           = obj.h;
+        %             obj.hist.v(end+1)           = obj.v;
+        %             obj.hist.W(end+1)           = obj.W;
+        %             obj.hist.d(end+1)           = obj.d;
+        %             obj.hist.t(end+1)           = obj.t; % using this is the global time instead of the local seg
+        %             obj.hist.throttle(end+1)    = throttle;
+        %             obj.hist.climb_angle(end+1) = climb_angle;
+        %             obj.hist.dF_dh(end+1)       = dF_dh;
+        %             obj.hist.dF_dv(end+1)       = dF_dv;
+        %             obj.hist.mdotf(end+1)       = mdotf;
+        %             obj.hist.TSFC(end+1)        = obj.perf_map.TSFC(I);
+        %             obj.hist.F(end+1)           = F_center;
+        %             obj.hist.segment_name(end+1)= segment.name.v;
+        %         end
+        %     end
+        % end
+
+        function [W_end, total_distance] = solve_mission(obj, mission, h0, v0, W_start)
+            % time/physics based simulation -> more computation
+
             % mission object must be read from readMissionStruct function and built using a combination of missionSeg
             % the starting condition is buried in obj.perf.cond
-            % fuel_weight_start -> ratio from 0 to 1 of how much the tank starts loaded
+            % W_start -> ratio from 0 to 1 of how much the tank starts loaded
             obj.mission = mission;
 
             obj.perf.model.geom = setLoadout(obj.perf.model.geom, ["AIM-9X" "" "" "AIM-120" "AIM-120" "" "" "AIM-9x"]);
@@ -115,9 +192,7 @@ classdef mission_calculator < handle
             obj.d = 0;
             obj.h = h0;
             obj.v = v0;
-            obj.W = obj.perf.model.geom.weights.empty.v + ...
-                    obj.perf.model.geom.weights.loaded.v + ...
-                    fuel_weight_start * obj.perf.model.geom.weights.max_fuel_weight.v;
+            obj.W = weightRatio(W_start, obj.perf.model.geom);
 
             if obj.record_hist
                 obj.hist.h           = obj.h;
@@ -203,7 +278,7 @@ classdef mission_calculator < handle
                     dt = max(dt_min, min(dt_max, dt));
                     
                     if obj.do_print
-                        fprintf("dt = %.4g , t = %.4g,  h = %.4g, v = %.4g, i = %i\n", dt, obj.t, obj.h, obj.v, i)
+                        fprintf("dt = %.4g , t = %.4g,  h = %.4g, v = %.4g, i = %i, W = %.3g\n", dt, obj.t, obj.h, obj.v, i, obj.W)
                     end
                 end
             end

@@ -362,6 +362,36 @@ title('Normalized Aspect Signature Comparison');
 legend({models.name}, 'Location', 'best');
 
 %% ================================================================
+%%  NGSP TRANSPORT VEHICLE - NEW MODEL ANALYSIS
+%% ================================================================
+% STL: TestAssm_Clean.STL
+% Units: mm  ->  unitScale = 0.001
+% Fuselage runs along STL-X axis  ->  rotate +90 deg about Z to align to Y
+%
+% Post-rotation bounding box (verified):
+%   Lx = 2.95 m  (body width)
+%   Ly = 15.35 m (body length / fuselage)
+%   Lz = 10.83 m (solar array span / vertical extent)
+%
+% Note on non-manifold edges (962 detected):
+%   Likely from CAD assembly joins (mating faces). This does not affect the
+%   PO computation meaningfully — each triangle is evaluated independently.
+%
+% knownRCS_m2 is set to NaN here because no measured/validated value exists
+% for this vehicle. The fleet correction from the fighter comparators is
+% applied instead, with geometry-similarity weighting. The uncertainty bound
+% reflects how well the fighter fleet correction transfers to a spacecraft
+% geometry — treat the absolute values with corresponding caution.
+
+ngspResult = analyzeNewModel( ...
+    correction, ...
+    'TestAssm_Clean.STL', ...
+    0.001, ...          % mm -> m
+    [0 0 1], ...        % rotate about Z
+    90, ...             % +90 deg: STL-X (fuselage) -> +Y
+    'Hellstinger' );
+
+%% ================================================================
 %%  LOCAL FUNCTIONS
 %% ================================================================
 
@@ -555,22 +585,38 @@ function result = analyzeNewModel(correction, stlFile, unitScale, rotAxis, rotDe
             compModels(m).name, dist, weights(gi), scales_dB(gi));
     end
 
+    % Warn if new model is geometrically far from all comparators
+    maxSim = max(weights);
+    if maxSim < 0.1
+        fprintf('\n  *** LOW SIMILARITY WARNING ***\n');
+        fprintf('  Max comparator similarity = %.4f (< 0.1).\n', maxSim);
+        fprintf('  New model geometry differs significantly from comparator fleet.\n');
+        fprintf('  Correction transfer may be unreliable. Uncertainty bound is conservative.\n');
+        % Widen uncertainty by geometry dissimilarity penalty
+        dissimilarityPenalty_dB = -10*log10(max(maxSim, 1e-6)) * 0.5;
+    else
+        dissimilarityPenalty_dB = 0;
+    end
+
     % Normalize weights
     if sum(weights) < 1e-12
         weights = ones(1, nGood) / nGood;
-        fprintf('  Warning: all similarities near zero, using equal weights.\n');
+        fprintf('  Falling back to equal weights.\n');
     else
         weights = weights / sum(weights);
     end
 
     % Weighted correction and uncertainty (weighted std in dB)
     corrScale_dB  = sum(weights .* scales_dB);
-    corrScale_std = sqrt(sum(weights .* (scales_dB - corrScale_dB).^2));
+    corrScale_std = sqrt(sum(weights .* (scales_dB - corrScale_dB).^2)) + dissimilarityPenalty_dB;
     corrScale_lin = 10^(corrScale_dB / 10);
 
-    fprintf('\nApplied correction: %+.2f dB (1-sigma uncertainty: +/-%.2f dB)\n', ...
-        corrScale_dB, corrScale_std);
-    fprintf('Uncertainty reflects comparator fleet agreement.\n');
+    fprintf('\nApplied correction : %+.2f dB\n', corrScale_dB);
+    fprintf('1-sigma uncertainty: +/-%.2f dB', corrScale_std);
+    if dissimilarityPenalty_dB > 0
+        fprintf('  (includes +%.2f dB geometry dissimilarity penalty)', dissimilarityPenalty_dB);
+    end
+    fprintf('\n');
 
     % Apply correction
     calSigma = rawSigma * corrScale_lin;

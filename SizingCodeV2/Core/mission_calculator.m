@@ -185,7 +185,7 @@ classdef mission_calculator < handle
             % W_start -> ratio from 0 to 1 of how much the tank starts loaded
             obj.mission = mission;
 
-            obj.perf.model.geom = setLoadout(obj.perf.model.geom, ["AIM-9X" "" "" "AIM-120" "AIM-120" "" "" "AIM-9x"]);
+            obj.perf.model.geom = setLoadout(obj.perf.model.geom, mission.loadout);
 
             % reset these vaues
             obj.t = 0;

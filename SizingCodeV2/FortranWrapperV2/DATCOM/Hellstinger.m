@@ -15,13 +15,16 @@
 
 % Create instance of kevin_cad 
 % STARTUP FUNCTIONS
+
 initialize
 matlabSetup
+%build_f18_template
 build_kevin_cad
 
 % INITIAL OBJECTS TO LOAD
 build_default_settings
 settings = readSettings();
+% geom = loadAircraft("f18_superhornet", settings);
 geom = loadAircraft("kevin_cad", settings);
 model = model_class(settings, geom);
     N = 100;
@@ -58,6 +61,14 @@ examplesDir = fullfile(thisDir, 'Examples');
 % end
 % 
 
+%% Stability Search Test Values
+model.geom.wing.le_x.v = 7.8;
+model.geom.wing.average_sweep.v = 45;
+
+l_h = 14; % global l_h value 
+% %l_h = m2ft(model.geom.elevator.qrtr_chd_x.v - model.geom.wing.qrtr_chd_x.v);
+% %z_H     = model.geom.elevator.sections(1).le_z.v - model.geom.wing.sections(1).le_z.v;
+ z_H = 6;
 %% ---- Case 3: Build custom input from struct ----------------------------
 % Generic supersonic fighter: circular fuselage + swept wing + tails.
 % Demonstrates write_datcom_input — replace numbers with your own geometry.
@@ -213,7 +224,8 @@ AR_w     = model.geom.wing.AR.v;
 LambdaLE = deg2rad(model.geom.wing.average_sweep.v);  % LE sweep in rad
 
 xac_wing_frac = 0.25 + (tan(LambdaLE)/4) * (1 + 2*lambda) / ((1 + lambda) * AR_w);
-x_ac_w = m2ft(model.geom.wing.le_x.v) + xac_wing_frac * m2ft(model.geom.wing.root_chord.v);
+wing_le_X_trial = model.geom.wing.le_x.v
+x_ac_w = m2ft(wing_le_X_trial) + xac_wing_frac * m2ft(model.geom.wing.root_chord.v);
 
 % Wing lift curve slope (Helmbold/DATCOM)
 clalpha_w = 2*pi;
@@ -228,7 +240,7 @@ S_Bmax     = model.geom.fuselage.max_area.v*ft_per_m^2;  % max cross-section are
 CLalpha_B  = 2 * K2 * S_Bmax / (model.geom.wing.area.v*ft_per_m^2); % per radian
 
 % Wing-body combined slope (using your existing model value)
-CLalpha_wb = model.CLa
+CLalpha_wb = model.CLa;
 
 % Body AC: for slender fuselage approximately at 25% body length
 % More accurate: use Munk integral, but 25% is standard first estimate
@@ -242,35 +254,38 @@ AR      = model.geom.wing.AR.v;
 lambda  = model.geom.wing.tip_chord.v / model.geom.wing.root_chord.v;
 Lambda_c4 = deg2rad(model.geom.wing.average_qrtr_chd_sweep.v);
 b       = model.geom.wing.span.v;
-l_h     = model.geom.elevator.qrtr_chd_x.v - model.geom.wing.qrtr_chd_x.v;
-z_H     = model.geom.elevator.sections(1).le_z.v - model.geom.wing.sections(1).le_z.v;
 
 K_A      = 1/AR - 1/(1 + AR^1.7);
 K_lambda = (10 - 3*lambda) / 7;
 K_H      = (1 - abs(z_H/b)) / (2*l_h/b)^(1/3);
 
-depsdalpha = 4.44 * (K_A * K_lambda * K_H * sqrt(cos(Lambda_c4)))^1.19;
+depsdalpha = 4.44 * (K_A * K_lambda * K_H * sqrt(cos(Lambda_c4)))^1.19
+
 %% Scissor Plot Generation
 
 clalphH = 2*pi; %/rad
 CLalphH = clalphH/(1 + clalphH/(pi*model.geom.elevator.AR.v)); %/rad
 etaH  = 0.86; % Assume middle of the road 
-l_h = m2ft(model.geom.elevator.qrtr_chd_x.v - model.geom.wing.qrtr_chd_x.v);
+
 xcg_ac_norm = linspace(-0.3,0.3,100);
 
 eps0 = 2*model.cond.CL.v/(pi*model.geom.wing.AR.v); %rad
 CLH = CLalphH*(-eps0);
+tau = 0.7; % elevator effectiveness due to stabilator
+delta_e_max = 25; %deg
+CLH_max = CLH;
+% CLH_max = CLalphH * (-eps0 - tau * delta_e_max*pi/180);
 
 zEng = 0.167386; %m
 
-CMW = model.cond.CL.v*(x_cg_empty - x_ac_wb)/(47.880258888889*model.cond.qinf.v)*m2ft(m2ft(model.geom.wing.area.v))*m2ft(model.geom.wing.average_chord.v); 
-CME = model.cond.throttle.v*0.25*model.geom.prop.T0_NoAB.v*zEng/(47.880258888889*model.cond.qinf.v*m2ft(m2ft(model.geom.wing.area.v))*m2ft(model.geom.wing.average_chord.v));
-
+CMW = c.wgschr.cmo * (AR_w + 2*cos(Lambda_c4)) / (AR_w + 4*cos(Lambda_c4));
+CME = model.cond.throttle.v * 0.25 * model.geom.prop.T0_NoAB.v * zEng / ...
+      (model.cond.qinf.v * model.geom.wing.area.v * model.geom.wing.average_chord.v);
 % Stability Requirement
 SHSW_stability = @(xcg_ac_norm) model.CLa.*xcg_ac_norm./(CLalphH*etaH*(1-depsdalpha).*(l_h./m2ft(model.geom.wing.average_chord.v)));
 
 % Control Requirement 
-SHSW_control = @(xcg_ac_norm) (model.cond.CL.v.*xcg_ac_norm./(CLH*etaH*l_h/m2ft(model.geom.wing.average_chord.v))) + (CMW + CME)/(CLH*etaH*l_h/m2ft(model.geom.wing.average_chord.v));
+SHSW_control = @(xcg_ac_norm) (model.cond.CL.v.*xcg_ac_norm./(CLH_max*etaH*l_h/m2ft(model.geom.wing.average_chord.v))) + (CMW + CME)/(CLH_max*etaH*l_h/m2ft(model.geom.wing.average_chord.v));
 
 figure;
 
@@ -280,8 +295,11 @@ plot(xcg_ac_norm, SHSW_control(xcg_ac_norm),'g');
 
 Xcgfull_norm = (x_cg_full - x_ac_wb)/m2ft(model.geom.wing.average_chord.v);
 Xcgempty_norm = (x_cg_empty - x_ac_wb)/m2ft(model.geom.wing.average_chord.v);
-xline(Xcgfull_norm);
-xline(Xcgempty_norm);
+dub1 = xline(Xcgfull_norm,'LineWidth',3);
+dub1.Label = 'XCG at MGTOW';
+dub2 = xline(Xcgempty_norm,'LineWidth',3);
+dub2.Label = 'XCG at empty weight';
+xline(0);
 %xline(0,'k','LineWidth',4)
 legend('Stability Limit','Control Limit');
 xlabel('x_cg - x_ac normalized');

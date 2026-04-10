@@ -334,7 +334,11 @@ classdef model_class < handle
                         % gives TA, TSFC, and alpha for military (first row) and max ab (second row)
                     
                         % thrust still scales linearly with throttle
-                        TA = TA(1, :) .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TA(2, :) - TA(1, :) );
+                        try
+                            TA = TA(1, :) .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TA(2, :) - TA(1, :) );
+                        catch
+                            disp("catch")
+                        end
 
                         % tsfc is a hook with there being a set min from 0 - 0.9. From 0.9-1 it is linear between max ab and military
                         TSFC_min_throttle = 0.4; % min occurs at 40% throttle -> BIG INPUT TO HOW EFFICENT THE ENGINE IS

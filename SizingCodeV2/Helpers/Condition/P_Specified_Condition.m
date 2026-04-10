@@ -16,7 +16,7 @@ function cond = P_Specified_Condition(perf, EP, h, MV, W, MV_decleration)
 
     perf.model.clear_mem(); perf.clear_data();
 
-    one_vec = ones(size(h));
+    one_vec = ones([1 , max([length(EP), length(h), length(MV), length(W)])]);
     if ~isstruct(perf.model.cond)
         perf.model.cond = buildDefaultCondStruct();
     end

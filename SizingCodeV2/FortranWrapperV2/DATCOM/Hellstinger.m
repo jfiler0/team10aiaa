@@ -76,15 +76,15 @@ c.fltcon.alschd = [-4, -2, 0, 2, 4, 8, 12, 16, 20];
 c.fltcon.rnnub  = [2.5e6, 3.8e6, 6.0e6, 9.5e6];
 
 % cLa model updates 
-perf.model.cond = levelFlightCondition(perf, 0, c.fltcon.mach(1), 0.5);
+perf.model.cond = levelFlightCondition(perf, 0, c.fltcon.mach(1),model.geom.weights.mtow.v);
 cLa_M1 = model.CLa;
-perf.model.cond = levelFlightCondition(perf, 0, c.fltcon.mach(2), 0.5);
+perf.model.cond = levelFlightCondition(perf, 0, c.fltcon.mach(2),model.geom.weights.mtow.v);
 cLa_M2 = model.CLa;
-perf.model.cond = levelFlightCondition(perf, 0, c.fltcon.mach(3), 0.5);
+perf.model.cond = levelFlightCondition(perf, 0, c.fltcon.mach(3),model.geom.weights.mtow.v);
 cLa_M3 = model.CLa;
-perf.model.cond = levelFlightCondition(perf, 0, c.fltcon.mach(4), 0.5);
+perf.model.cond = levelFlightCondition(perf, 0, c.fltcon.mach(4),model.geom.weights.mtow.v);
 cLa_M4 = model.CLa;
-perf.model.cond = levelFlightCondition(perf, 0, c.fltcon.mach(1), 0.5);
+perf.model.cond = levelFlightCondition(perf, 0, c.fltcon.mach(1),model.geom.weights.mtow.v);
 
 % Reference geometry
 c.optins.sref  = m2ft(m2ft(geom.ref_area.v));    % ft^2  gross wing area
@@ -206,6 +206,8 @@ end
 
 %% X_ac_wb generation
 % Wing AC (fraction of root chord from apex, then convert to fuse station)
+x_cg_empty = 0.647*m2ft(model.geom.fuselage.length.v);
+x_cg_full = 0.617*m2ft(model.geom.fuselage.length.v);
 lambda   = model.geom.wing.tip_chord.v / model.geom.wing.root_chord.v;
 AR_w     = model.geom.wing.AR.v;
 LambdaLE = deg2rad(model.geom.wing.average_sweep.v);  % LE sweep in rad

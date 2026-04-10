@@ -1,5 +1,5 @@
 % matlabSetup;
-name = "F414";
+name = "F100";
 interpObj = load_engine_lookup(name, false);
 
 funcDir     = fileparts(mfilename('fullpath'));
@@ -72,7 +72,7 @@ n_mach2 = 40;
 n_alt2  = 40;
 mach_vec2 = linspace(min(devObj.gridded.mach), max(devObj.gridded.mach), n_mach2);
 % alt_vec2  = linspace(min(devObj.gridded.alt),  max(devObj.gridded.alt),  n_alt2);
-alt_vec2  = linspace(-8000,  max(devObj.gridded.alt),  n_alt2);
+alt_vec2  = linspace(-100,  max(devObj.gridded.alt),  n_alt2);
 [MG2, AG2] = ndgrid(mach_vec2, alt_vec2);
 
 thrust_09 = interpObj.TA(MG2, AG2, 0.9 * ones(size(MG2)));

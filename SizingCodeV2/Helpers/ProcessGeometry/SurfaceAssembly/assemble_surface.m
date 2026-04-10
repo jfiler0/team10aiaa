@@ -1,4 +1,9 @@
-function surf = assemble_surface(sections)
+function surf = assemble_surface(sections, mirror)
+    arguments
+        sections 
+        mirror = true
+    end
+    % mirror is true for most things. But for the f16 it is false as it is just one. This changes how some calculations are done
     if(length(sections)<2)
         error("Must have at least two sections to define a wing")
     end
@@ -28,12 +33,17 @@ function surf = assemble_surface(sections)
     end
 
     surf = struct();
+    surf.mirror = json_entry("Is Mirrored", double(mirror), "", true); % saving boolean as 0/1
     surf.le_x = json_entry("Leading Edge X Position", sections(1).le_x.v, "m", true);
     surf.le_y = json_entry("Leading Edge Y Position", sections(1).le_y.v, "m", true);
     surf.qrtr_chd_x = json_entry("Quarter Chord X Position", sections(1).qrtr_chd_coords(1), "m", true);
     surf.root_chord = json_entry("Root Chord", sections(1).chord_length.v, "m", true);
     surf.tip_chord = json_entry("Tip Chord", sections(end).chord_length.v, "m", true);
-    surf.span = json_entry("Span", sections(end).le_y.v * 2, "m", true);
+    if mirror
+        surf.span = json_entry("Span", sections(end).le_y.v, "m", true); % this ends up as PROJECTED span which changes vtail aspect ratio
+    else
+        surf.span = json_entry("Span", sections(end).le_yp.v, "m", true); % making this yp helps with things like the vertical tail
+    end
     surf.taper_ratio = json_entry("Taper Ratio", surf.tip_chord.v / surf.root_chord.v, "", true);
 
     surf.sections = sections;
@@ -42,17 +52,18 @@ function surf = assemble_surface(sections)
 
     % Area weighted
     surf.average_chord = json_entry("Average Chord", 0, "m", true); % filled in a sec
-    surf.average_sweep = json_entry("Average LE Sweep", 0, "deg", true); % filled in a 
+    surf.average_sweep = json_entry("Average LE Sweep", 0, "deg", true); % filled in a sec
     surf.average_te_sweep = json_entry("Average TESweep", 0, "deg", true); % filled in a sec
-    surf.average_qrtr_chd_sweep = json_entry("Average Quarer Chord Sweep", 0, "deg", true); % filled in a sec
+    surf.average_qrtr_chd_sweep = json_entry("Average Quarter Chord Sweep", 0, "deg", true); % filled in a sec
     surf.qrtr_chd_x = json_entry("Quarter Chord X Position", 0, "m", true); % filled in a sec
     surf.average_tc = json_entry("Average t/c Ratio", 0, "", true); % filled in a sec
     surf.x_cp = json_entry("Surface CP X Pos from nose", 0, "", true); % filled in a sec
 
     num_panels = length(sections)-1;
     for i = 1:num_panels
-        height = sections(i+1).le_y.v - sections(i).le_y.v;
+        height = sections(i+1).le_yp.v - sections(i).le_yp.v; % spanwist distance fo the panels
 
+        % AREA IS NOT MIRROED IT IS ONLY ONE HALF
         area = 0.5 * height *( sections(i+1).chord_length.v + sections(i).chord_length.v );
         sweep = atan2d( sections(i+1).le_x.v - sections(i).le_x.v, height );
         te_sweep = atan2d( sections(i+1).te_x.v - sections(i).te_x.v, sections(i+1).te_y.v - sections(i).te_y.v );
@@ -79,9 +90,6 @@ function surf = assemble_surface(sections)
     surf.qrtr_chd_x.v = surf.qrtr_chd_x.v / surf.area.v;
     surf.average_tc.v = surf.average_tc.v / surf.area.v;
     surf.x_cp.v = surf.x_cp.v / surf.area.v;
-
-    % TODO: Get trailing edge and 1/4 chord sweep angles
-    % TODO: Get 1/4 chord root position
 
     surf.AR = json_entry("Aspect Ratio", surf.span.v / surf.average_chord.v, "m", true);
 end

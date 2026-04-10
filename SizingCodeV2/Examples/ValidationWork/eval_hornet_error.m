@@ -68,12 +68,12 @@ function data = compute_missions_res(data, mission, perf, settings, des)
     temp_perf.clear_data; temp_perf.model.clear_mem();
 
     temp_calc = mission_calculator(temp_perf, settings); % loadout is applied internally
-    temp_calc.record_hist = true; % true for plotting
+    temp_calc.record_hist = false; % true for plotting
     temp_calc.do_print = false;
     temp_calc.build_map(); % assembles v, h, W map for key performance info
 
     W_final = temp_calc.solve_mission(mission, 0, kt2ms(135), 1); % starts at 135 kt at full weight
     data = res_cal(data, W_final, weightRatio(0, temp_perf.model.geom), des);
 
-    temp_calc.plot_hist
+    % temp_calc.plot_hist
 end

@@ -114,6 +114,6 @@ fprintf("Final Scaler = %.3g | total radius = %.3g nm | W_end - W_E = %.3g\n", r
 fprintf( "Found approximate F18 range (ferry): 1654 nm. Simulation of best total range: %.0f nm\n", m2nm(total_distance))
 
 [max_range_est, h_opt, M_opt, v_opt] = estimate_max_range(perf, 1);
-fprintf( "Found approximate F18 range: 1654 nm. Estimate of best total range: %.0f nm (h=%.2f kf , M=%.2f, v=%.0f kt)\n", m2nm(max_range_est), m2ft(h_opt)/1000, M_opt, m2ft(v_opt))
+fprintf( "Found approximate F18 range: 1654 nm. Estimate of best total range: %.0f nm (h=%.2f kf , M=%.2f, v=%.0f kt)\n", m2nm(max_range_est), m2ft(h_opt)/1000, M_opt, ms2kt(v_opt))
 
 % mission_calculator.plot_hist

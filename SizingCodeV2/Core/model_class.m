@@ -412,7 +412,6 @@ classdef model_class < handle
                             store = obj.geom.stores(i);
                             value = value + store.frontal_area.v * obj.settings.CDp_CONST_CD / obj.geom.ref_area.v;
                         end
-                        value = 0;
                     case obj.settings.codes.CDp_IGNORE
                         value = 0;
 

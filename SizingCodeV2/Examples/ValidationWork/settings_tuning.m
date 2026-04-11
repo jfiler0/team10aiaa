@@ -10,8 +10,10 @@ settings = readSettings();
 
 settings.TSFC_scaler = X(1);
 settings.CDp_scaler = X(2);
-settings.TA_scaler = X(3);
-settings.CDw_scaler  = X(4);
+% settings.TA_scaler = 1;
+settings.CDw_scaler  = X(3);
+% settings.WE_scaler = X(5); % scales all components and the final empty weight
+% settings.WF_ratio =  X(6); % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
 
 %% BUILD MISSIONS - Hornet
 Hi_Hi_Hi = { ...
@@ -86,17 +88,23 @@ writeMissionStruct(Hi_Hi_Hi, "Corsair_Hi_Hi_Hi", ["" "" "" "" "" "" "" ""]);
 
 %% TEST RUNS
 
-data_hornet = eval_hornet_error(settings);
-res_hornet_tot = norm(data_hornet.res);
-
-data_falcon = eval_falcon_error(settings);
-res_falcon_tot = norm(data_falcon.res);
-
-data_tomact = eval_tomcat_error(settings);
-res_tomcat_tot = norm(data_tomact.res);
-
-data_corsair = eval_corsair_error(settings);
-res_corsair_tot = norm(data_corsair.res);
+try
+    data_hornet = eval_hornet_error(settings);
+    res_hornet_tot = norm(data_hornet.res);
+    
+    data_falcon = eval_falcon_error(settings);
+    res_falcon_tot = norm(data_falcon.res);
+    
+    data_tomact = eval_tomcat_error(settings);
+    res_tomcat_tot = norm(data_tomact.res);
+    
+    data_corsair = eval_corsair_error(settings);
+    res_corsair_tot = norm(data_corsair.res);
+catch
+    res = 1e6; % better than crashing
+    warning("Hit an error")
+    return
+end
 
 if print
     T = table();
@@ -136,6 +144,6 @@ if print
     fprintf("Total error for the corsair: %.2f percent \n", 100*res_corsair_tot )
 end
 
-res = norm([data_hornet.res data_falcon.res data_tomact.res data_corsair.res]);
+res = norm( rmmissing([data_hornet.res data_falcon.res data_tomact.res data_corsair.res]) );
 
 end

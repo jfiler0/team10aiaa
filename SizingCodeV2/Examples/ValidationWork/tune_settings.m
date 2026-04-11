@@ -2,11 +2,13 @@ matlabSetup();
 % 1.5619    0.9684    1.0605    1.0549    0.4280
 
 %     TSFC    CDp    TA     Cdw    WE    WF
-X0 = [1.5453, 0.1, 1.0649, 1.0309, 1, 0.4206];
+% X0 = [1.5453, 0.1, 1.0649, 1.0309, 1, 0.4206];
 % 1.2453    0.7000    1.0649    1.6309    0.8000    0.3831
+% 1.3875    0.7000    1.8750 -> 1836 nm
 
 %     TSFC    CDp    Cdw
-X0 = [1.1703, 0.3250,  1.6309];
+% X0 = [1.1703, 0.3250,  1.6309];
+X0 = [1.45 1 2 1];
 fun = @(X) settings_tuning(X, false);
 
 % ------------------------------------------------------------------ %
@@ -54,10 +56,18 @@ opts = optimoptions('patternsearch', ...
 % ub = [2.0,  2.0,  2.0,  2.0,  0.8];
 
 lb = [0.7,  0.3,  0.7];   % tune per variable meaning
-ub = [2.0,  1.0,  2.0];
+ub = [2.0,  1.5,  2.0];
 
-tic
-xs = patternsearch(fun, X0, [], [], [], [], lb, ub, [], opts);
-toc
-xs
-settings_tuning(xs, true);
+% tic
+% xs = patternsearch(fun, X0, [], [], [], [], lb, ub, [], opts);
+% toc
+% xs
+% settings_tuning(xs, true);
+
+%    TSFC    CDp    CDw
+% XS = [0.7015 0.325 1.9872]; % 79.55
+% XS = [0.7015 0.4 1.9872]; % 96.78
+% XS = [1 0 1]; % ferry range 3196
+% XS = [1.5 1 1.5]; % ferry range 
+
+settings_tuning(X0, true)

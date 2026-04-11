@@ -10,8 +10,9 @@ settings = readSettings();
 
 settings.TSFC_scaler = X(1);
 settings.CDp_scaler = X(2);
-% settings.TA_scaler = 1;
+
 settings.CDw_scaler  = X(3);
+settings.TA_scaler = X(4);
 % settings.WE_scaler = X(5); % scales all components and the final empty weight
 % settings.WF_ratio =  X(6); % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
 
@@ -90,16 +91,16 @@ writeMissionStruct(Hi_Hi_Hi, "Corsair_Hi_Hi_Hi", ["" "" "" "" "" "" "" ""]);
 
 try
     data_hornet = eval_hornet_error(settings);
-    res_hornet_tot = norm(data_hornet.res);
+    res_hornet_tot = norm(rmmissing(data_hornet.res));
     
     data_falcon = eval_falcon_error(settings);
-    res_falcon_tot = norm(data_falcon.res);
-    
+    res_falcon_tot = norm(rmmissing(data_falcon.res));
+
     data_tomact = eval_tomcat_error(settings);
-    res_tomcat_tot = norm(data_tomact.res);
-    
+    res_tomcat_tot = norm(rmmissing(data_tomact.res));
+
     data_corsair = eval_corsair_error(settings);
-    res_corsair_tot = norm(data_corsair.res);
+    res_corsair_tot = norm(rmmissing(data_corsair.res));
 catch
     res = 1e6; % better than crashing
     warning("Hit an error")
@@ -115,35 +116,37 @@ if print
     
     disp(T)
     fprintf("Total error for the hornet: %.2f percent \n", 100*res_hornet_tot )
-    
+
     T = table();
     T.("Error Name") = data_falcon.des';
     T.("Percent Error") = 100 *data_falcon.res';
     T.("Computed") = data_falcon.val';
     T.("Target") = data_falcon.tar';
-    
+
     disp(T)
     fprintf("Total error for the falcon: %.2f percent \n", 100*res_falcon_tot )
-    
+
     T = table();
     T.("Error Name") = data_tomact.des';
     T.("Percent Error") = 100 *data_tomact.res';
     T.("Computed") = data_tomact.val';
     T.("Target") = data_tomact.tar';
-    
+
     disp(T)
     fprintf("Total error for the tomcat: %.2f percent \n", 100*res_tomcat_tot )
-    
+
     T = table();
     T.("Error Name") = data_corsair.des';
     T.("Percent Error") = 100 *data_corsair.res';
     T.("Computed") = data_corsair.val';
     T.("Target") = data_corsair.tar';
-    
+
     disp(T)
     fprintf("Total error for the corsair: %.2f percent \n", 100*res_corsair_tot )
 end
 
-res = norm( rmmissing([data_hornet.res data_falcon.res data_tomact.res data_corsair.res]) );
+% res = norm( rmmissing([data_hornet.res data_falcon.res data_tomact.res data_corsair.res]) );
+
+res = norm( rmmissing([data_hornet.res]) );
 
 end

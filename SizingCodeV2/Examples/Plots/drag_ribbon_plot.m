@@ -17,7 +17,7 @@ function drag_ribbon_plot(perf, h0, N, W)
     LD = perf.LD;
     range_term = 200 * perf.mdotf ./ perf.model.cond.vel.v;
 
-    Y = [Cd0_vec ; Cdi_vec ; Cdw_vec ; Cdp_vec];
+    Y = [Cdp_vec; Cd0_vec ; Cdi_vec ; Cdw_vec];
 
     area(M_vec, Y')
     axis tight
@@ -29,7 +29,7 @@ function drag_ribbon_plot(perf, h0, N, W)
     plot(M_vec, LD)
     plot(M_vec, range_term)
     ylabel("Lift/Drag OR 200 mdotf[kg/s] / v[m/s]");
-    legend({'Parasite', 'Induced', 'Wave', 'Payload','Lift/Drag', 'Range Term'})
+    legend({'Payload','Parasite', 'Induced', 'Wave', 'Lift/Drag', 'Range Term'})
     grid on
     title(sprintf("Drag Ribbon Plot for h=%.0f ft", m2ft(h0)) )
 end

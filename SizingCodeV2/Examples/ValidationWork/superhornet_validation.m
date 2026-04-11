@@ -18,7 +18,7 @@ fprintf("F18 listed mtow weight: 66000 lb. Code value: %.0f\n", N2lb(geom.weight
 fprintf("F18 listed internal fuel weight: 14850 lb. Code value: %.0f\n", N2lb(geom.weights.max_fuel_weight.v))
 fprintf("F18 combat empty weight (stores but no fuel)/mtow ~39,351lb / 60,729lb. Code: %.0f (empty) / %.0f (mtow)\n", N2lb(weightRatio(0, geom_strike)), N2lb(weightRatio(1, geom_strike)))
 
-
+perf.clear_data();
 [v_land_mtow, glide_angle] = compute_landing_speed(perf, 1);
 v_land_empty = compute_landing_speed(perf, 0);
 

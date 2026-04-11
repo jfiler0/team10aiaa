@@ -45,6 +45,8 @@ perf.model.clear_mem(); perf.clear_data();
 perf.model.geom = setLoadout(perf.model.geom, ["AIM-9X" "" "" "FPU-12" "FPU-12" "FPU-12" "" "AIM-9X"]);
 [max_range_est, h_opt, ~, v_opt] = estimate_max_range(perf, 1);
 
+drag_ribbon_plot(perf,0, 50, 0.5)
+
 data = res_cal(data, m2nm(max_range_est), 1654, "Ferry Max Range");
 data = res_cal(data, m2ft(h_opt)/1000, 42, "Ferry Cruise Best Alt");
 data = res_cal(data, ms2kt(v_opt), 484, "Ferry Cruise Best Speed");

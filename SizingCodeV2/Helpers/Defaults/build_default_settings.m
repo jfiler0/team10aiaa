@@ -23,16 +23,16 @@ set.spot_factor_reference = 52.7559; % Folded wing area of an f18e
 
 set.CD0_scaler = 1; % general scaler to parasite drag
 set.CDi_scaler = 1;
-set.CDw_scaler = 1.6309; % general scaler to wave drag
+set.CDw_scaler = 2.5; % general scaler to wave drag
 set.CLa_scaler = 1;
-set.CDp_scaler = 0.3250;
+set.CDp_scaler = 1;
 set.SpotFactor_scaler = 1;
 
 set.COST_scaler = 1;
-set.TA_scaler = 1;
-set.TSFC_scaler = 1.1703;
+set.TA_scaler = 0.95;
+set.TSFC_scaler = 1.3;
 
-set.WE_scaler = 1; % scales all components and the final empty weight
+set.WE_scaler = 1.056; % scales all components and the final empty weight
 set.WF_ratio =  0.4206; % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
 
 set.codes = build_default_codes();

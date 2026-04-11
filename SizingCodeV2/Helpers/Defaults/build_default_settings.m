@@ -32,6 +32,9 @@ set.COST_scaler = 1;
 set.TA_scaler = 1;
 set.TSFC_scaler = 1.65;
 
+set.WE_scaler = 1; % scales all components and the final empty weight
+set.WF_ratio =  0.4206; % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
+
 set.codes = build_default_codes();
 
 set.WE_model = set.codes.WE_Roskam; % go back to set.codes.WE_Nicolai
@@ -45,7 +48,7 @@ set.PROP_model = set.codes.PROP_HYBRID; % PROP_BASIC PROP_NPSS PROP_HOOK PROP_HY
 set.CDp_model = set.codes.CDp_CONST;
 set.SpotFactor_model = set.codes.SpotFactor_BASIC;
 
-set.CDp_CONST_CD = 0.2; % the drag coefficent used for each store in the CDp_CONST model
+set.CDp_CONST_CD = 0.15; % the drag coefficent used for each store in the CDp_CONST model
 
 fullPath = mfilename('fullpath');
 codeFolder = fileparts(fullPath);

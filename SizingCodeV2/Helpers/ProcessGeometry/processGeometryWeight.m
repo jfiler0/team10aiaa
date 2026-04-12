@@ -34,6 +34,7 @@ function geom = processGeometryWeight(geom, settings)
         fn = fieldnames(weight_comps);  % get all field names
         total = 0;
         for i = 1:numel(fn)
+            weight_comps.(fn{i}) = weight_comps.(fn{i}) * settings.WE_scaler;
             total = total + weight_comps.(fn{i});
         end
         WE = total;
@@ -41,7 +42,7 @@ function geom = processGeometryWeight(geom, settings)
 
     % Usally, we enter derived equations as a string. This can be fixed later. Easier to just used derived override here
     geom.weights.empty = json_entry("Empty Weight", WE, "N", true); % this is with no stores
-    geom.weights.max_fuel_weight = json_entry("Max Fuel Weight", geom.input.WF_ratio.v * (geom.weights.mtow.v - geom.weights.empty.v), "N", true);
+    geom.weights.max_fuel_weight = json_entry("Max Fuel Weight", settings.WF_ratio * (geom.weights.mtow.v - geom.weights.empty.v), "N", true);
     geom.weights.loaded = json_entry("Loaded Weight", 0, "N", true); % set with setLoadout
     geom.weights.ext_max_fuel_weight = json_entry("External Tank Max Fuel Weight", 0, "N", true); % set with setLoadout
     geom.weights.components = weight_comps;

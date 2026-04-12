@@ -18,7 +18,7 @@ fprintf("F18 listed mtow weight: 66000 lb. Code value: %.0f\n", N2lb(geom.weight
 fprintf("F18 listed internal fuel weight: 14850 lb. Code value: %.0f\n", N2lb(geom.weights.max_fuel_weight.v))
 fprintf("F18 combat empty weight (stores but no fuel)/mtow ~39,351lb / 60,729lb. Code: %.0f (empty) / %.0f (mtow)\n", N2lb(weightRatio(0, geom_strike)), N2lb(weightRatio(1, geom_strike)))
 
-
+perf.clear_data();
 [v_land_mtow, glide_angle] = compute_landing_speed(perf, 1);
 v_land_empty = compute_landing_speed(perf, 0);
 
@@ -42,14 +42,14 @@ fprintf("Max Rate of Climb Sealevel (mil) (M0.5) (empty): 12fpm. Code: %.2f\n", 
 perf.model.clear_mem(); perf.clear_data(); perf.model.cond = generateCondition(geom, 0, 0.5, 1, W, 1);
 fprintf("Max Rate of Climb Sealevel (AB) (M0.5) (empty): 44fpm. Code: %.2f\n", m2ft(perf.ExcessPower)*60/1000);
 
-% drag_ribbon_plot(perf, ft2m(40000), 50, 1)
-
-% levelflight_performance_plots(perf,50)
-% plot_performance(geom, perf, 50)
-% max_performance_plots(perf, 50)
-% displayAircraftGeom(geom)
-
-% PRELOAD THE MISSION CALCULATOR
+% % drag_ribbon_plot(perf, ft2m(40000), 50, 1)
+% 
+% % levelflight_performance_plots(perf,50)
+% % plot_performance(geom, perf, 50)
+% % max_performance_plots(perf, 50)
+% % displayAircraftGeom(geom)
+% 
+% % PRELOAD THE MISSION CALCULATOR
 mission_calculator = mission_calculator(perf, settings);
 mission_calculator.record_hist = false;
 mission_calculator.do_print = false;
@@ -112,6 +112,8 @@ mission_calculator.record_hist = true;
 fprintf("Final Scaler = %.3g | total radius = %.3g nm | W_end - W_E = %.3g\n", range_scaler, m2nm(total_distance)/2, W_end - geom.weights.empty.v)
 
 fprintf( "Found approximate F18 range (ferry): 1654 nm. Simulation of best total range: %.0f nm\n", m2nm(total_distance))
+
+perf.model.clear_mem(); perf.clear_data();
 
 [max_range_est, h_opt, M_opt, v_opt] = estimate_max_range(perf, 1);
 fprintf( "Found approximate F18 range: 1654 nm. Estimate of best total range: %.0f nm (h=%.2f kf , M=%.2f, v=%.0f kt)\n", m2nm(max_range_est), m2ft(h_opt)/1000, M_opt, ms2kt(v_opt))

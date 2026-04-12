@@ -20,7 +20,8 @@ function cond = P_Specified_Condition(perf, EP, h, MV, W, MV_decleration)
     if ~isstruct(perf.model.cond)
         perf.model.cond = buildDefaultCondStruct();
     end
-    perf.model.cond = generateCondition(perf.model.geom, h, MV, one_vec, W, one_vec, perf.model.cond, MV_decleration);
+    perf.model.cond = generateCondition(perf.model.geom, h(:)', MV(:)', one_vec(:)', W(:)', one_vec(:)', perf.model.cond, MV_decleration); % make sure everything is forced to row vector with (:)'
+    EP = EP(:)'; % also needs to be a row vector
    
     drag = perf.Drag;
 

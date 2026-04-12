@@ -44,34 +44,34 @@ writeMissionStruct(Air2Gnd_700nm, "OPM_Air2Gnd_700nm",  ["AIM-9X" "Mk-83" "Mk-83
 % X(1) - MTOW (N)
 % X(2) - Wing Root Chord (m)
 % X(3) - Wing Span (m)
-% X(4) - Wing Sweep (deg)
+% X(4) - Wing Tip Chord (m)
 
-X0 = [lb2N(65166) 3.528 16.824 34.37];
+X0 = [lb2N(58000) 6.1 ft2m(49) 1.5]; xs = X0;
 
 fun = @(X) objective2(X, model, geom, settings);
-
-%% OPTIMIZE
-% Normalize X so fmincon sees O(1) variables
-X_scale = X0;
-
-fun_norm = @(X_n) objective2(X_n .* X_scale, model, geom, settings);
-
-X0_n = X0 ./ X_scale;   % all ones at start
-lb_n = [lb2N(30000), 1.5,  8, 5] ./ X_scale;
-ub_n = [lb2N(120000), 9.0, 35, 50] ./ X_scale;   % wider chord bound
-
-opts = optimoptions('fmincon', ...
-    'Algorithm',                'sqp',  ...
-    'Display',                  'iter', ...
-    'FiniteDifferenceStepSize', 1e-3,   ...  % 5% in normalized space = meaningful for all vars
-    'StepTolerance',            1e-4,   ...
-    'FunctionTolerance',        1e-5,   ...
-    'OptimalityTolerance',      1e-5,   ...
-    'MaxFunctionEvaluations',   300);
-
-tic
-xs_n = fmincon(fun_norm, X0_n, [], [], [], [], lb_n, ub_n, [], opts);
-xs   = xs_n .* X_scale;
+% 
+% %% OPTIMIZE
+% % Normalize X so fmincon sees O(1) variables
+% X_scale = abs(X0);
+% 
+% fun_norm = @(X_n) objective2(X_n .* X_scale, model, geom, settings);
+% 
+% X0_n = X0 ./ X_scale;   % all ones at start
+% lb_n = [lb2N(30000), 1.5,  5, 0.1] ./ X_scale;
+% ub_n = [lb2N(120000), 9.0, 20, 5] ./ X_scale;   % wider chord bound
+% 
+% opts = optimoptions('fmincon', ...
+%     'Algorithm',                'sqp',  ...
+%     'Display',                  'iter', ...
+%     'FiniteDifferenceStepSize', 1e-3,   ...  % 5% in normalized space = meaningful for all vars
+%     'StepTolerance',            1e-4,   ...
+%     'FunctionTolerance',        1e-5,   ...
+%     'OptimalityTolerance',      1e-5,   ...
+%     'MaxFunctionEvaluations',   300);
+% 
+% tic
+% xs_n = fmincon(fun_norm, X0_n, [], [], [], [], lb_n, ub_n, [], opts);
+% xs   = xs_n .* X_scale;
 
 %% REPORT OUT
 [~, output] = objective2(xs, model, geom, settings);
@@ -82,6 +82,10 @@ fprintf("MTOW = %.0f lb. root = %.2f m. span = %.2f m. sweep = %.2f deg .Landing
 
 displayAircraftGeom(output.geom)
 
+output.geom.name.v = "0412_Optimization";
+output.geom.id.v = "0412_Optimization";
+writeAircraftFile(output.geom)
+
 T = table();
 T.("Constraint Name") = output.g_names';
 T.("Constraint Value") = output.g_vec';
@@ -91,16 +95,16 @@ T.("Computed Value") = output.value';
 disp(T);
 
 T = table();
-T.("Variable Name") = ["MTOW [lb]", "Root Chord [m]", "Span [m]", "Sweep [deg]"]';
+T.("Variable Name") = ["MTOW [lb]", "Root Chord [m]", "Span [m]", "Tip Chord [m]"]';
 T.("Varible Values") = [N2lb(xs(1)), xs(2), xs(3), xs(4)]';
 
 disp(T);
 
 N = 20;
-sweep_1d(fun, X0, 1, linspace(lb2N(50000), lb2N(120000), N));
-sweep_1d(fun, X0, 2, linspace(4, 10, N));
-sweep_1d(fun, X0, 3, linspace(15, 35, N));
-sweep_1d(fun, X0, 4, linspace(10, 45, N));
+sweep_1d(fun, xs, 1, linspace(lb2N(50000), lb2N(120000), N));
+sweep_1d(fun, xs, 2, linspace(4, 10, N));
+sweep_1d(fun, xs, 3, linspace(10, 20, N));
+sweep_1d(fun, xs, 4, linspace(0.5, 6, N));
 
 % drag_ribbon_plot(output.perf, 6000, 200, 0.5)
 
@@ -162,9 +166,9 @@ function sweep_1d(fun, X0, idx, range)
 
     ylim(g_ylim);
     xlim([range(1), range(end)]);
-    ylabel('Constraint g   (g \leq 0 feasible)');
+    ylabel('Constraint g   (g $\leq$ 0 feasible)');
     xlabel(sprintf('X(%d)', idx));
-    title(sprintf('1D Constraint Sweep — Variable %d', idx));
+    title(sprintf('1D Constraint Sweep , Variable %d', idx));
     grid on;
     legend('Location', 'best', 'NumColumns', 2);
 end

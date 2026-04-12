@@ -30,15 +30,15 @@ function [obj, output] = objective2(X, model, base_geom, settings)
     % MAIN WING DEFENITION - only the inboard side of the flap must be defined
         wing_root = X(2);
         wing_span = X(3);
-        sweep = X(4);
+        sweep = 30; % to match mach angle
         
-        wing_tip = 0.25 * wing_root;
-        lerx_root = wing_root*2;
+        wing_tip = X(4);
+        lerx_root = wing_root*1.7;
         wing_le_x = 0.48 * geom.fuselage.length.v - lerx_root + wing_root;
     
         sec0 = new_section(lerx_root, wing_le_x, geom.fuselage.diameter.v/2, tc=0.06);
         sec1 = new_section(wing_root, wing_le_x + lerx_root - wing_root, sec0.le_yp.v + 0.08 * wing_span, tc=0.04);
-        sec6 = new_section(wing_tip, wing_le_x + lerx_root - wing_root + sind(sweep)*(wing_span/2 - sec1.le_y.v), wing_span/2, tc=0.02);
+        sec6 = new_section(wing_tip, sec1.le_x.v + sind(sweep)*(wing_span/2 - sec1.le_y.v), wing_span/2, tc=0.02);
         
         % MAIN FLAP
         sec2 = btw_section(sec1, sec6, 0.1, flap_length=0.2, control_name="Main Flap");

@@ -41,7 +41,7 @@ GW = 0.95 * TOGW;
 % wing
 K_w = 1; % is 1 for fixed wing airplanes, is 1.175 for variable sweep wing airplanes
 n_ult = 1.5*7.5;
-t_c_m = 0.05; % (t/c)_m
+t_c_m = geom.wing.average_tc.v; % (t/c)_m
 lambda_LE = deg2rad(geom.wing.average_sweep.v); % leading edge sweep angle of the wing
 taper_ratio = geom.wing.taper_ratio.v;
 A = geom.wing.AR.v; % wing aspect ratio
@@ -51,14 +51,14 @@ S = m2ft(m2ft(geom.wing.area.v)); % wing area
 S_h = m2ft(m2ft(geom.elevator.area.v)); % horizontal tail area (m^2)
 b_h = m2ft(geom.elevator.span.v); %horizontal tail span
 A_h = geom.elevator.AR.v; %horizontal tail aspect ratio
-t_r_h = 0.5; % horizontal tail maximum root thickness
+t_r_h = geom.rudder.sections(1).tc.v; % horizontal tail maximum root thickness
 c_bar = m2ft(geom.elevator.average_chord.v);
 
 %vertical tail
 S_v = m2ft(m2ft(geom.rudder.area.v));% vertical tail area 
 A_v = geom.rudder.AR.v;% vertical tail aspect ratio
-t_r_v = t_r_h;% vertical tail maximum root thickness
-lambda_quarter_v = deg2rad(35);% vertical tail quarter chord sweep angle
+t_r_v = geom.elevator.sections(1).tc.v;% vertical tail maximum root thickness
+lambda_quarter_v = deg2rad(geom.elevator.average_qrtr_chd_sweep.v);% vertical tail quarter chord sweep angle
 
 M_H = 0.95; % maximum mach number at sealevel -> hard setting is more stable
 l_v = m2ft(geom.rudder.le_x.v-geom.wing.le_x.v); %distance from wing c/4 to vertical tail cv/4
@@ -76,6 +76,7 @@ l_f = geom.fuselage.length.v; %fuselage length (m)
 h_f = m2ft(sqrt(geom.fuselage.max_area.v / pi)/2); %maximum fuselage height
 w_f = h_f; %maximum fuselage width (m)
 
+% TODO: THESE ARE FIXED
 N_inl = geom.prop.num_engine.v; %number of inlets
 A_inl = 5.5; %capture area per inlet (ft^2)
 l_n = 56-24-10; %nacelle length from inlet lip to compressor face (ft)
@@ -96,14 +97,15 @@ N_e = geom.prop.num_engine.v; % number of engines
 b = m2ft(geom.wing.span.v); % wing span
 K_osc = 0; % jet engine value is 0.
 
+% THIS COULD BE CALCULATED
 R = 1400; %maximum range (nm)
 
 K_api = 212; % for supersonic airplanes with wing and tail anti-icing
 N_cr = 1;% number of crew
 
 
-% Engine Weigh
-W_engine = N2lb(geom.prop.dry_weight.v);
+% Engine Weight
+W_engine = N2lb(geom.prop.dry_weight.v); % number of engines is added later
 
 
 %% Chapter 5 Equations: Estimating Structure Weight
@@ -199,7 +201,6 @@ W_hps = 0.0180 * TOGW;
 W_iae = 0.575 * W_engine^0.556 * R^0.25;
 
 % Electrical System Weight Esimtations, we are given this
-W_els = 2500;
 W_els = 347* (( W_fc + W_iae)/1000)^0.509; %fs or fc
 
 % Weight Estimatino for air conidtionaing, pressurization, and anti-icing

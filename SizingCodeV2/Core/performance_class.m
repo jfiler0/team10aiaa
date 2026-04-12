@@ -20,6 +20,7 @@ classdef performance_class < handle % <--- Inheriting from handle allows in-plac
         %% HELPERS
         function obj = clear_data(obj)
             obj.data = struct();
+            obj.model.clear_mem();
         end
         function bool = hasData(obj, field)
             bool = isfield(obj.data, field);

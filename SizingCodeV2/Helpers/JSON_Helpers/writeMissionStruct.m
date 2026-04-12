@@ -11,7 +11,7 @@ function writeMissionStruct(mission, name, loadout)
     mission_obj = struct();
     mission_obj.name = json_entry("Name", name, "s");
     mission_obj.data = mission;
-    mision_obj.loadout = loadout;
+    mission_obj.loadout = loadout;
 
     fullPath = mfilename('fullpath');
     codeFolder = fileparts(fullPath);

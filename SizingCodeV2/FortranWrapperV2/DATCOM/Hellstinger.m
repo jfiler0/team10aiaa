@@ -353,9 +353,9 @@ text(-0.4, SH_design, sprintf('  S_H/S_W = %.3f', SH_design), ...
     'FontSize', 12, ...
     'Color', 'b');
 title('Hellstinger')
+
+%% Cn_beta vs alpha plot
+figure;
+
 if isfile(inpFile), delete(inpFile); end
 
-SHSW_design_ratio = SHSW_control(x_ctrl_cross);
-
-% Horizontal tail area
-SHSW_design_size = model.geom.elevator.area.v*SHSW_design_ratio

@@ -65,10 +65,12 @@ examplesDir = fullfile(thisDir, 'Examples');
 model.geom.wing.le_x.v = 7.8;
 model.geom.wing.average_sweep.v = 45;
 
-l_h = 14; % global l_h value 
+l_h = 21; % global l_h value 
 % %l_h = m2ft(model.geom.elevator.qrtr_chd_x.v - model.geom.wing.qrtr_chd_x.v);
 % %z_H     = model.geom.elevator.sections(1).le_z.v - model.geom.wing.sections(1).le_z.v;
- z_H = 6;
+z_H = 3;
+depsdalpha = 0.35;
+AR = 5;
 %% ---- Case 3: Build custom input from struct ----------------------------
 % Generic supersonic fighter: circular fuselage + swept wing + tails.
 % Demonstrates write_datcom_input — replace numbers with your own geometry.
@@ -224,7 +226,7 @@ AR_w     = model.geom.wing.AR.v;
 LambdaLE = deg2rad(model.geom.wing.average_sweep.v);  % LE sweep in rad
 
 xac_wing_frac = 0.25 + (tan(LambdaLE)/4) * (1 + 2*lambda) / ((1 + lambda) * AR_w);
-wing_le_X_trial = model.geom.wing.le_x.v
+wing_le_X_trial = model.geom.wing.le_x.v;
 x_ac_w = m2ft(wing_le_X_trial) + xac_wing_frac * m2ft(model.geom.wing.root_chord.v);
 
 % Wing lift curve slope (Helmbold/DATCOM)
@@ -247,10 +249,10 @@ CLalpha_wb = model.CLa;
 x_ac_B = 0.25 * m2ft(model.geom.fuselage.length.v);
 
 % Combined wing-body AC (area-weighted)
-x_ac_wb = (x_ac_w * CLalpha_w + x_ac_B * CLalpha_B) / (CLalpha_B + CLalpha_w);
-
+%x_ac_wb = (x_ac_w * CLalpha_w + x_ac_B * CLalpha_B) / (CLalpha_B + CLalpha_w);
+x_ac_wb = 31.9
 %% Downwash Gradient DATCOM estimation
-AR      = model.geom.wing.AR.v;
+%AR      = model.geom.wing.AR.v;
 lambda  = model.geom.wing.tip_chord.v / model.geom.wing.root_chord.v;
 Lambda_c4 = deg2rad(model.geom.wing.average_qrtr_chd_sweep.v);
 b       = model.geom.wing.span.v;
@@ -259,12 +261,13 @@ K_A      = 1/AR - 1/(1 + AR^1.7);
 K_lambda = (10 - 3*lambda) / 7;
 K_H      = (1 - abs(z_H/b)) / (2*l_h/b)^(1/3);
 
-depsdalpha = 4.44 * (K_A * K_lambda * K_H * sqrt(cos(Lambda_c4)))^1.19
+% depsdalpha = 4.44 * (K_A * K_lambda * K_H * sqrt(cos(Lambda_c4)))^1.19;
 
 %% Scissor Plot Generation
 
 clalphH = 2*pi; %/rad
-CLalphH = clalphH/(1 + clalphH/(pi*model.geom.elevator.AR.v)); %/rad
+%AR = model.geom.elevator.AR.v
+CLalphH = clalphH/(1 + clalphH/(pi*AR)); %/rad
 etaH  = 0.86; % Assume middle of the road 
 
 xcg_ac_norm = linspace(-0.3,0.3,100);
@@ -299,9 +302,61 @@ dub1 = xline(Xcgfull_norm,'LineWidth',3);
 dub1.Label = 'XCG at MGTOW';
 dub2 = xline(Xcgempty_norm,'LineWidth',3);
 dub2.Label = 'XCG at empty weight';
-xline(0);
-%xline(0,'k','LineWidth',4)
 legend('Stability Limit','Control Limit');
 xlabel('x_cg - x_ac normalized');
 ylabel('SH/SW');
+xline(0);
+
+%% Design Tail Size and Midpoint Horizontal Line
+
+cbar_ft = m2ft(model.geom.wing.average_chord.v);
+l_h_bar = l_h / cbar_ft;
+
+% --- Step 1: evaluate each curve at its corresponding CG limit ---
+% Stability is critical at the AFT CG (empty)
+% Control is critical at the FORWARD CG (full fuel)
+SH_stab_at_aft_CG = SHSW_stability(Xcgempty_norm);
+SH_ctrl_at_fwd_CG = SHSW_control(Xcgfull_norm);
+
+% --- Step 2: design SH/SW is lower of the two
+SH_design = min(SH_stab_at_aft_CG,SH_ctrl_at_fwd_CG);
+
+% --- Step 3: find where the horizontal line intersects each curve ---
+% Stability curve is linear through origin: SHSW = slope_s * x
+% So x_intersect = SH_design / slope_s
+slope_s       = SHSW_stability(1) - SHSW_stability(0);   % gradient
+x_stab_cross  = SH_design / slope_s;
+
+% Control curve is linear with intercept: SHSW = slope_c * x + intercept_c
+slope_c       = SHSW_control(1) - SHSW_control(0);
+intercept_c   = SHSW_control(0);
+x_ctrl_cross  = (SH_design - intercept_c) / slope_c;
+
+% --- Step 4: determine actual line extents clipped to CG limits ---
+x_line_left  = min(x_stab_cross, x_ctrl_cross);
+x_line_right = max(x_stab_cross, x_ctrl_cross);
+
+% CG limits (forward = full fuel, aft = empty)
+x_fwd = min(Xcgfull_norm, Xcgempty_norm);
+x_aft = max(Xcgfull_norm, Xcgempty_norm);
+
+% --- Step 6: clip line to the range between curves only ---
+x_plot = linspace(x_line_left, x_line_right, 100);
+
+% --- Step 7: plot ---
+plot(x_plot, SH_design * ones(size(x_plot)), 'b--', 'LineWidth', 2);
+plot(x_stab_cross, SH_design, 'rs', 'MarkerFaceColor', 'r', 'MarkerSize', 8);
+plot(x_ctrl_cross, SH_design, 'gs', 'MarkerFaceColor', 'g', 'MarkerSize', 8);
+yline(SH_design, 'b:', 'LineWidth', 0.5);
+
+text(-0.4, SH_design, sprintf('  S_H/S_W = %.3f', SH_design), ...
+    'VerticalAlignment', 'middle', ...
+    'HorizontalAlignment', 'left', ...
+    'FontSize', 12, ...
+    'Color', 'b');
 if isfile(inpFile), delete(inpFile); end
+
+SHSW_design_ratio = SHSW_control(x_ctrl_cross);
+
+% Horizontal tail area
+SHSW_design_size = model.geom.elevator.area.v*SHSW_design_ratio

@@ -18,14 +18,12 @@
 
 initialize
 matlabSetup
-%build_f18_template
-build_kevin_cad
 
 % INITIAL OBJECTS TO LOAD
 build_default_settings
 settings = readSettings();
 % geom = loadAircraft("f18_superhornet", settings);
-geom = loadAircraft("kevin_cad", settings);
+geom = loadAircraft("0412_Optimization", settings);
 model = model_class(settings, geom);
     N = 100;
     perf = performance_class(model);
@@ -62,15 +60,16 @@ examplesDir = fullfile(thisDir, 'Examples');
 % 
 
 %% Stability Search Test Values
-model.geom.wing.le_x.v = 7.8;
-model.geom.wing.average_sweep.v = 45;
-
-l_h = 21; % global l_h value 
-% %l_h = m2ft(model.geom.elevator.qrtr_chd_x.v - model.geom.wing.qrtr_chd_x.v);
-% %z_H     = model.geom.elevator.sections(1).le_z.v - model.geom.wing.sections(1).le_z.v;
-z_H = 3;
-depsdalpha = 0.35;
-AR = 5;
+% model.geom.wing.le_x.v = 7.8;
+% model.geom.wing.average_sweep.v = 45;
+% 
+% l_h = 21; % global l_h value 
+l_h = m2ft(model.geom.elevator.qrtr_chd_x.v - model.geom.wing.qrtr_chd_x.v);
+% % %z_H     = model.geom.elevator.sections(1).le_z.v - model.geom.wing.sections(1).le_z.v;
+% z_H = 3;
+% depsdalpha = 0.35;
+% AR = 5;
+z_H = 0.1;
 %% ---- Case 3: Build custom input from struct ----------------------------
 % Generic supersonic fighter: circular fuselage + swept wing + tails.
 % Demonstrates write_datcom_input — replace numbers with your own geometry.
@@ -219,7 +218,7 @@ end
 
 %% X_ac_wb generation
 % Wing AC (fraction of root chord from apex, then convert to fuse station)
-x_cg_empty = 0.647*m2ft(model.geom.fuselage.length.v);
+x_cg_empty = 0.649*m2ft(model.geom.fuselage.length.v);
 x_cg_full = 0.617*m2ft(model.geom.fuselage.length.v);
 lambda   = model.geom.wing.tip_chord.v / model.geom.wing.root_chord.v;
 AR_w     = model.geom.wing.AR.v;
@@ -239,7 +238,7 @@ CLalpha_w = clalpha_w / (1 + clalpha_w/(pi*AR_w));
 K2         = 0.9;
 ft_per_m      = 3.28084;
 S_Bmax     = model.geom.fuselage.max_area.v*ft_per_m^2;  % max cross-section area
-CLalpha_B  = 2 * K2 * S_Bmax / (model.geom.wing.area.v*ft_per_m^2); % per radian
+CLalpha_B  = 2 * K2 * S_Bmax / (model.geom.ref_area.v*ft_per_m^2); % per radian
 
 % Wing-body combined slope (using your existing model value)
 CLalpha_wb = model.CLa;
@@ -250,9 +249,9 @@ x_ac_B = 0.25 * m2ft(model.geom.fuselage.length.v);
 
 % Combined wing-body AC (area-weighted)
 %x_ac_wb = (x_ac_w * CLalpha_w + x_ac_B * CLalpha_B) / (CLalpha_B + CLalpha_w);
-x_ac_wb = 31.9
+x_ac_wb = 31.7
 %% Downwash Gradient DATCOM estimation
-%AR      = model.geom.wing.AR.v;
+AR      = model.geom.wing.AR.v;
 lambda  = model.geom.wing.tip_chord.v / model.geom.wing.root_chord.v;
 Lambda_c4 = deg2rad(model.geom.wing.average_qrtr_chd_sweep.v);
 b       = model.geom.wing.span.v;
@@ -261,7 +260,7 @@ K_A      = 1/AR - 1/(1 + AR^1.7);
 K_lambda = (10 - 3*lambda) / 7;
 K_H      = (1 - abs(z_H/b)) / (2*l_h/b)^(1/3);
 
-% depsdalpha = 4.44 * (K_A * K_lambda * K_H * sqrt(cos(Lambda_c4)))^1.19;
+depsdalpha = 4.44 * (K_A * K_lambda * K_H * sqrt(cos(Lambda_c4)))^1.19;
 
 %% Scissor Plot Generation
 
@@ -283,7 +282,7 @@ zEng = 0.167386; %m
 
 CMW = c.wgschr.cmo * (AR_w + 2*cos(Lambda_c4)) / (AR_w + 4*cos(Lambda_c4));
 CME = model.cond.throttle.v * 0.25 * model.geom.prop.T0_NoAB.v * zEng / ...
-      (model.cond.qinf.v * model.geom.wing.area.v * model.geom.wing.average_chord.v);
+      (model.cond.qinf.v * model.geom.ref_area.v * model.geom.wing.average_chord.v);
 % Stability Requirement
 SHSW_stability = @(xcg_ac_norm) model.CLa.*xcg_ac_norm./(CLalphH*etaH*(1-depsdalpha).*(l_h./m2ft(model.geom.wing.average_chord.v)));
 
@@ -302,7 +301,6 @@ dub1 = xline(Xcgfull_norm,'LineWidth',3);
 dub1.Label = 'XCG at MGTOW';
 dub2 = xline(Xcgempty_norm,'LineWidth',3);
 dub2.Label = 'XCG at empty weight';
-legend('Stability Limit','Control Limit');
 xlabel('x_cg - x_ac normalized');
 ylabel('SH/SW');
 xline(0);
@@ -348,12 +346,13 @@ plot(x_plot, SH_design * ones(size(x_plot)), 'b--', 'LineWidth', 2);
 plot(x_stab_cross, SH_design, 'rs', 'MarkerFaceColor', 'r', 'MarkerSize', 8);
 plot(x_ctrl_cross, SH_design, 'gs', 'MarkerFaceColor', 'g', 'MarkerSize', 8);
 yline(SH_design, 'b:', 'LineWidth', 0.5);
-
+legend('Stability Limit','Control Limit','','','','Minimum Elevator Area Ratio');
 text(-0.4, SH_design, sprintf('  S_H/S_W = %.3f', SH_design), ...
     'VerticalAlignment', 'middle', ...
     'HorizontalAlignment', 'left', ...
     'FontSize', 12, ...
     'Color', 'b');
+title('Hellstinger')
 if isfile(inpFile), delete(inpFile); end
 
 SHSW_design_ratio = SHSW_control(x_ctrl_cross);

@@ -15,17 +15,17 @@
 
 % Create instance of kevin_cad 
 % STARTUP FUNCTIONS
-
+clear all
+close all
 initialize
 matlabSetup
-%build_f18_template
-build_kevin_cad
+build_f18_template
+
 
 % INITIAL OBJECTS TO LOAD
 build_default_settings
 settings = readSettings();
-% geom = loadAircraft("f18_superhornet", settings);
-geom = loadAircraft("kevin_cad", settings);
+geom = loadAircraft("f18_superhornet", settings);
 model = model_class(settings, geom);
     N = 100;
     perf = performance_class(model);
@@ -62,13 +62,11 @@ examplesDir = fullfile(thisDir, 'Examples');
 % 
 
 %% Stability Search Test Values
-model.geom.wing.le_x.v = 7.8;
-model.geom.wing.average_sweep.v = 45;
 
-l_h = 14; % global l_h value 
+l_h = 24; % found from chat
 % %l_h = m2ft(model.geom.elevator.qrtr_chd_x.v - model.geom.wing.qrtr_chd_x.v);
 % %z_H     = model.geom.elevator.sections(1).le_z.v - model.geom.wing.sections(1).le_z.v;
- z_H = 6;
+z_H = 3.5; % found from chat
 %% ---- Case 3: Build custom input from struct ----------------------------
 % Generic supersonic fighter: circular fuselage + swept wing + tails.
 % Demonstrates write_datcom_input — replace numbers with your own geometry.
@@ -293,11 +291,11 @@ plot(xcg_ac_norm, SHSW_stability(xcg_ac_norm),'r');
 hold on
 plot(xcg_ac_norm, SHSW_control(xcg_ac_norm),'g');
 
-Xcgfull_norm = (x_cg_full - x_ac_wb)/m2ft(model.geom.wing.average_chord.v);
-Xcgempty_norm = (x_cg_empty - x_ac_wb)/m2ft(model.geom.wing.average_chord.v);
-dub1 = xline(Xcgfull_norm,'LineWidth',3);
+% Xcgfull_norm = (x_cg_full - x_ac_wb)/m2ft(model.geom.wing.average_chord.v);
+% Xcgempty_norm = (x_cg_empty - x_ac_wb)/m2ft(model.geom.wing.average_chord.v);
+dub1 = xline(-0.05,'LineWidth',3);
 dub1.Label = 'XCG at MGTOW';
-dub2 = xline(Xcgempty_norm,'LineWidth',3);
+dub2 = xline(0.11,'LineWidth',3);
 dub2.Label = 'XCG at empty weight';
 xline(0);
 %xline(0,'k','LineWidth',4)

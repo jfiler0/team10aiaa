@@ -49,7 +49,7 @@ writeMissionStruct(Air2Gnd_700nm, "OPM_Air2Gnd_700nm",  ["AIM-9X" "Mk-83" "Mk-83
 X0 = [lb2N(58000) 6.1 ft2m(49) 1.5]; xs = X0;
 
 fun = @(X) objective2(X, model, geom, settings);
-% 
+
 % %% OPTIMIZE
 % % Normalize X so fmincon sees O(1) variables
 % X_scale = abs(X0);
@@ -106,7 +106,7 @@ sweep_1d(fun, xs, 2, linspace(4, 10, N));
 sweep_1d(fun, xs, 3, linspace(10, 20, N));
 sweep_1d(fun, xs, 4, linspace(0.5, 6, N));
 
-% drag_ribbon_plot(output.perf, 6000, 200, 0.5)
+drag_ribbon_plot(output.perf, 6000, 200, 0.5)
 
 function sweep_1d(fun, X0, idx, range)
     [~, output_x0] = fun(X0);

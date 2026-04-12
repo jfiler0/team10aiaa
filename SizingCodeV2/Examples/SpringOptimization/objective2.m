@@ -73,9 +73,9 @@ function [obj, output] = objective2(X, model, base_geom, settings)
     range_air2air = estimate_max_range(perf, 1, x0_override=x0);    
     output = add_const(output, m2nm(range_air2air), 1600, OVER, "800nm Radius (Air2Air)");
 
-    % perf.model.geom = setLoadout(geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
-    % range_air2air = estimate_max_range(perf, 1, x0_override=x0);    
-    % output = add_const(output, m2nm(range_air2air), 1600, OVER, "800nm Radius (Air2Gnd)");
+    perf.model.geom = setLoadout(geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
+    range_air2air = estimate_max_range(perf, 1, x0_override=x0);    
+    output = add_const(output, m2nm(range_air2air), 1600, OVER, "800nm Radius (Air2Gnd)");
     % 
     % perf.model.geom = setLoadout(geom, ["AIM-9X" "" "" "FPU-12" "FPU-12" "" "" "AIM-9x"]);
     % range_air2air = estimate_max_range(perf, 1, x0_override=x0);    

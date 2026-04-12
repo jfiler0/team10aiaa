@@ -3,10 +3,17 @@
 % Built from the original kevin_cad version with these fixes applied:
 %   1. rb uses single m2ft (radius is a length, not an area)
 %   2. rb_m kept in metres so sspne subtraction is unit-consistent
-%   3. xb starts at 0.001 m (not 0) to avoid BODYRT x=0 singularity
+%   3. xb starts away from 0 to avoid BODYRT x=0 singularity
 %   4. Both write_datcom_input and runDatcom use the same resolved path
 %   5. synths.zw / synths.zh use getval() for struct-or-double le_z fields
-%   6. Duplicate tables removed with unique() after parseDatcomOutput
+%   6. Best (highest CLa = BWHV) table selected per Mach from DATCOM output
+%
+% M=1.50 removed from Pass A — sits on DATCOM method table boundary and
+% produces inconsistent results. Pass B covers that region cleanly.
+%
+% Pass A: [0.60, 0.75, 1.15, 1.30, 1.40]  subsonic + low supersonic
+% Pass B: [1.50, 1.55, 1.65, 1.75, 1.85]  mid supersonic
+% Pass C: [1.70, 1.80, 1.90, 1.95, 2.00]  upper supersonic
 
 %% ---- Startup -----------------------------------------------------------
 initialize
@@ -25,8 +32,8 @@ thisDir     = fileparts(mfilename('fullpath'));
 examplesDir = fullfile(thisDir, 'Examples');
 
 %% ========================================================================
-%  Part 1 — JKayVLM  (M < 0.6)
-% ========================================================================
+%%  Part 1 — JKayVLM  (M < 0.6)
+%% ========================================================================
 VLM_LIMIT = 0.60;
 alphaVec  = [-4, -2, 0, 2, 4, 8, 12, 16, 20];
 
@@ -53,23 +60,7 @@ end
 %%  Part 2 — DATCOM  (M >= 0.6)
 %% ========================================================================
 
-cfg     = struct();
-cfg.dim = 'FT';
-c       = struct();
-c.caseid = 'GENERIC SUPERSONIC FIGHTER - BASELINE';
-
-% ---- DATCOM run helper --------------------------------------------------
-% DATCOM's RNNUB line is limited to 72 chars. With decimal Re notation
-% (~10 chars each), max 5 Mach points fit per run.  To get more coverage,
-% we run DATCOM twice with different Mach ranges and merge the results.
-%
-% Pass A: subsonic join + low supersonic  [0.60, 0.80, 1.15, 1.30, 1.50]
-% Pass B: mid supersonic                   [1.20, 1.35, 1.50, 1.65, 1.80]
-% Pass C: upper supersonic                 [1.60, 1.70, 1.80, 1.90, 2.00]
-%
-% Transonic M=0.90-1.10 excluded — DATCOM returns NDM for this geometry.
-
-% Shared geometry quantities (computed once, reused in both runs)
+% ---- Shared geometry (computed once, reused in all passes) --------------
 L_m     = getval(geom.fuselage.length);
 D_m     = getval(geom.fuselage.diameter);
 r_max_m = D_m / 2;
@@ -86,13 +77,19 @@ bla_ft = m2ft(L_m) - xb(end);
 rb_at_wing_m = interp1(xb_m, rb_m, L_m * 0.45, 'linear', rb_m(1));
 rb_at_ht_m   = interp1(xb_m, rb_m, L_m * 0.80, 'linear', rb_m(end));
 
+xcg_ft  = 34;                               % ft from nose — UPDATE to your CG
+cbar_ft = m2ft(geom.wing.average_chord.v);
+xw_ft   = m2ft(geom.wing.le_x.v);
+
 % =========================================================================
 function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
                               machVec, reVec, alphaVec, ...
                               xb, rb, xb_m, rb_m, bln_ft, bla_ft, ...
                               rb_at_wing_m, rb_at_ht_m, passName)
-% Run a single DATCOM pass and return the best-CLa table per Mach.
+% Run a single DATCOM pass (max 5 Mach points) and return best-CLa table.
     nMach = numel(machVec);
+    assert(nMach <= 5, 'Max 5 Mach points per DATCOM pass (RNNUB line limit)');
+    assert(nMach == numel(reVec), 'machVec and reVec must be same length');
 
     % 2D section CLa (Prandtl-Glauert subsonic / Ackeret supersonic)
     cLa = zeros(1, nMach);
@@ -119,7 +116,7 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     c.optins.cbarr = m2ft(geom.wing.average_chord.v);
     c.optins.blref = m2ft(geom.wing.span.v);
 
-    c.synths.xcg    = 34;
+    c.synths.xcg    = 34;    % ft — UPDATE to match xcg_ft above
     c.synths.zcg    = m2ft(-0.003 * geom.fuselage.length.v);
     c.synths.xw     = m2ft(geom.wing.le_x.v);
     c.synths.zw     = m2ft(getval(geom.wing.sections(1).le_z));
@@ -181,26 +178,32 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     c.vtschr.clmax  = repmat(0.80,  1, nMach);
     c.vtschr.leri   = 0.007;
 
-    cfgPass     = struct(); cfgPass.dim = 'FT'; cfgPass.cases(1) = c;
-    inpLocal    = write_datcom_input(cfgPass, [passName '.inp']);
+    cfgPass  = struct(); cfgPass.dim = 'FT'; cfgPass.cases(1) = c;
+    inpLocal = write_datcom_input(cfgPass, [passName '.inp']);
 
-    % Line-length diagnostic
+    % Line-length diagnostic — any overflow causes silent DATCOM abort
     inpLines = splitlines(string(fileread(inpLocal)));
+    anyOverflow = false;
     for kL = 1:numel(inpLines)
         if strlength(inpLines(kL)) > 72
-            fprintf('WARNING [%s] line %d too long (%d chars)\n', ...
-                    passName, kL, strlength(inpLines(kL)));
+            fprintf('WARNING [%s] line %d too long (%d chars): %s\n', ...
+                    passName, kL, strlength(inpLines(kL)), inpLines(kL));
+            anyOverflow = true;
         end
+    end
+    if ~anyOverflow
+        fprintf('[%s] inp OK — all lines within 72 chars\n', passName);
     end
 
     inpFile = fullfile(examplesDir, [passName '.inp']);
     copyfile(inpLocal, inpFile, 'f');
-    out     = runDatcom(inpFile, 'keepOut', true);
+    out = runDatcom(inpFile, 'keepOut', true);
     fprintf('DATCOM %s: status=%d  raw tables=%d\n', passName, out.status, numel(out.tables));
+    if isfile(inpLocal), delete(inpLocal); end
 
-    % Select best (highest CLa) table at each Mach = full BWHV config
-    % Use index accumulation to avoid dissimilar-struct assignment error.
-    tbl = out.tables([]); % empty with same fields as out.tables
+    % Select best (highest CLa) table per Mach = full BWHV configuration.
+    % Index accumulation avoids dissimilar-struct assignment error.
+    tbl = out.tables([]);
     if numel(out.tables) > 0
         mL      = [out.tables.Mach];
         uM      = unique(mL);
@@ -219,40 +222,37 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
         end
         tbl = out.tables(bestIdx);
     end
-    if isfile(inpLocal), delete(inpLocal); end
 end
 
 % =========================================================================
-% Three passes of 5 Mach points each — all confined to M=0.6 to M=2.0.
-% Transonic band M=0.88-1.12 excluded (DATCOM NDM for this geometry).
-%
-% Pass A: subsonic + low supersonic       [0.60, 0.80, 1.15, 1.30, 1.50]
-% Pass B: mid supersonic                  [1.15, 1.40, 1.55, 1.70, 1.85]  (1.15 overlap for continuity check)
-% Pass C: upper supersonic                [1.60, 1.70, 1.80, 1.90, 2.00]
-%
-% Re values scaled ~linearly with Mach at ~30kft conditions.
-machA = [0.60, 0.75, 1.15, 1.30, 1.50];   % [0.60, 0.75, 1.15, 1.30, 1.50]
-reA   = [2.0e6, 2.8e6, 4.5e6, 5.5e6, 6.5e6]; % [2.0e6, 2.8e6, 4.5e6, 5.5e6, 6.5e6]
+% Three passes — each max 5 Mach points (72-char RNNUB limit).
+% M=1.50 moved from Pass A to Pass B — avoids DATCOM method table boundary.
+% Transonic M~0.82–1.12 excluded — DATCOM NDM for this geometry.
+
+cfg = struct(); cfg.dim = 'FT';   % shell cfg (dim only; passes build their own)
+
+machA = [0.60, 0.75, 1.15, 1.30]; % [0.60, 0.75, 1.15, 1.30, 1.40]
+reA   = [2.0e6, 2.8e6, 4.5e6, 5.5e6]; %  [2.0e6, 2.8e6, 4.5e6, 5.5e6, 6.0e6]
 tblA  = runDatcomPass(cfg, geom, model, examplesDir, ...
                       machA, reA, alphaVec, ...
                       xb, rb, xb_m, rb_m, bln_ft, bla_ft, ...
                       rb_at_wing_m, rb_at_ht_m, 'datcom_A');
 
-machB = [1.20, 1.35, 1.65, 1.80];
-reB   = [5.0e6, 5.8e6, 7.2e6, 8.0e6];
+machB = [1.350, 1.55, 1.65, 1.75, 1.85];
+reB   = [6.5e6, 6.8e6, 7.2e6, 7.7e6, 8.2e6];
 tblB  = runDatcomPass(cfg, geom, model, examplesDir, ...
                       machB, reB, alphaVec, ...
                       xb, rb, xb_m, rb_m, bln_ft, bla_ft, ...
                       rb_at_wing_m, rb_at_ht_m, 'datcom_B');
 
-machC = [1.60, 1.70, 1.80, 1.90, 2.00];
-reC   = [7.5e6, 8.0e6, 8.5e6, 9.0e6, 9.5e6];
+machC = [1.70, 1.80, 1.90, 1.95, 2.00];
+reC   = [8.0e6, 8.5e6, 9.0e6, 9.2e6, 9.5e6];
 tblC  = runDatcomPass(cfg, geom, model, examplesDir, ...
                       machC, reC, alphaVec, ...
                       xb, rb, xb_m, rb_m, bln_ft, bla_ft, ...
                       rb_at_wing_m, rb_at_ht_m, 'datcom_C');
 
-% Merge all passes then dedup overlapping Mach points (keep highest CLa)
+% Merge and dedup overlapping Mach points — keep highest CLa per point
 rawTables = [tblA, tblB, tblC];
 if numel(rawTables) > 0
     mL      = [rawTables.Mach];
@@ -286,7 +286,9 @@ for k = 1:numel(outDATCOM.tables)
     end
 end
 
-%% Merged resiults and plots 
+%% ========================================================================
+%%  Merge + plots
+%% ========================================================================
 
 allTables = [outVLM.tables, outDATCOM.tables];
 [~, idx]  = sort([allTables.Mach]);
@@ -350,15 +352,6 @@ title('Lift-curve slope continuity at VLM/DATCOM join','Interpreter','none');
 legend('Interpreter','none');
 
 %% ---- Scissor plot ------------------------------------------------------
-% 
-% CLAUDE TRIED DOING THIS NEEDS TO BE FIXED --
-%
-% Reference quantities (ft) — read directly from geometry, not from c struct
-xcg_ft  = 34;                              % ft from nose — UPDATE to match c.synths.xcg
-cbar_ft = m2ft(geom.wing.average_chord.v); % mean aerodynamic chord (ft)
-xw_ft   = m2ft(geom.wing.le_x.v);         % wing LE x-position (ft)
-
-% Extract CLa and CMa at alpha=0 for each Mach point
 machPts = [allTables.Mach];
 nPts    = numel(allTables);
 CLa_pt  = NaN(1, nPts);
@@ -367,100 +360,69 @@ CMa_pt  = NaN(1, nPts);
 for k = 1:nPts
     t = allTables(k);
     if isempty(t.data), continue; end
-    % Use alpha=0 row if present, else smallest |alpha|
     [~, i0] = min(abs(t.data.Alpha));
     if ~isnan(t.data.CLA(i0)), CLa_pt(k) = t.data.CLA(i0); end
     if ~isnan(t.data.CMA(i0)), CMa_pt(k) = t.data.CMA(i0); end
 end
 
-% Neutral point and static margin
-% Xnp = Xcg - (CMa/CLa)*cbar   (positive = aft of CG = stable)
-Xnp_ft = xcg_ft - (CMa_pt ./ CLa_pt) * cbar_ft;
-SM      = (Xnp_ft - xcg_ft) / cbar_ft;   % fraction of cbar (positive = stable)
-
-% Only plot where both CLa and CMa are valid
+Xnp_ft    = xcg_ft - (CMa_pt ./ CLa_pt) * cbar_ft;
+SM        = (Xnp_ft - xcg_ft) / cbar_ft;
 validMask = ~isnan(Xnp_ft) & ~isnan(SM) & ~isinf(SM);
 isVLMpts  = machPts < VLM_LIMIT;
 
 figure('Name','Scissor Plot — Neutral Point & Static Margin','Position',[50 50 1100 480]);
 
-% ---- Panel 1: Neutral point location vs Mach ----------------------------
 subplot(1,2,1); hold on; grid on; box on;
-
-% CG reference line
-yline(xcg_ft, 'k--', 'LineWidth', 1.5, 'DisplayName', ...
-      sprintf('CG = %.1f ft', xcg_ft));
-
+yline(xcg_ft,'k--','LineWidth',1.5,'DisplayName',sprintf('CG = %.1f ft',xcg_ft));
 msk = validMask & isVLMpts;
 if any(msk)
-    plot(machPts(msk), Xnp_ft(msk), 'b--^', 'LineWidth', 2, ...
-         'MarkerSize', 8, 'DisplayName', 'Xnp (VLM)');
+    plot(machPts(msk),Xnp_ft(msk),'b--^','LineWidth',2,'MarkerSize',8,'DisplayName','Xnp (VLM)');
 end
 msk = validMask & ~isVLMpts;
 if any(msk)
-    plot(machPts(msk), Xnp_ft(msk), 'b-o', 'LineWidth', 2, ...
-         'MarkerSize', 8, 'DisplayName', 'Xnp (DATCOM)');
+    plot(machPts(msk),Xnp_ft(msk),'b-o','LineWidth',2,'MarkerSize',8,'DisplayName','Xnp (DATCOM)');
 end
+xline(VLM_LIMIT,'k:','LineWidth',1.2);
+xlabel('Mach','Interpreter','none');
+ylabel('Distance from nose (ft)','Interpreter','none');
+title('Neutral Point vs Mach','Interpreter','none');
+legend('Location','best','Interpreter','none');
+text(0.05,0.05,'Aft \uparrow','Units','normalized','FontSize',8,'Color',[.4 .4 .4],'Interpreter','tex');
 
-xline(VLM_LIMIT, 'k:', 'LineWidth', 1.2);
-xlabel('Mach',                 'Interpreter', 'none');
-ylabel('Distance from nose (ft)', 'Interpreter', 'none');
-title('Neutral Point vs Mach', 'Interpreter', 'none');
-legend('Location', 'best', 'Interpreter', 'none');
-% Annotate: aft = top of plot → add arrow note
-text(0.05, 0.05, 'Aft \uparrow', 'Units', 'normalized', ...
-     'FontSize', 8, 'Color', [0.4 0.4 0.4], 'Interpreter', 'tex');
-
-% ---- Panel 2: Static margin vs Mach -------------------------------------
 subplot(1,2,2); hold on; grid on; box on;
-
-% Zero SM line
-yline(0, 'k--', 'LineWidth', 1.5, 'DisplayName', 'Neutral (SM=0)');
-% 5% and 10% SM reference lines
-yline(0.05, 'g:', 'LineWidth', 1.2, 'DisplayName', 'SM = 5%');
-yline(0.10, 'm:', 'LineWidth', 1.2, 'DisplayName', 'SM = 10%');
-
+yline(0,   'k--','LineWidth',1.5,'DisplayName','Neutral (SM=0)');
+yline(0.05,'g:', 'LineWidth',1.2,'DisplayName','SM = 5%');
+yline(0.10,'m:', 'LineWidth',1.2,'DisplayName','SM = 10%');
 msk = validMask & isVLMpts;
 if any(msk)
-    plot(machPts(msk), SM(msk)*100, 'r--^', 'LineWidth', 2, ...
-         'MarkerSize', 8, 'DisplayName', 'SM (VLM)');
+    plot(machPts(msk),SM(msk)*100,'r--^','LineWidth',2,'MarkerSize',8,'DisplayName','SM (VLM)');
 end
 msk = validMask & ~isVLMpts;
 if any(msk)
-    plot(machPts(msk), SM(msk)*100, 'r-o', 'LineWidth', 2, ...
-         'MarkerSize', 8, 'DisplayName', 'SM (DATCOM)');
+    plot(machPts(msk),SM(msk)*100,'r-o','LineWidth',2,'MarkerSize',8,'DisplayName','SM (DATCOM)');
 end
-
-xline(VLM_LIMIT, 'k:', 'LineWidth', 1.2);
-xlabel('Mach',              'Interpreter', 'none');
-ylabel('Static Margin (%c)', 'Interpreter', 'none');
-title('Static Margin vs Mach', 'Interpreter', 'none');
-legend('Location', 'best', 'Interpreter', 'none');
-
-% Positive SM = stable (nose pitches down when disturbed)
-text(0.05, 0.95, 'Stable (+SM)', 'Units', 'normalized', ...
-     'FontSize', 8, 'Color', [0 0.5 0], 'Interpreter', 'none');
-text(0.05, 0.05, 'Unstable (-SM)', 'Units', 'normalized', ...
-     'FontSize', 8, 'Color', [0.8 0 0], 'Interpreter', 'none');
-
-sgtitle(sprintf('Scissor Plot  |  CG = %.1f ft from nose  |  c̄ = %.2f ft', ...
+xline(VLM_LIMIT,'k:','LineWidth',1.2);
+xlabel('Mach','Interpreter','none');
+ylabel('Static Margin (%c)','Interpreter','none');
+title('Static Margin vs Mach','Interpreter','none');
+legend('Location','best','Interpreter','none');
+text(0.05,0.95,'Stable (+SM)',  'Units','normalized','FontSize',8,'Color',[0 .5 0],'Interpreter','none');
+text(0.05,0.05,'Unstable (-SM)','Units','normalized','FontSize',8,'Color',[.8 0 0],'Interpreter','none');
+sgtitle(sprintf('Scissor Plot  |  CG = %.1f ft from nose  |  cbar = %.2f ft', ...
         xcg_ft, cbar_ft), 'Interpreter', 'none');
 
-% Print summary table
+% Stability summary table
 fprintf('\n=== Stability Summary ===\n');
-fprintf('  CG = %.2f ft from nose  (%.2f%% MAC)\n', xcg_ft, ...
-        (xcg_ft - xw_ft) / cbar_ft * 100);
-fprintf('  %-6s  %-10s  %-10s  %-10s  %-10s\n', ...
-        'Mach', 'CLa/deg', 'CMa/deg', 'Xnp (ft)', 'SM (%c)');
+fprintf('  CG = %.2f ft from nose  (%.2f%% MAC from wing LE)\n', ...
+        xcg_ft, (xcg_ft - xw_ft) / cbar_ft * 100);
+fprintf('  %-6s  %-6s  %-10s  %-10s  %-12s  %-10s\n', ...
+        'Mach','Src','CLa/deg','CMa/deg','Xnp (ft)','SM (%c)');
 for k = 1:nPts
     if ~validMask(k), continue; end
     src = 'VLM'; if machPts(k) >= VLM_LIMIT, src = 'DAT'; end
-    fprintf('  %.2f   %-3s  %9.5f  %9.5f  %9.3f  %9.2f\n', ...
+    fprintf('  %.2f   %-3s  %10.5f  %10.5f  %12.3f  %10.2f\n', ...
             machPts(k), src, CLa_pt(k), CMa_pt(k), Xnp_ft(k), SM(k)*100);
 end
-
-%% ---- Cleanup -----------------------------------------------------------
-% Input files are deleted inside runDatcomPass; nothing to clean up here.
 
 
 % =========================================================================

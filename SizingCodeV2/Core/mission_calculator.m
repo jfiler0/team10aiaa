@@ -33,6 +33,10 @@ classdef mission_calculator < handle
             h_vec = linspace(0, ft2m(30000), 8);
             W_vec = linspace(obj.perf.model.geom.weights.empty.v, obj.perf.model.geom.weights.mtow.v, 5);
             EP_vec = linspace(-200, 200, 5);
+
+            if W_vec(1) > W_vec(end)
+                error("Weights have gone crazy and empty is now more than mtow")
+            end
             
             perf = obj.perf;
             
@@ -220,6 +224,15 @@ classdef mission_calculator < handle
 
         function solve_section(obj, segment)
             type = segment.type.v;
+
+            if obj.W < obj.perf.model.geom.weights.empty.v / 2
+                % warning("Weight too low for mission");
+                % this helps add robustess if the mission cannot be completed. Setting it reduces noise as increasing mtow will bring it
+                % closer
+                % obj.W(end) = obj.perf.model.geom.weights.empty.v / 2;
+                obj.W(end) = NaN;
+                return;
+            end
 
             if strcmp(type, 'FIXED_WF')
                 fuel_burned = obj.W * (1 - segment.WFi.v);

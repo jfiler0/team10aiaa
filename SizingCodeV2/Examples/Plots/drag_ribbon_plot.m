@@ -19,6 +19,7 @@ function drag_ribbon_plot(perf, h0, N, W)
 
     Y = [Cdp_vec; Cd0_vec ; Cdi_vec ; Cdw_vec];
 
+    figure("Name","Drag Ribbon")
     area(M_vec, Y')
     axis tight
     ylim([0, 0.1])

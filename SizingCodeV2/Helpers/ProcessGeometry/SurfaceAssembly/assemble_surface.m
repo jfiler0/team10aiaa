@@ -40,7 +40,7 @@ function surf = assemble_surface(sections, mirror)
     surf.root_chord = json_entry("Root Chord", sections(1).chord_length.v, "m", true);
     surf.tip_chord = json_entry("Tip Chord", sections(end).chord_length.v, "m", true);
     if mirror
-        surf.span = json_entry("Span", sections(end).le_y.v, "m", true); % this ends up as PROJECTED span which changes vtail aspect ratio
+        surf.span = json_entry("Span", 2 * sections(end).le_y.v, "m", true); % this ends up as PROJECTED span which changes vtail aspect ratio (AND INCLUDES MIRRORED)
     else
         surf.span = json_entry("Span", sections(end).le_yp.v, "m", true); % making this yp helps with things like the vertical tail
     end

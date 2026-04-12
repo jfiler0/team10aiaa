@@ -29,17 +29,17 @@ set.CDp_scaler = 1;
 set.SpotFactor_scaler = 1;
 
 set.COST_scaler = 1;
-set.TA_scaler = 0.95;
-set.TSFC_scaler = 1.3;
+set.TA_scaler = 0.9;
+set.TSFC_scaler = 1.1; % 1.3
 
 set.WE_scaler = 1.056; % scales all components and the final empty weight
-set.WF_ratio =  0.4206; % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
+set.WF_ratio =  0.4555; % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
 
 set.codes = build_default_codes();
 
 set.WE_model = set.codes.WE_Roskam; % go back to set.codes.WE_Nicolai
 
-set.CD0_model = set.codes.CD0_FRICTION; % CD0_BASIC CD0_FRICTION
+set.CD0_model = set.codes.CD0_BASIC; % CD0_BASIC CD0_FRICTION
 set.CDi_model = set.codes.CDi_BASIC_SUBSONIC; % CDi_BASIC_SUBSONIC CDi_IDRAG
 set.CDw_model = set.codes.CDw_BASIC;
 set.CLa_model = set.codes.CLa_RAYMER;

@@ -5,6 +5,9 @@ build_kevin_cad % editing this geometry as it already holds to most constraints
 % INITIAL OBJECTS TO LOAD
 build_default_settings
 settings = readSettings();
+
+settings.WF_ratio = 0.6; % important override here
+
 geom = loadAircraft("kevin_cad", settings); % note that this included loading prop which is why it is disabled in the loop
 model = model_class(settings, geom);
 
@@ -95,11 +98,11 @@ disp(T);
 
 N = 20;
 sweep_1d(fun, X0, 1, linspace(lb2N(50000), lb2N(120000), N));
-% sweep_1d(fun, X0, 2, linspace(4, 10, N));
-% sweep_1d(fun, X0, 3, linspace(15, 35, N));
-% sweep_1d(fun, X0, 4, linspace(10, 45, N));
+sweep_1d(fun, X0, 2, linspace(4, 10, N));
+sweep_1d(fun, X0, 3, linspace(15, 35, N));
+sweep_1d(fun, X0, 4, linspace(10, 45, N));
 
-drag_ribbon_plot(output.perf, 6000, 200, 0.5)
+% drag_ribbon_plot(output.perf, 6000, 200, 0.5)
 
 function sweep_1d(fun, X0, idx, range)
     [~, output_x0] = fun(X0);

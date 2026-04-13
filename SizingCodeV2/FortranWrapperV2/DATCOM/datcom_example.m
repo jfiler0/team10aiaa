@@ -38,10 +38,10 @@ N        = 100;
 perf     = performance_class(model);
 settings = readSettings();
 
-<<<<<<< HEAD
+% <<<<<<< HEAD
 thisDir     = fileparts(mfilename('fullpath'));
 examplesDir = fullfile(thisDir, 'Examples');
-=======
+% =======
 %% ---- Case 2: Run EX3.INP directly --------------------------------------
 % Full configuration buildup: body + wing + horizontal tail + vertical tail.
 
@@ -55,7 +55,6 @@ for k = 1:numel(out2.tables)
         disp(t.data)
     end
 end
->>>>>>> f47c74a7d3144a6e76e57a5e2a1d4051a455b480
 
 %% ---- Shared settings ---------------------------------------------------
 VLM_LIMIT = 0.60;

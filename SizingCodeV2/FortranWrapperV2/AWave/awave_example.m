@@ -26,7 +26,8 @@ out2 = runAwave(fullfile('Examples', 'case2.inp'));
 
 if isempty(out2.CDW)
     fprintf('  No CDW parsed. Raw output snippet:\n');
-    disp(out2.raw);
+   
+ disp(out2.raw);
 else
     fprintf('  %-8s %s\n', 'Mach', 'CDW');
     for k = 1:numel(out2.CDW)

@@ -28,12 +28,34 @@ N        = 100;
 perf     = performance_class(model);
 settings = readSettings();
 
+<<<<<<< HEAD
 thisDir     = fileparts(mfilename('fullpath'));
 examplesDir = fullfile(thisDir, 'Examples');
 
 %% ========================================================================
 %%  Part 1 — JKayVLM  (M < 0.6)
 %% ========================================================================
+=======
+% <<<<<<< HEAD
+thisDir     = fileparts(mfilename('fullpath'));
+examplesDir = fullfile(thisDir, 'Examples');
+% =======
+%% ---- Case 2: Run EX3.INP directly --------------------------------------
+% Full configuration buildup: body + wing + horizontal tail + vertical tail.
+
+out2 = runDatcom(fullfile(examplesDir, 'EX3.INP'));
+
+fprintf('\n=== Case 2: EX3 (body + wing + tails) ===\n');
+for k = 1:numel(out2.tables)
+    t = out2.tables(k);
+    fprintf('  [%d] M=%.2f | %s\n', k, t.Mach, t.caseTitle);
+    if ~isempty(t.data) && ~all(isnan(t.data.CL))
+        disp(t.data)
+    end
+end
+
+%% ---- Shared settings ---------------------------------------------------
+>>>>>>> b92f4db11c1a56069fb318ee6868e73dde99bdf6
 VLM_LIMIT = 0.60;
 alphaVec  = [-4, -2, 0, 2, 4, 8, 12, 16, 20];
 

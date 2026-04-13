@@ -186,7 +186,8 @@ cfg.cases(1) = c;
 
 model.geom.c = c;
 
-untitled2.m;
+
+untitled2;
 % % Write input file then run
 % inpFile = write_datcom_input(cfg, 'fighter_baseline.inp');
 % out3    = runDatcom(fullfile(examplesDir, 'fighter_baseline.inp'));
@@ -224,6 +225,14 @@ outDATCOM = model.geom.tables;
 
 %% X_ac_wb generation
 % Wing AC (fraction of root chord from apex, then convert to fuse station)
+z_H = 0.1;
+l_h = m2ft(model.geom.elevator.qrtr_chd_x.v - model.geom.wing.qrtr_chd_x.v);
+        % % %z_H     = model.geom.elevator.sections(1).le_z.v - model.geom.wing.sections(1).le_z.v;
+        % z_H = 3;
+        % depsdalpha = 0.35;
+        % AR = 5;
+        z_H = 0.1;
+
 x_cg_empty = 0.649*m2ft(model.geom.fuselage.length.v);
 x_cg_full = 0.617*m2ft(model.geom.fuselage.length.v);
 lambda   = model.geom.wing.tip_chord.v / model.geom.wing.root_chord.v;
@@ -247,6 +256,7 @@ S_Bmax     = model.geom.fuselage.max_area.v*ft_per_m^2;  % max cross-section are
 CLalpha_B  = 2 * K2 * S_Bmax / (model.geom.ref_area.v*ft_per_m^2); % per radian
 
 % Wing-body combined slope (using your existing model value)
+model.cond = levelFlightCondition(perf, 0, 0.5, 1);
 CLalpha_wb = model.CLa;
 
 % Body AC: for slender fuselage approximately at 25% body length

@@ -14,7 +14,7 @@ close all
 initialize
 matlabSetup
 build_kevin_cad
-
+%Hellstinger;
 build_default_settings
 settings = readSettings();
 geom     = loadAircraft("0412_Optimization", settings);
@@ -109,7 +109,7 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     clmaxWing = linspace(1.40, 0.45, nMach);
     clmaxHT   = linspace(1.10, 0.35, nMach);
 
-    c = struct();
+    
     c.caseid = 'GENERIC SUPERSONIC FIGHTER - BASELINE';
     c.fltcon.nmach  = nMach;
     c.fltcon.mach   = machVec;
@@ -295,6 +295,7 @@ allTables = [outVLM.tables, outDATCOM.tables];
 allTables = allTables(idx);
 [~, uIdx] = unique([allTables.Mach]);
 allTables = allTables(uIdx);
+
 model.geom.tables = outDATCOM.tables;
 fprintf('\n=== MERGED sweep (%d Mach points) ===\n', numel(allTables));
 for k = 1:numel(allTables)

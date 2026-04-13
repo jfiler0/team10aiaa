@@ -34,7 +34,8 @@ function [obj, output] = objective2(X, model, base_geom, settings)
         
         wing_tip = X(4);
         lerx_root = wing_root*1.7;
-        wing_le_x = 0.48 * geom.fuselage.length.v - lerx_root + wing_root;
+        % wing_le_x = 0.48 * geom.fuselage.length.v - lerx_root + wing_root;
+        wing_le_x = 1.165;
     
         sec0 = new_section(lerx_root, wing_le_x, geom.fuselage.diameter.v/2, tc=0.06);
         sec1 = new_section(wing_root, wing_le_x + lerx_root - wing_root, sec0.le_yp.v + 0.08 * wing_span, tc=0.04);
@@ -67,19 +68,20 @@ function [obj, output] = objective2(X, model, base_geom, settings)
     
     % output = compute_missions_res(output, readMissionStruct("OPM_Air2Air_700nm"), perf, settings, "Air2Air");
 
-    x0 = [ft2m(30000), 0.7];
-
-    perf.model.geom = setLoadout(geom, ["AIM-9X" "AIM-120" "AIM-120" "AIM-120" "AIM-120" "AIM-120" "AIM-120" "AIM-9X"]);
-    range_air2air = estimate_max_range(perf, 1, x0_override=x0);    
-    output = add_const(output, m2nm(range_air2air), 1600, OVER, "800nm Radius (Air2Air)");
-
-    perf.model.geom = setLoadout(geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
-    range_air2air = estimate_max_range(perf, 1, x0_override=x0);    
-    output = add_const(output, m2nm(range_air2air), 1600, OVER, "800nm Radius (Air2Gnd)");
+    % x0 = [ft2m(30000), 0.7];
     % 
-    % perf.model.geom = setLoadout(geom, ["AIM-9X" "" "" "FPU-12" "FPU-12" "" "" "AIM-9x"]);
+    % perf.model.geom = setLoadout(geom, ["AIM-9X" "AIM-120" "AIM-120" "AIM-120" "AIM-120" "AIM-120" "AIM-120" "AIM-9X"]);
     % range_air2air = estimate_max_range(perf, 1, x0_override=x0);    
-    % output = add_const(output, m2nm(range_air2air), 1600, OVER, "900nm Radius (Ferry)");  
+    % output = add_const(output, m2nm(range_air2air), 1600, OVER, "800nm Radius (Air2Air)");
+    % 
+    % perf.model.geom = setLoadout(geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
+    % range_air2air = estimate_max_range(perf, 1, x0_override=x0);    
+    % output = add_const(output, m2nm(range_air2air), 1600, OVER, "800nm Radius (Air2Gnd)");
+
+    [W_final, W_empty] = eval_air2air(perf, 800);
+    output = add_const(output, W_final, W_empty, OVER, "800nm Radius (Air2Air)");
+    [W_final, W_empty] = eval_air2gnd(perf, 800);
+    output = add_const(output, W_final, W_empty, OVER, "800nm Radius (Air2Gnd)");
 
     try
         [v_land, glide_angle, ~] = compute_landing_speed(perf, 1); % landing at full weight

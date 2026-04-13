@@ -61,57 +61,63 @@ mission = readMissionStruct("Ferry_700nm");
 % [W_end, total_distance] = mission_calculator.solve_mission_simple(mission, 1);
 
 % Sample range scalers from 0.5 to 2
-scaler_vec = linspace(0.5, 1.5, 50);
-residual_vec = zeros(size(scaler_vec));
+% scaler_vec = linspace(0.5, 1.5, 50);
+% residual_vec = zeros(size(scaler_vec));
+% 
+% for i = 1:length(scaler_vec)
+%     residual_vec(i) = fun(mission, mission_calculator, scaler_vec(i), geom);
+% end
+% 
+% % Find where residual crosses zero (changes sign)
+% sign_change = find(diff(sign(residual_vec)) ~= 0, 1, 'first');
+% 
+% if isempty(sign_change)
+%     warning('No zero crossing found. Using closest value.');
+%     [~, idx] = min(abs(residual_vec));
+%     range_scaler = scaler_vec(idx);
+% else
+%     % Interpolate to get more accurate zero crossing
+%     x1 = scaler_vec(sign_change);
+%     x2 = scaler_vec(sign_change + 1);
+%     y1 = residual_vec(sign_change);
+%     y2 = residual_vec(sign_change + 1);
+%     range_scaler = x1 - y1 * (x2 - x1) / (y2 - y1);
+% end
+% 
+% % Plot the residual
+% figure('Name', 'Range Scaler Optimization');
+% plot(scaler_vec, residual_vec, 'b-', 'LineWidth', 2);
+% hold on;
+% plot(range_scaler, 0, 'ro', 'MarkerSize', 10, 'MarkerFaceColor', 'r');
+% yline(0, 'k--', 'LineWidth', 1);
+% grid on;
+% xlabel('Range Scaler');
+% ylabel('Residual ($W_{final} - W_{empty}$) [N]');
+% title('Mission Range Optimization');
+% legend('Residual', 'Optimal Point', 'Target', 'Location', 'best');
+% hold off;
+% 
+% function res = fun(mission, mission_calculator, range_scaler, geom)
+%     mission = scale_mission_range(mission, range_scaler);
+%     W_final = mission_calculator.solve_mission(mission, 0, 150, 1); % or use the solve_mission_simple
+%     res = W_final - geom.weights.empty.v;
+% end
+% 
+% % range_scaler = 1.5;
+% 
+% mission = scale_mission_range(mission, range_scaler);
+% mission_calculator.record_hist = true;
+% [W_end, total_distance] = mission_calculator.solve_mission(mission, 0, 150, 1);
+% 
+% fprintf("Final Scaler = %.3g | total radius = %.3g nm | W_end - W_E = %.3g\n", range_scaler, m2nm(total_distance)/2, W_end - geom.weights.empty.v)
 
-for i = 1:length(scaler_vec)
-    residual_vec(i) = fun(mission, mission_calculator, scaler_vec(i), geom);
-end
+fun = @(R) eval_air2air(perf, R) - geom.weights.empty.v;
 
-% Find where residual crosses zero (changes sign)
-sign_change = find(diff(sign(residual_vec)) ~= 0, 1, 'first');
+R_max_air2air = fzero(fun, 400);
 
-if isempty(sign_change)
-    warning('No zero crossing found. Using closest value.');
-    [~, idx] = min(abs(residual_vec));
-    range_scaler = scaler_vec(idx);
-else
-    % Interpolate to get more accurate zero crossing
-    x1 = scaler_vec(sign_change);
-    x2 = scaler_vec(sign_change + 1);
-    y1 = residual_vec(sign_change);
-    y2 = residual_vec(sign_change + 1);
-    range_scaler = x1 - y1 * (x2 - x1) / (y2 - y1);
-end
+fprintf("F18 fighter escort range ~600nm. Calculated: %.1f\n", R_max_air2air)
 
-% Plot the residual
-figure('Name', 'Range Scaler Optimization');
-plot(scaler_vec, residual_vec, 'b-', 'LineWidth', 2);
-hold on;
-plot(range_scaler, 0, 'ro', 'MarkerSize', 10, 'MarkerFaceColor', 'r');
-yline(0, 'k--', 'LineWidth', 1);
-grid on;
-xlabel('Range Scaler');
-ylabel('Residual ($W_{final} - W_{empty}$) [N]');
-title('Mission Range Optimization');
-legend('Residual', 'Optimal Point', 'Target', 'Location', 'best');
-hold off;
-
-function res = fun(mission, mission_calculator, range_scaler, geom)
-    mission = scale_mission_range(mission, range_scaler);
-    W_final = mission_calculator.solve_mission(mission, 0, 150, 1); % or use the solve_mission_simple
-    res = W_final - geom.weights.empty.v;
-end
-
-% range_scaler = 1.5;
-
-mission = scale_mission_range(mission, range_scaler);
-mission_calculator.record_hist = true;
-[W_end, total_distance] = mission_calculator.solve_mission(mission, 0, 150, 1);
-
-fprintf("Final Scaler = %.3g | total radius = %.3g nm | W_end - W_E = %.3g\n", range_scaler, m2nm(total_distance)/2, W_end - geom.weights.empty.v)
-
-fprintf( "Found approximate F18 range (ferry): 1654 nm. Simulation of best total range: %.0f nm\n", m2nm(total_distance))
+% fprintf( "Found approximate F18 range (ferry): 1654 nm. Simulation of best total range: %.0f nm\n", m2nm(total_distance))
 
 perf.model.clear_mem(); perf.clear_data();
 

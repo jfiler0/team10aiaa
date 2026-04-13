@@ -1,6 +1,6 @@
 matlabSetup;
 
-file_name = "0412_Optimization";
+file_name = "HellstingerV3";
 geom = readAircraftFile(file_name);
 settings = readSettings();
 
@@ -15,13 +15,17 @@ cond = levelFlightCondition(perf, 0, 0.5, 1); % M0.5, sea level, MTOW
 
 % displayAircraftGeom(geom)
 
-mission_calc = mission_calculator(perf, settings);
-mission_calc.record_hist = true;
-mission_calc.do_print = false;
-mission_calc.build_map(); % assembles v, h, W map for key performance info
+% mission_calc = mission_calculator(perf, settings);
+% mission_calc.record_hist = true;
+% mission_calc.do_print = false;
+% mission_calc.build_map(); % assembles v, h, W map for key performance info
+% 
+% mission = readMissionStruct("Air2Air_700nm");
+% W_final_Air2Air = mission_calc.solve_mission(mission, 0, kt2ms(135), 1); % solve air2air mission
+% 
+% W_final_Air2Air - weightRatio(0, geom);
+% mission_calc.plot_hist
 
-mission = readMissionStruct("Air2Air_700nm");
-W_final_Air2Air = mission_calc.solve_mission(mission, 0, kt2ms(135), 1); % solve air2air mission
+W_final = eval_air2air(perf, 500)
+W_final - geom.weights.empty.v;
 
-W_final_Air2Air - weightRatio(0, geom);
-mission_calc.plot_hist

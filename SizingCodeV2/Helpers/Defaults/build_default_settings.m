@@ -30,7 +30,7 @@ set.SpotFactor_scaler = 1;
 
 set.COST_scaler = 1;
 set.TA_scaler = 0.9;
-set.TSFC_scaler = 1.4; % 1.3
+set.TSFC_scaler = 1.7; % 1.3
 
 set.WE_scaler = 1.056; % scales all components and the final empty weight
 set.WF_ratio =  0.4555; % WF = WF_ratio * (MTOW - WE) -> internal fuel weight

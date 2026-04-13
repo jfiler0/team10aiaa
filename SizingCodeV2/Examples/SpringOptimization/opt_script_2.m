@@ -46,7 +46,9 @@ writeMissionStruct(Air2Gnd_700nm, "OPM_Air2Gnd_700nm",  ["AIM-9X" "Mk-83" "Mk-83
 % X(3) - Wing Span (m)
 % X(4) - Wing Tip Chord (m)
 
-X0 = [lb2N(58000) 6.1 ft2m(49) 1.5]; xs = X0;
+% X0 = [lb2N(58000) 6.1 ft2m(49) 1.5]; xs = X0;
+
+X0 = [lb2N(59500) 7.0 16.8 1.6]; xs = X0;
 
 fun = @(X) objective2(X, model, geom, settings);
 
@@ -82,8 +84,8 @@ fprintf("MTOW = %.0f lb. root = %.2f m. span = %.2f m. sweep = %.2f deg .Landing
 
 displayAircraftGeom(output.geom)
 
-output.geom.name.v = "0412_Optimization";
-output.geom.id.v = "0412_Optimization";
+output.geom.name.v = "HellstingerV3";
+output.geom.id.v = "HellstingerV3";
 writeAircraftFile(output.geom)
 
 T = table();

@@ -3,9 +3,9 @@ function displayAircraftGeom(geom)
 figure; hold on; axis equal; grid on;
 
 drawSurface(geom.outline.coords.fuseage,   [0.6 0.6 0.6], FaceAlpha=0.5, Label='Fuselage');
-drawSurface(geom.outline.coords.wing,      [0.2 0.4 0.8], FaceAlpha=0.4, Label='Wing',Mirror=true);
-drawSurface(geom.outline.coords.elevator,  [0.8 0.3 0.2], FaceAlpha=0.4, Label='Elevator',Mirror=true);
-drawSurface(geom.outline.coords.rudder,     [0.3 0.7 0.3], FaceAlpha=0.4, Label='Rudder',Mirror=true);
+drawSurface(geom.outline.coords.wing,      [0.2 0.4 0.8], FaceAlpha=0.4, Label='Wing', Mirror=geom.wing.mirror.v);
+drawSurface(geom.outline.coords.elevator,  [0.8 0.3 0.2], FaceAlpha=0.4, Label='Elevator', Mirror=geom.elevator.mirror.v);
+drawSurface(geom.outline.coords.rudder,     [0.3 0.7 0.3], FaceAlpha=0.4, Label='Rudder', Mirror=geom.rudder.mirror.v);
 
 xlabel('x (m)'); ylabel('y (m)');
 title('Aircraft Layout');

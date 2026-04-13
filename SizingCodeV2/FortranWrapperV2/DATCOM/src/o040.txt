@@ -1,0 +1,65 @@
+  **************************************************
+    VT Aerospace Aircraft Design Software Series
+  **************************************************
+
+                   Program JKayVLM
+
+  A program to estimate the subsonic aerodynamics and
+  stability and control derivatives for an assessment
+  of the control power required in conceptual aircraft
+  designs. The basic method is the vortex ring
+  variation of the vlm method.
+
+  Conceived and written by Jacob Kay.
+  This program modified by
+    - W.H. Mason and Alex Benoliel, March 1993
+    - W.H. Mason, Nov. 16 1996
+    - L.T. Leifsson, Feb 2004
+
+  The Department of Aerospace and Ocean Engineering,
+  Virginia Tech, Blacksburg, VA 24061
+  http://www.aoe.vt.edu, email: whmason@vt.edu
+
+
+   VLM Based Stability & Control Evaluation Code
+
+   icase               =            3
+   MACH NUMBER         =      0.40000
+   Sref                =     28.65000
+   c ref               =      4.05000
+   b ref               =     10.83000
+   HEIGHT ABOVE GROUND = 100000.00000
+   X-cg                =     10.36300
+   Z-cg                =     -0.04600
+   CL0                 =      0.00000
+   Cm0                 =      0.00000
+   Cdi(at alpha = 0)   =      0.00000
+   CL-alpha            =      2.49381
+   Cm-alpha            =      1.71750
+   Cm/CL               =      0.68870
+   Cdi/CL^2            =      0.16977
+   CL (at alpha = 5)   =      0.21763
+   Cdi(at alpha = 5)   =      0.00804
+   Lift-curve slope of
+   tail due to downwash
+   of wing             =      0.36798
+   CL-q                =      0.37107
+   CM-q                =     -2.82484
+   CL-delta [2 1]      =      0.55984
+   Cm-delta [2 1]      =     -0.40899
+   Cl-delta [2 1]      =     -0.09748
+   Cn-delta [2 1]      =      0.00283
+   Cy-beta             =          NaN
+   Cn-beta             =          NaN
+   Cl-beta             =          NaN
+   Cy-r                =          NaN
+   Cn-r                =          NaN
+   Cl-r                =          NaN
+   Cl-p                =          NaN
+   Cn-p                =          NaN
+   Cy-delta [1 2]      =          NaN
+   Cl-delta [1 2]      =          NaN
+   Cn-delta [1 2]      =          NaN
+
+  Run completed successfully.
+

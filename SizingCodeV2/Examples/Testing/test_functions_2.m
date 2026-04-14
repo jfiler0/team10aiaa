@@ -13,7 +13,7 @@ build_kevin_cad
 build_default_settings
 settings = readSettings();
 % geom = loadAircraft("kevin_cad", settings);
-geom = loadAircraft("kevin_cad", settings);
+geom = loadAircraft("0412_Optimization", settings);
 
 model = model_class(settings, geom);
 perf = performance_class(model);

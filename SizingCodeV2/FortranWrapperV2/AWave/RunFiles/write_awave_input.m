@@ -86,8 +86,6 @@ hasZFUS = hasFuse && isfield(cfg, 'ZFUS');
 %  J1 = 0  : no wing
 %  J1 = -1 : wing, no TZORD, single WAFORD per station  (most common)
 %  J1 = 1  : wing, TZORD present, single WAFORD per station
-%  J1 = -1 with NWAFOR<0: wing, no TZORD, separate upper/lower WAFORD
-%  J1 = 1  with NWAFOR<0: wing, TZORD present, separate upper/lower WAFORD
 %  J2 = 0  : no fuselage
 %  J2 = -1 : fuselage present (circular if J6=-1, non-circular with ZFUS if J6=0)
 %  J6 = -1 : circular fuselage (no ZFUS read)
@@ -112,14 +110,13 @@ if hasWing
         J1 = -1;                     % no TZORD
     end
 else
-    NWAF   = 0;
+    NWAF        = 0;
     NWAFOR_sign = 0;
-    J1 = 0;
+    J1          = 0;
 end
 
 if hasFuse
-    NFUS = numel(cfg.XFUS);
-    % NRADX and NFORX: for simple cases both equal the number of x-stations
+    NFUS  = numel(cfg.XFUS);
     NRADX = zeros(1,4);
     NFORX = zeros(1,4);
     for k = 1:min(NFUS,4)
@@ -128,9 +125,9 @@ if hasFuse
     end
     J2 = -1;
     if hasZFUS
-        J6 = 0;     % non-circular: reads ZFUS
+        J6 = 0;
     else
-        J6 = -1;    % circular: no ZFUS
+        J6 = -1;
     end
 else
     NFUS  = 0;
@@ -181,7 +178,7 @@ if hasWing
     NXAF   = numel(cfg.XAF);
     NWAFOR = NXAF;
 
-    % XAF: chordwise stations in 10F7.0 records
+    % XAF: chordwise stations
     writeF7(fid, cfg.XAF(:)', 'XAF');
 
     % WAFORG: one line per spanwise station [xLE y z chord]
@@ -215,7 +212,7 @@ end
 % -------------------------------------------------------------------------
 if hasFuse
     for seg = 1:NFUS
-        writeF7(fid, cfg.XFUS{seg}(:)', sprintf('XFUS seg%d', seg));
+        writeF7(fid, cfg.XFUS{seg}(:)',   sprintf('XFUS seg%d',   seg));
         if hasZFUS
             writeF7(fid, cfg.ZFUS{seg}(:)', sprintf('ZFUS seg%d', seg));
         end
@@ -229,8 +226,11 @@ end
 %  A4  field: NCASE label  e.g. "M1.2" for Mach 1.2
 %  I4  fields: MACH  NX  NTHETA  NREST  NCON  ICYC  KKODE  JRST  IPLOT
 %
-%  NCON: 0 = read next CASE line (same geometry, multi-Mach sweep)
-%         1 = read new configuration (title + CONTROL + geometry)
+%  NCON: 1 = done (no more cases / new configuration follows)
+%        0 = another CASE record follows with same geometry
+%
+%  JRST: 0 = normal forward analysis (always use this)
+%        1 = read solution from restart file (only for reshaping restarts)
 % -------------------------------------------------------------------------
 ncases = numel(cfg.cases);
 for k = 1:ncases
@@ -239,35 +239,39 @@ for k = 1:ncases
     Mach   = double(c.Mach);
     Mach_i = round(Mach * 1000);      % integer Mach * 1000
 
-    % 4-char NCASE label: "Mxx.x" truncated/padded to 4 chars
-    machStr = sprintf('%.1f', Mach);
-    caseLabel = sprintf('M%s', machStr);
-    caseLabel = caseLabel(1:min(4, end));
-    caseLabel = sprintf('%-4s', caseLabel);   % left-pad to exactly 4 chars
+    % 4-char NCASE label: "Mx.x" left-justified
+    machStr   = sprintf('%.1f', Mach);
+    caseLabel = sprintf('%-4s', ['M' machStr]);
+    caseLabel = caseLabel(1:4);
 
     NX     = int32(c.NX);
     NTHETA = int32(c.NTHETA);
     NREST  = int32(getfield_default(c, 'NREST', 0));
     ICYC   = int32(getfield_default(c, 'ICYC',  0));
 
-    % NCON: 0 = another CASE follows (same config), 1 = done / new config
+    % FIX 1: NCON=1 means "no more cases", NCON=0 means "another follows".
+    % The last case (or any case with continueNext=false) must use NCON=1.
     if k < ncases
-        NCON = int32(0);           % more CASE lines follow
+        NCON = int32(0);   % another CASE line follows
     else
         continueNext = getfield_default(c, 'continueNext', false);
-        NCON = int32(continueNext);
+        NCON = int32(~continueNext);   % 1 = done, 0 = new config follows
     end
 
     KKODE = int32(0);
-    JRST  = int32(0);   % 0 = normal; 1 = skip body reshaping
-    if ICYC == 0, JRST = int32(1); end   % no reshaping → skip OVL20
+
+    % FIX 2: JRST=0 always for normal (non-restart) analysis.
+    % JRST=1 tells D2500 to read a restart file; with no file on disk it
+    % fails immediately regardless of ICYC.
+    JRST  = int32(0);
+
     IPLOT = int32(0);
 
     fprintf(fid, '%4s%4d%4d%4d%4d%4d%4d%4d%4d%4d  CASE %d\n', ...
         caseLabel, Mach_i, NX, NTHETA, NREST, NCON, ICYC, KKODE, JRST, IPLOT, k);
 
-    % XREST: restraint points (only on first cycle, only once)
-    if NREST > 0 && k == 1
+    % XREST: restraint points (only when NREST > 0)
+    if NREST > 0
         assert(isfield(c, 'XREST') && numel(c.XREST) >= NREST, ...
             'write_awave_input: case %d has NREST=%d but XREST is missing or too short', k, NREST);
         writeF7(fid, c.XREST(1:NREST)', 'XREST');
@@ -283,19 +287,35 @@ end
 % =========================================================================
 
 function writeF7(fid, vals, label)
-%WRITEF7  Write values in FORMAT(10F7.0) records, label as right comment.
-%  D2500 reads data with FORMAT(10F7.0): 10 values per record, 7 chars each.
-%  Labels on the right are human-readable comments only (not parsed by Fortran).
+%WRITEF7  Write values in FORMAT(10F7.0) records with label as right comment.
+%
+%  D2500 reads data with FORMAT(10F7.0): exactly 10 values per record,
+%  7 characters each = 70 characters of data per line.
+%
+%  FIX 3: always pad to the full 70-char data zone before writing the
+%  label, so the label can never be misread as an F7.0 data field.
+%
+%  FIX (formatting): use %7.4g so fractional values like 0.08333 stay
+%  within their 7-character field (the default %7g uses 6 sig-figs which
+%  overflows for numbers like 0.333333 → 8 chars).
 vals = vals(:)';
 n    = numel(vals);
 nrec = ceil(n / 10);
 for r = 1:nrec
-    i1 = (r-1)*10 + 1;
-    i2 = min(r*10, n);
+    i1    = (r-1)*10 + 1;
+    i2    = min(r*10, n);
     chunk = vals(i1:i2);
+
+    % Write data values
     for v = chunk
-        fprintf(fid, '%7g', v);
+        fprintf(fid, '%7.4g', v);
     end
+
+    % Pad remaining slots to column 70 so label is always past the data zone
+    npad = 10 - numel(chunk);
+    fprintf(fid, '%s', repmat(' ', 1, npad*7));
+
+    % Label on first record only (human-readable comment, not parsed)
     if r == 1
         fprintf(fid, '  %s\n', label);
     else

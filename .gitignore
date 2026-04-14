@@ -1,7 +1,8 @@
 *.asv
 Sizing/concepts_tabulations.xlsx
 /Sizing/Lookups/atmosphere_lookup.mat
+/SizingCodeV2/Lookups/atmosphere_lookup.mat
 
 *.json
 
-*.mat
+/SizingCodeV2/FortranWrapperV2/iDrag/src/idrag_mex.mexw64

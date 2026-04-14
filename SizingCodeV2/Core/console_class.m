@@ -186,6 +186,8 @@ classdef console_class < handle
                             jprint("Wrote current geometry to: " + savePath);
                         end
                     case 'startavl'
+                        warning("This is depreciated since updating wing defenition");
+                        % TODO: Fix AVL implementation
                         generatePlane(obj.geom);
                         start_avl;
                     case 'editloadout'
@@ -557,6 +559,7 @@ end
 
 % some real gpt
 function printTableConsole(T)
+    % TODO: Fix so it can print NaN
 
     if isempty(T) || width(T) == 0
         jprint("Empty table.", 0);

@@ -1,6 +1,6 @@
 function plot_performance(geom, perf, N)
     perf.model.cond = generateCondition(geom, 0, 0.3, 1, 0.5, 0.75);
-    perf.model.clear_mem;
+    perf.model.clear_mem; perf.clear_data();
 
     M_vec = linspace(0.3, 2, N);
     perf.model.cond = generateCondition(geom, perf.model.cond.h.v, M_vec, perf.model.cond.n.v, perf.model.cond.W.v, perf.model.cond.throttle.v);

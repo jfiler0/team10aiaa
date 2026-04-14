@@ -10,9 +10,9 @@ input.Wdg    = geom.weights.mtow.v;   % Design gross weight [N] ~ 15000 kg
 input.Nz     = 1.3 * geom.input.g_limit.v;            % Ultimate load factor
 input.Sw     = geom.wing.area.v;           % Wing area [m^2]
 input.AR     = geom.wing.AR.v;          % Wing aspect ratio
-input.tc_root= 0.08;         % t/c at root
-input.lambda = geom.wing.tr.v;          % Wing taper
-input.sweep  = geom.wing.le_sweep.v;           % Wing sweep [deg]
+input.tc_root= geom.wing.sections(1).tc.v;         % t/c at root
+input.lambda = geom.wing.taper_ratio.v;          % Wing taper
+input.sweep  = geom.wing.average_sweep.v;           % Wing sweep [deg]
 input.Scsw   = (2/37)*geom.wing.area.v;            % Wing control-surface area [m^2]
 input.K_dw   = 1.3;             % Wing design correction
 input.K_vs   = 1;             % Wing structural factor
@@ -32,7 +32,7 @@ input.L_t    = geom.fuselage.length.v / 2;            % Tail moment arm [m]
 input.S_r    = 1;            % Additional area
 input.A_vt   = 1.5;          % Vertical tail aspect ratio
 input.lam_vt = 0.4;          % Vertical tail taper
-input.sweep_vt = geom.wing.le_sweep.v;         % Sweep [deg]
+input.sweep_vt = geom.wing.average_sweep.v;         % Sweep [deg]
 
 % Fuselage
 input.L      = geom.fuselage.length.v;           % Length [m]

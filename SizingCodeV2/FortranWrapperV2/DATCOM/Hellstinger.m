@@ -85,7 +85,10 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     end
     clmaxWing = linspace(1.40, 0.45, nMach);
     clmaxHT   = linspace(1.10, 0.35, nMach);
-
+    model.geom.elevator.root_chord.v = 4;
+    model.geom.elevator.tip_chord.v = 1.8;
+    model.geom.elevator.span.v = 7;
+    
     c = struct();
     c.caseid = 'GENERIC SUPERSONIC FIGHTER - BASELINE';
     c.fltcon.nmach  = nMach;   c.fltcon.mach   = machVec;
@@ -130,6 +133,7 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     c.wgschr.deltay = 8.0;  c.wgschr.cli = 0.05;  c.wgschr.alphai = 0.5;
     c.wgschr.clalpa = cLa;  c.wgschr.clmax = clmaxWing;
     c.wgschr.cmo    = -0.015;  c.wgschr.leri = 0.008;  c.wgschr.clamo = 0.105;
+
 
     c.htplnf.chrdr  = m2ft(model.geom.elevator.root_chord.v);
     c.htplnf.chrdtp = m2ft(model.geom.elevator.tip_chord.v);
@@ -292,70 +296,111 @@ legend('Interpreter','none');
 %% ========================================================================
 %%  Neutral point & static margin vs Mach
 %% ========================================================================
+%% ========================================================================
+%%  Correct Static Margin vs Mach (REFERENCE SHIFTED TO CG)
+%% ========================================================================
 
-xcg_ft  = 34;                               % ft from nose — UPDATE to your CG
+xcg_ft  = 30.8;   % <-- your CG from nose [ft]
 cbar_ft = m2ft(geom.wing.average_chord.v);
-xw_ft   = m2ft(geom.wing.le_x.v);
 
 machPts = [allTables.Mach];
 nPts    = numel(allTables);
-CLa_pt  = NaN(1, nPts);
-CMa_pt  = NaN(1, nPts);
+
+machPts = [allTables.Mach]; nPts = numel(allTables); CLa_pt = NaN(1, nPts); CMa_pt = NaN(1, nPts); 
+
+for k = 1:nPts t = allTables(k); 
+    if isempty(t.data), continue; 
+    end 
+    [~, i0] = min(abs(t.data.Alpha)); 
+    if ~isnan(t.data.CLA(i0)), CLa_pt(k) = t.data.CLA(i0); 
+    end 
+    if ~isnan(t.data.CMA(i0)), CMa_pt(k) = t.data.CMA(i0); 
+    end 
+end
+
+CLA_vec      = NaN(1, nPts);   % lift curve slope (per deg)
+CMA_nose_vec = NaN(1, nPts);   % moment slope about nose
+CMA_cg_vec   = NaN(1, nPts);   % corrected moment slope about CG
+SM_vec       = NaN(1, nPts);   % static margin
 
 for k = 1:nPts
     t = allTables(k);
+
     if isempty(t.data), continue; end
+
+    % Find alpha closest to 0 (DATCOM reports derivatives here)
     [~, i0] = min(abs(t.data.Alpha));
-    if ~isnan(t.data.CLA(i0)), CLa_pt(k) = t.data.CLA(i0); end
-    if ~isnan(t.data.CMA(i0)), CMa_pt(k) = t.data.CMA(i0); end
+
+    % Extract slopes
+    CLA = t.data.CLA(i0);   % per deg
+    CMA_nose = t.data.CMA(i0); % per deg (about nose)
+
+    if isnan(CLA) || isnan(CMA_nose), continue; end
+
+    % Store raw values
+    CLA_vec(k)      = CLA;
+    CMA_nose_vec(k) = CMA_nose;
+
+    % 🔑 SHIFT MOMENT TO CG
+    CMA_cg = CMA_nose - CLA * (xcg_ft)/m2ft(model.geom.fuselage.length.v);
+
+    CMA_cg_vec(k) = CMA_cg;
+
+    % 🔑 COMPUTE STATIC MARGIN
+    SM_vec(k) = -CMA_cg / CLA;
 end
 
-Xnp_ft    = xcg_ft - (CMa_pt ./ CLa_pt) * cbar_ft;
-SM_mach   = (Xnp_ft - xcg_ft) / cbar_ft;
-validMask = ~isnan(Xnp_ft) & ~isnan(SM_mach) & ~isinf(SM_mach);
+% Convert to percent
+SM_percent = SM_vec * 100;
+
+% Mask valid points
+validMask = ~isnan(SM_percent) & ~isinf(SM_percent);
 isVLMpts  = machPts < VLM_LIMIT;
 
-figure('Name','Neutral Point & Static Margin vs Mach','Position',[50 50 1100 420]);
-subplot(1,2,1); hold on; grid on; box on;
-yline(xcg_ft,'k--','LineWidth',1.5,'DisplayName',sprintf('CG = %.1f ft',xcg_ft));
-msk = validMask & isVLMpts;
-if any(msk), plot(machPts(msk),Xnp_ft(msk),'b--^','LineWidth',2,'MarkerSize',8,'DisplayName','Xnp (VLM)'); end
-msk = validMask & ~isVLMpts;
-if any(msk), plot(machPts(msk),Xnp_ft(msk),'b-o','LineWidth',2,'MarkerSize',8,'DisplayName','Xnp (DATCOM)'); end
-xline(VLM_LIMIT,'k:','LineWidth',1.2);
-xlabel('Mach','Interpreter','none'); ylabel('Distance from nose (ft)','Interpreter','none');
-title('Neutral Point vs Mach','Interpreter','none'); legend('Location','best','Interpreter','none');
+%% ---- Plot --------------------------------------------------------------
+figure('Name','Corrected Static Margin vs Mach','Position',[200 200 700 500]);
+hold on; grid on; box on;
 
-subplot(1,2,2); hold on; grid on; box on;
-yline(0,'k--','LineWidth',1.5,'DisplayName','Neutral (SM=0)');
+yline(0,'k--','LineWidth',1.5,'DisplayName','Neutral Stability');
 yline(5,'g:','LineWidth',1.2,'DisplayName','SM = 5%');
-msk = validMask & isVLMpts;
-if any(msk), plot(machPts(msk),SM_mach(msk)*100,'r--^','LineWidth',2,'MarkerSize',8,'DisplayName','SM (VLM)'); end
-msk = validMask & ~isVLMpts;
-if any(msk), plot(machPts(msk),SM_mach(msk)*100,'r-o','LineWidth',2,'MarkerSize',8,'DisplayName','SM (DATCOM)'); end
-xline(VLM_LIMIT,'k:','LineWidth',1.2);
-xlabel('Mach','Interpreter','none'); ylabel('Static Margin (%MAC)','Interpreter','none');
-title('Static Margin vs Mach','Interpreter','none'); legend('Location','best','Interpreter','none');
-sgtitle('Mach Sweep Stability','Interpreter','none');
 
-fprintf('\n=== Stability Summary ===\n');
-fprintf('  CG = %.2f ft from nose  (%.2f%% MAC)\n', xcg_ft, (xcg_ft-xw_ft)/cbar_ft*100);
-fprintf('  %-6s  %-6s  %-10s  %-10s  %-12s  %-10s\n','Mach','Src','CLa/deg','CMa/deg','Xnp (ft)','SM (%c)');
-for k = 1:nPts
-    if ~validMask(k), continue; end
-    src = 'VLM'; if machPts(k) >= VLM_LIMIT, src = 'DAT'; end
-    fprintf('  %.2f   %-3s  %10.5f  %10.5f  %12.3f  %10.2f\n', ...
-            machPts(k), src, CLa_pt(k), CMa_pt(k), Xnp_ft(k), SM_mach(k)*100);
+msk = validMask & isVLMpts;
+if any(msk)
+    plot(machPts(msk), SM_percent(msk), 'r--^', ...
+        'LineWidth',2,'MarkerSize',8,'DisplayName','SM (VLM)');
 end
 
+msk = validMask & ~isVLMpts;
+if any(msk)
+    plot(machPts(msk), SM_percent(msk), 'r-o', ...
+        'LineWidth',2,'MarkerSize',8,'DisplayName','SM (DATCOM)');
+end
+
+xline(VLM_LIMIT,'k:','LineWidth',1.2);
+
+xlabel('Mach');
+ylabel('Static Margin (% MAC)');
+title('Corrected Static Margin vs Mach (CG-referenced)');
+legend('Location','best');
+
+%% ---- Debug print (VERY useful) -----------------------------------------
+fprintf('\n=== Corrected Static Margin Debug ===\n');
+fprintf('Mach    CLA(/deg)   CMA_nose   CMA_cg   SM(%%)\n');
+
+for k = 1:nPts
+    if ~validMask(k), continue; end
+    fprintf('%.2f    %8.4f    %8.4f    %8.4f    %8.2f\n', ...
+        machPts(k), CLA_vec(k), CMA_nose_vec(k), ...
+        CMA_cg_vec(k), SM_percent(k));
+end
 %% ========================================================================
 %%  Classical Scissor Plot
 %% ========================================================================
 % =========================================================================
 % PARAMETERS — UPDATE THESE
 % =========================================================================
-x_cg_full  = 0.617 * m2ft(model.geom.fuselage.length.v);  % CG at MGTOW (ft)
-x_cg_empty = 0.649 * m2ft(model.geom.fuselage.length.v);  % CG at empty (ft)
+x_cg_full  = 0.649 * m2ft(model.geom.fuselage.length.v);  % CG at MGTOW (ft)
+x_cg_empty = 0.617 * m2ft(model.geom.fuselage.length.v);  % CG at empty (ft)
 
 CM_ac_w    = -0.015;     % wing zero-lift CM (from wgschr.cmo)
 eta_H      = 0.86;       % HT efficiency
@@ -375,16 +420,11 @@ Lambda_c4 = deg2rad(model.geom.wing.average_qrtr_chd_sweep.v);
 b_w       = model.geom.wing.span.v;   % m
 
 % HT moment arm (from xcg to HT quarter-chord, ft)
-%l_h = m2ft(model.geom.elevator.qrtr_chd_x.v - model.geom.wing.qrtr_chd_x.v);
-l_h = 28;
+l_h = m2ft(model.geom.elevator.qrtr_chd_x.v - model.geom.wing.qrtr_chd_x.v);
+%l_h = 27;
 % Vertical offset HT from wing (ft) — hardcoded if field unavailable
-z_H = m2ft(getval(model.geom.elevator.sections(1).le_z) - ...
-           getval(model.geom.wing.sections(1).le_z));
-if ~isnumeric(z_H) || isnan(z_H) || z_H == 0
-    z_H = 0.1;   % fallback (ft)
-end
-model.geom.elevator.root_chord.v = 3;
-model.geom.elevator.tip_chord.v = 1.8;
+z_H = 0.1;
+
 elevrootchord = model.geom.elevator.root_chord.v;
 elevtipchord = model.geom.elevator.tip_chord.v;
 %elevrootchord = 3;
@@ -504,11 +544,16 @@ xline(0,'k:','LineWidth',0.8,'HandleVisibility','off');
 xlim([-0.35, 0.35]); ylim([-0.8, 0.8]);
 xlabel('x_{cg} - x_{ac} normalized','Interpreter','tex','FontSize',12);
 ylabel('S_H/S_W','Interpreter','tex','FontSize',12);
-title('Hellstinger','FontSize',13);
+title('Hellstinger Longitudinal Stability','FontSize',13);
 legend('Location','northwest','FontSize',10);
-text(-0.33, SH_design+0.03, sprintf('  S_H/S_W = %.3f', SH_design), ...
+text(-0.33, SH_design+0.07, sprintf('  S_H/S_W = %.3f', SH_design), ...
      'FontSize',11,'Color','b','FontWeight','bold');
 
+%% CN_beta vs. alpha generation
+figure; 
+CN_beta = allTables(1).data(:,11);
+Alpha_vec = allTables(1).data(:,1);
+plot(Alpha_vec,CN_beta);
 
 % =========================================================================
 function v = getval(x)

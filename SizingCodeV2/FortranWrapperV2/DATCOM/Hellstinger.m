@@ -32,7 +32,7 @@ reVLM   = [0.9e6, 1.3e6, 1.6e6];
 
 vlmCfg.machVec  = machVLM;
 vlmCfg.alphaVec = alphaVec;
-vlmCfg.xcg      = 34 * 0.3048;
+vlmCfg.xcg      = 30.55 * 0.3048;
 vlmCfg.zcg      = -0.003 * geom.fuselage.length.v;
 vlmCfg.Re       = reVLM;
 vlmCfg.icase    = 3;
@@ -97,7 +97,7 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     c.optins.cbarr = m2ft(geom.wing.average_chord.v);
     c.optins.blref = m2ft(geom.wing.span.v);
 
-    c.synths.xcg    = 34;
+    c.synths.xcg    = 30.55;
     c.synths.zcg    = m2ft(-0.003 * geom.fuselage.length.v);
     c.synths.xw     = m2ft(geom.wing.le_x.v);
     c.synths.zw     = m2ft(getval(geom.wing.sections(1).le_z));
@@ -155,11 +155,16 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     c.vtplnf.swafp  = 0.0;  c.vtplnf.twista = 0.0;
     c.vtplnf.type   = 1;
     c.vtschr.tovc   = model.geom.rudder.average_tc.v;
+    c.vtschr.tovco  = model.geom.rudder.average_tc.v;
     c.vtschr.xovc   = 0.40;
+    c.vtschr.deltay = 6.0;
+    c.vtschr.cli    = 0.0;
+    c.vtschr.alphai = 0.0;
+    c.vtschr.cmo    = 0.0;
+    c.vtschr.clamo  = 0.095;
     c.vtschr.clalpa = repmat(0.090, 1, nMach);
     c.vtschr.clmax  = repmat(0.80,  1, nMach);
     c.vtschr.leri   = 0.007;
-    c.vtplnf.nvert  = 2.0;  % twin vertical tails
 
     cfgPass  = struct(); cfgPass.dim = 'FT'; cfgPass.cases(1) = c;
     inpLocal = write_datcom_input(cfgPass, [passName '.inp']);
@@ -293,7 +298,7 @@ legend('Interpreter','none');
 %%  Neutral point & static margin vs Mach
 %% ========================================================================
 
-xcg_ft  = 34;                               % ft from nose — UPDATE to your CG
+xcg_ft  = 30.55;                               % ft from nose — UPDATE to your CG
 cbar_ft = m2ft(geom.wing.average_chord.v);
 xw_ft   = m2ft(geom.wing.le_x.v);
 
@@ -354,8 +359,8 @@ end
 % =========================================================================
 % PARAMETERS — UPDATE THESE
 % =========================================================================
-x_cg_full  = 0.617 * m2ft(model.geom.fuselage.length.v);  % CG at MGTOW (ft)
-x_cg_empty = 0.649 * m2ft(model.geom.fuselage.length.v);  % CG at empty (ft)
+x_cg_full  = 0.649 * m2ft(model.geom.fuselage.length.v);  % CG at MGTOW (ft)
+x_cg_empty = 0.617 * m2ft(model.geom.fuselage.length.v);  % CG at empty (ft)
 
 CM_ac_w    = -0.015;     % wing zero-lift CM (from wgschr.cmo)
 eta_H      = 0.86;       % HT efficiency
@@ -431,8 +436,8 @@ CLalpha_B  = 2 * K2 * S_Bmax / model.geom.wing.area.v; % per radian
 x_ac_B = 0.25 * model.geom.fuselage.length.v;
 
 % Combined wing-body AC (area-weighted)
-%x_ac_wb = m2ft((x_ac_w * CLalpha_w + x_ac_B * CLalpha_B) / CLalpha_wb);
-x_ac_wb = 31.5;
+x_ac_wb = m2ft((x_ac_w * CLalpha_w + x_ac_B * CLalpha_B) / CLalpha_wb);
+% x_ac_wb = 31.5;
 % ---- Downwash gradient (Nelson/DATCOM) ----------------------------------
 K_A      = 1/AR_w - 1/(1 + AR_w^1.7);
 K_lambda = (10 - 3*lambda_w) / 7;

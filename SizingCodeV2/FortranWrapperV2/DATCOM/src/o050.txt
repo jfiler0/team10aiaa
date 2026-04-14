@@ -29,26 +29,26 @@
    c ref               =      6.33000
    b ref               =     16.80000
    HEIGHT ABOVE GROUND = 100000.00000
-   X-cg                =     10.36300
+   X-cg                =      9.31200
    Z-cg                =     -0.04600
    CL0                 =      0.00000
    Cm0                 =      0.00000
    Cdi(at alpha = 0)   =      0.00000
    CL-alpha            =      2.18676
-   Cm-alpha            =      0.77884
-   Cm/CL               =      0.35616
+   Cm-alpha            =      0.41675
+   Cm/CL               =      0.19058
    Cdi/CL^2            =     -0.06572
    CL (at alpha = 5)   =      0.19083
    Cdi(at alpha = 5)   =     -0.00239
    Lift-curve slope of
    tail due to downwash
    of wing             =      0.30531
-   CL-q                =      1.21151
-   CM-q                =     -0.52880
+   CL-q                =      1.86016
+   CM-q                =     -0.53098
    CL-delta [2 1]      =      0.71441
-   Cm-delta [2 1]      =     -0.15690
+   Cm-delta [2 1]      =     -0.27552
    Cl-delta [2 1]      =     -0.09749
-   Cn-delta [2 1]      =      0.01933
+   Cn-delta [2 1]      =      0.01760
    Cy-beta             =          NaN
    Cn-beta             =          NaN
    Cl-beta             =          NaN

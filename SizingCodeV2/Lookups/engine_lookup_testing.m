@@ -1,5 +1,5 @@
-% matlabSetup;
-name = "F100";
+matlabSetup;
+name = "F414";
 interpObj = load_engine_lookup(name, false);
 
 funcDir     = fileparts(mfilename('fullpath'));
@@ -71,8 +71,8 @@ sgtitle(name + " — Raw vs Smoothed vs Interpolated", 'FontSize', 14, 'FontWeig
 n_mach2 = 40;
 n_alt2  = 40;
 mach_vec2 = linspace(min(devObj.gridded.mach), max(devObj.gridded.mach), n_mach2);
-% alt_vec2  = linspace(min(devObj.gridded.alt),  max(devObj.gridded.alt),  n_alt2);
-alt_vec2  = linspace(-100,  max(devObj.gridded.alt),  n_alt2);
+alt_vec2  = linspace(min(devObj.gridded.alt),  max(devObj.gridded.alt),  n_alt2);
+% alt_vec2  = linspace(-100,  max(devObj.gridded.alt),  n_alt2);
 [MG2, AG2] = ndgrid(mach_vec2, alt_vec2);
 
 thrust_09 = interpObj.TA(MG2, AG2, 0.9 * ones(size(MG2)));
@@ -116,3 +116,56 @@ title('TSFC — Throttle = 1.0 (Max AB)');
 xlabel('Mach'); ylabel('Alt (m)'); grid on;
 
 sgtitle(name + " — Mil Power vs Max AB Slices", 'FontSize', 14, 'FontWeight', 'bold');
+
+% ------------------------------------------------------------------ %
+%  1D sweep figure — vary each input independently from X0           %
+% ------------------------------------------------------------------ %
+X0 = [0.5, 0.9, 5000];   % [Mach, Throttle, Altitude (m)]
+
+n_sweep   = 2000;mach_sw   = linspace(min(devObj.gridded.mach), max(devObj.gridded.mach), n_sweep);
+thr_sw    = linspace(0, 1, n_sweep);
+alt_sw    = linspace(min(devObj.gridded.alt),  max(devObj.gridded.alt),  n_sweep);
+
+ta_mach  = interpObj.TA(  mach_sw, X0(3) * ones(1,n_sweep), X0(2) * ones(1,n_sweep));
+ta_thr   = interpObj.TA(  X0(1)   * ones(1,n_sweep), X0(3) * ones(1,n_sweep), thr_sw);
+ta_alt   = interpObj.TA(  X0(1)   * ones(1,n_sweep), alt_sw, X0(2) * ones(1,n_sweep));
+
+tsfc_mach = interpObj.TSFC(mach_sw, X0(3) * ones(1,n_sweep), X0(2) * ones(1,n_sweep));
+tsfc_thr  = interpObj.TSFC(X0(1)   * ones(1,n_sweep), X0(3) * ones(1,n_sweep), thr_sw);
+tsfc_alt  = interpObj.TSFC(X0(1)   * ones(1,n_sweep), alt_sw, X0(2) * ones(1,n_sweep));
+
+figure('Name', name + " 1D Sweeps from X0", 'Position', [100 100 1200 700]);
+tiledlayout(2, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+
+nexttile;
+plot(mach_sw, ta_mach, 'LineWidth', 1.5);
+xlabel('Mach'); ylabel('Thrust (N)'); title('TA vs Mach');
+xline(X0(1), '--k'); grid on;
+
+nexttile;
+plot(thr_sw, ta_thr, 'LineWidth', 1.5);
+xlabel('Throttle'); ylabel('Thrust (N)'); title('TA vs Throttle');
+xline(X0(2), '--k'); grid on;
+
+nexttile;
+plot(alt_sw, ta_alt, 'LineWidth', 1.5);
+xlabel('Alt (m)'); ylabel('Thrust (N)'); title('TA vs Altitude');
+xline(X0(3), '--k'); grid on;
+
+nexttile;
+plot(mach_sw, tsfc_mach, 'LineWidth', 1.5);
+xlabel('Mach'); ylabel('TSFC (kg/N/s)'); title('TSFC vs Mach');
+xline(X0(1), '--k'); grid on;
+
+nexttile;
+plot(thr_sw, tsfc_thr, 'LineWidth', 1.5);
+xlabel('Throttle'); ylabel('TSFC (kg/N/s)'); title('TSFC vs Throttle');
+xline(X0(2), '--k'); grid on;
+
+nexttile;
+plot(alt_sw, tsfc_alt, 'LineWidth', 1.5);
+xlabel('Alt (m)'); ylabel('TSFC (kg/N/s)'); title('TSFC vs Altitude');
+xline(X0(3), '--k'); grid on;
+
+sgtitle(name + sprintf(' — 1D Sweeps from X0 = [M=%.2f, T=%.2f, h=%.0fm]', X0(1), X0(2), X0(3)), ...
+    'FontSize', 14, 'FontWeight', 'bold');

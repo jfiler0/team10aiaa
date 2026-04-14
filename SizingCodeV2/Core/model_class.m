@@ -362,8 +362,8 @@ classdef model_class < handle
                             obj.prop_interp = load_engine_lookup(obj.geom.prop.engine.v);
                         end
 
-                        TA = obj.prop_interp.TA(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v) * obj.geom.prop.num_engine.v; % NUM ENGINE
-                        TSFC = obj.prop_interp.TSFC(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
+                        TA = obj.prop_interp.TA(obj.cond.M_face.v, obj.cond.h.v, obj.cond.throttle.v) * obj.geom.prop.num_engine.v; % NUM ENGINE
+                        TSFC = obj.prop_interp.TSFC(obj.cond.M_face.v, obj.cond.h.v, obj.cond.throttle.v);
 
                     case obj.settings.codes.PROP_HYBRID
                         [TA, ~] = max_prop_info(obj.cond, obj.geom.prop.T0_NoAB.v, obj.geom.prop.T0_AB.v); % no longer tracking alpha
@@ -374,7 +374,7 @@ classdef model_class < handle
                         if ~isstruct(obj.prop_interp)
                             obj.prop_interp = load_engine_lookup(obj.geom.prop.engine.v);
                         end
-                        TSFC = obj.prop_interp.TSFC(obj.cond.M.v, obj.cond.h.v, obj.cond.throttle.v);
+                        TSFC = obj.prop_interp.TSFC(obj.cond.M_face.v, obj.cond.h.v, obj.cond.throttle.v);
                         
                     otherwise
                         error("Code '%i' has no recognized definition for the COST model.", code)

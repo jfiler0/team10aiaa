@@ -108,5 +108,9 @@ function cond = generateCondition(geom, h, M_vel, n, W, throttle, sample_cond, M
     cond.Lift.v = cond.W.v .* cond.n.v;
     cond.CL.v = cond.Lift.v ./ (geom.ref_area.v * cond.qinf.v);
 
+    b = 1.846; % right scaling for M0.8 at face at M2
+    cond.M_face.v = log(b * cond.M.v + 1) / ( b*log(b+1)); % function where f''(0)=0, f'(0)=1, f(2)=0.8, f(0)=0
+    cond.M_face.v = cond.M.v;
+
     cond = addCondThrottle(cond, throttle);
 end

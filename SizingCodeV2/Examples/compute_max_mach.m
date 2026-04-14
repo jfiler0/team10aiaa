@@ -18,6 +18,7 @@ end
 function out = obj(perf, h, M, W)
     perf.model.cond = levelFlightCondition(perf, h, M, W, perf.model.settings.codes.MV_DEC_MACH);
 
+    h_min = 100;
     R = 100;
-    out = 1 / perf.model.cond.M.v + R * max( -perf.ExcessPower, 0) / 100;
+    out = 1 / perf.model.cond.M.v + R * max( [-perf.ExcessPower, 0, 1-h/h_min] ) / 100;
 end

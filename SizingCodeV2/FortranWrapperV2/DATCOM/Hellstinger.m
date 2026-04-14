@@ -19,6 +19,7 @@ settings = readSettings();
 
 thisDir     = fileparts(mfilename('fullpath'));
 examplesDir = fullfile(thisDir, 'Examples');
+perf.model.cond = levelFlightCondition(perf, 0, 0.3, model.geom.weights.mtow.v);
 
 %% ========================================================================
 %%  Part 1 — JKayVLM  (M < 0.6)
@@ -105,7 +106,9 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     c.synths.zh     = m2ft(getval(geom.elevator.sections(1).le_z));
     c.synths.alih   = 0.0;
     c.synths.xv     = m2ft(geom.rudder.le_x.v);
+    c.synths.zv     = m2ft(getval(geom.rudder.sections(1).le_z));  % <-- ADD
     c.synths.vertup = true;
+    
 
     c.body.nx = 5;  c.body.bnose = 2;  c.body.btail = 1;
     c.body.bln = bln_ft;  c.body.bla = bla_ft;
@@ -156,6 +159,7 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     c.vtschr.clalpa = repmat(0.090, 1, nMach);
     c.vtschr.clmax  = repmat(0.80,  1, nMach);
     c.vtschr.leri   = 0.007;
+    c.vtplnf.nvert  = 2.0;  % twin vertical tails
 
     cfgPass  = struct(); cfgPass.dim = 'FT'; cfgPass.cases(1) = c;
     inpLocal = write_datcom_input(cfgPass, [passName '.inp']);
@@ -173,24 +177,14 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     out = runDatcom(inpFile, 'keepOut', true);
     fprintf('DATCOM %s: status=%d  raw tables=%d\n', passName, out.status, numel(out.tables));
 
-    tbl = out.tables([]);
+       tbl = out.tables([]);
     if numel(out.tables) > 0
-        mL      = [out.tables.Mach];
-        uM      = unique(mL);
-        bestIdx = zeros(1, numel(uM));
+        mL = [out.tables.Mach];
+        uM = unique(mL);
         for km = 1:numel(uM)
-            idx     = find(mL == uM(km));
-            CLaVals = zeros(1, numel(idx));
-            for ki = 1:numel(idx)
-                t = out.tables(idx(ki));
-                if ~isempty(t.data) && ~all(isnan(t.data.CLA))
-                    CLaVals(ki) = max(abs(t.data.CLA), [], 'omitnan');
-                end
-            end
-            [~, best]   = max(CLaVals);
-            bestIdx(km) = idx(best);
+            idx = find(mL == uM(km));
+            tbl = [tbl, out.tables(idx)];  % keep ALL tables (long. + lat.-dir.)
         end
-        tbl = out.tables(bestIdx);
     end
     if isfile(inpLocal), delete(inpLocal); end
 end
@@ -217,26 +211,7 @@ tblC  = runDatcomPass(cfg, geom, model, examplesDir, ...
                       bln_ft, bla_ft, rb_at_wing_m, rb_at_ht_m, 'datcom_C');
 
 rawTables = [tblA, tblB, tblC];
-if numel(rawTables) > 0
-    mL      = [rawTables.Mach];
-    uM      = unique(mL);
-    bestIdx = zeros(1, numel(uM));
-    for km = 1:numel(uM)
-        idx     = find(abs(mL - uM(km)) < 1e-6);
-        CLaVals = zeros(1, numel(idx));
-        for ki = 1:numel(idx)
-            t = rawTables(idx(ki));
-            if ~isempty(t.data) && ~all(isnan(t.data.CLA))
-                CLaVals(ki) = max(abs(t.data.CLA), [], 'omitnan');
-            end
-        end
-        [~, best]   = max(CLaVals);
-        bestIdx(km) = idx(best);
-    end
-    outDATCOM.tables = rawTables(bestIdx);
-else
-    outDATCOM.tables = rawTables;
-end
+outDATCOM.tables = rawTables;  % keep all — both long. and lat.-dir. tables per Mach
 
 fprintf('\n=== DATCOM (M >= %.2f) ===\n', VLM_LIMIT);
 for k = 1:numel(outDATCOM.tables)
@@ -258,8 +233,6 @@ allTables = [outVLM.tables, outDATCOM.tables];
 allTables = allTables(idx);
 [~, uIdx] = unique([allTables.Mach]);
 allTables = allTables(uIdx);
-
-model.geom.tables = outDATCOM.tables;
 
 fprintf('\n=== MERGED sweep (%d Mach points) ===\n', numel(allTables));
 for k = 1:numel(allTables)
@@ -383,13 +356,15 @@ end
 % =========================================================================
 x_cg_full  = 0.617 * m2ft(model.geom.fuselage.length.v);  % CG at MGTOW (ft)
 x_cg_empty = 0.649 * m2ft(model.geom.fuselage.length.v);  % CG at empty (ft)
-x_ac_wb    = 31.7;       % wing-body AC (ft from nose) — UPDATE from DATCOM/W&B
+
 CM_ac_w    = -0.015;     % wing zero-lift CM (from wgschr.cmo)
 eta_H      = 0.86;       % HT efficiency
 tau        = 0.70;       % elevator effectiveness (hinged ~0.65, stabilator ~1.0)
 delta_e_max = 25;        % max elevator deflection (deg)
 CL_design  = 0.30;       % design CL for control sizing — UPDATE
-CM_E       = 0;          % engine pitching moment (set 0 if unknown)
+zEng = 0.167386;
+CM_E       = model.geom.prop.T0_NoAB.v * zEng / ...
+      (model.cond.qinf.v * model.geom.ref_area.v * model.geom.wing.average_chord.v);        % engine pitching moment (set 0 if unknown)
 % =========================================================================
 
 % ---- Geometry -----------------------------------------------------------
@@ -400,18 +375,23 @@ Lambda_c4 = deg2rad(model.geom.wing.average_qrtr_chd_sweep.v);
 b_w       = model.geom.wing.span.v;   % m
 
 % HT moment arm (from xcg to HT quarter-chord, ft)
-l_h = m2ft(model.geom.elevator.qrtr_chd_x.v - model.geom.wing.qrtr_chd_x.v);
-
+%l_h = m2ft(model.geom.elevator.qrtr_chd_x.v - model.geom.wing.qrtr_chd_x.v);
+l_h = 28;
 % Vertical offset HT from wing (ft) — hardcoded if field unavailable
 z_H = m2ft(getval(model.geom.elevator.sections(1).le_z) - ...
            getval(model.geom.wing.sections(1).le_z));
 if ~isnumeric(z_H) || isnan(z_H) || z_H == 0
     z_H = 0.1;   % fallback (ft)
 end
-
+model.geom.elevator.root_chord.v = 3;
+model.geom.elevator.tip_chord.v = 1.8;
+elevrootchord = model.geom.elevator.root_chord.v;
+elevtipchord = model.geom.elevator.tip_chord.v;
+%elevrootchord = 3;
+%elevtipchord = 1.8;
 % HT area (ft^2, trapezoidal)
-SH_ft2 = m2ft(m2ft((model.geom.elevator.root_chord.v + ...
-                     model.geom.elevator.tip_chord.v) / 2 ...
+SH_ft2 = m2ft(m2ft((elevrootchord + ...
+                     elevtipchord) / 2 ...
                      * model.geom.elevator.span.v));
 SW_ft2 = m2ft(m2ft(geom.ref_area.v));
 
@@ -420,7 +400,7 @@ fprintf('  l_h = %.2f ft   z_H = %.3f ft\n', l_h, z_H);
 fprintf('  SH = %.2f ft^2   SW = %.2f ft^2   SH/SW actual = %.4f\n', ...
         SH_ft2, SW_ft2, SH_ft2/SW_ft2);
 fprintf('  x_cg_full = %.2f ft   x_cg_empty = %.2f ft   x_ac_wb = %.2f ft\n', ...
-        x_cg_full, x_cg_empty, x_ac_wb);
+        x_cg_full, x_cg_empty);
 
 % ---- Lift curve slopes (per rad) ----------------------------------------
 cla_2d     = 2*pi;
@@ -433,12 +413,32 @@ ref_idx    = find(~isnan(CLa_pt) & abs(machPts - 0.60) < 0.05, 1);
 if isempty(ref_idx), [~, ref_idx] = min(abs(machPts - 0.60)); end
 CLalpha_wb = CLa_pt(ref_idx) * (180/pi);   % /rad
 
+lambda   = model.geom.wing.tip_chord.v / model.geom.wing.root_chord.v;
+AR_w     = model.geom.wing.AR.v;
+LambdaLE = deg2rad(model.geom.wing.average_sweep.v);  % LE sweep in rad
+
+xac_wing_frac = 0.25 + (tan(LambdaLE)/4) * (1 + 2*lambda) / ((1 + lambda) * AR_w);
+x_ac_w = model.geom.wing.le_x.v + xac_wing_frac * model.geom.wing.root_chord.v;
+
+% Body lift curve slope (DATCOM slender body approx)
+% Munk factor K2 ~ 0.9 for typical fuselage fineness ratios
+K2         = 0.9;
+S_Bmax     = model.geom.fuselage.max_area.v;  % max cross-section area
+CLalpha_B  = 2 * K2 * S_Bmax / model.geom.wing.area.v; % per radian
+
+% Body AC: for slender fuselage approximately at 25% body length
+% More accurate: use Munk integral, but 25% is standard first estimate
+x_ac_B = 0.25 * model.geom.fuselage.length.v;
+
+% Combined wing-body AC (area-weighted)
+%x_ac_wb = m2ft((x_ac_w * CLalpha_w + x_ac_B * CLalpha_B) / CLalpha_wb);
+x_ac_wb = 31.5;
 % ---- Downwash gradient (Nelson/DATCOM) ----------------------------------
 K_A      = 1/AR_w - 1/(1 + AR_w^1.7);
 K_lambda = (10 - 3*lambda_w) / 7;
-K_H      = (1 - abs(z_H / m2ft(b_w))) / (2 * l_h / m2ft(b_w))^(1/3);
-depsda   = 4.44 * (K_A * K_lambda * K_H * sqrt(cos(Lambda_c4)))^1.19;
-depsda   = max(0, min(depsda, 0.85));   % clamp to physical range
+K_H      = (1 - abs(z_H / b_w)) / (2 * l_h / b_w)^(1/3);
+depsdacalc = 4.44 * (K_A * K_lambda * K_H * sqrt(cos(Lambda_c4)))^1.19;
+depsda = 0.8;
 fprintf('  dε/dα = %.4f (clamped)\n', depsda);
 
 % ---- Wing CMac (sweep correction) ---------------------------------------
@@ -452,10 +452,11 @@ K_stab      = CLalpha_H * eta_H * (1 - depsda) * (l_h / cbar_ft);
 SHSW_stab   = @(x) CLalpha_wb .* x ./ K_stab;
 
 % Control limit (negative slope)
-eps0      = 0;
-CLH_max   = CLalpha_H * (-eps0 - tau * delta_e_max * pi/180);
+inc = 0.2;
+eps0      = 2 * model.cond.CL.v / (pi * model.geom.wing.AR.v);
+CLH_max   = CLalpha_H * ((-eps0 - tau +inc)*pi/180);
 K_ctrl    = CLH_max * eta_H * (l_h / cbar_ft);
-SHSW_ctrl = @(x) (CL_design .* x - CMW - CM_E) ./ K_ctrl;
+SHSW_ctrl = @(x) (CL_design .* x +CMW + CM_E) ./ K_ctrl;
 
 % Normalised CG limits
 Xcg_full_norm  = (x_cg_full  - x_ac_wb) / cbar_ft;
@@ -507,7 +508,6 @@ title('Hellstinger','FontSize',13);
 legend('Location','northwest','FontSize',10);
 text(-0.33, SH_design+0.03, sprintf('  S_H/S_W = %.3f', SH_design), ...
      'FontSize',11,'Color','b','FontWeight','bold');
-
 
 
 % =========================================================================

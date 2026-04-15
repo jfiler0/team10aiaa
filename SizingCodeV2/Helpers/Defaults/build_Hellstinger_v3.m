@@ -1,11 +1,19 @@
+%% build_f18_template
+% - Goal: For testing, we need an aircraft file. This also provides an example file to reference for future aircraft analyisis. While you
+% can build a file like this for each, the XML can be easily edited.
+% - The specific assignments for each of these construct names is important. If any are missing, things will almost certainty break. You can
+% add new things. It is also critical to keep plane files consistent with the same naming conventions.
+
+% These strings are pretty self explanatory in what they assign. Read json_entry for more info on each field
+
 clear; % Start fresh
 
 plane = struct();
 
-plane.name = json_entry("Aircraft Name", "HellstingerV3", "s");
-plane.id = json_entry("Aircraft ID", "HellstingerV3", "s");
+plane.name = json_entry("Aircraft Name", "Hellstinger v3", "s");
+plane.id = json_entry("Aircraft ID", "Hellstinger v3", "s");
 
-plane.fuselage.length = json_entry("Fuselage Length", ft2m(50), "m");
+plane.fuselage.length = json_entry("Fuselage Length", in2m(600), "m");
 plane.fuselage.max_area = json_entry("Fuselage Max Area", in2m(in2m(4650)), "m2");
 plane.fuselage.E_WD = json_entry("Fuselage Wave Drag Efficency", 2.2, "");
 
@@ -18,18 +26,14 @@ plane.weights.mtow = json_entry("Max Takeoff Weight", lb2N(79081), "N");
 plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
 
 % MAIN WING DEFENITION - only the inboard side of the flap must be defined
-    wing_root = 4.7;
-    wing_span = 17.55;
-    wing_tip = 0.64;
-    sweep = 30; % to match mach angle
     
-    lerx_root = wing_root*1.7;
-    % wing_le_x = 0.48 * plane.fuselage.length.v - lerx_root + wing_root;
-    wing_le_x = 1.165;
+    lerx_root = 7;
+    wing_root = in2m(174.1);
+    wing_le_x = 0.45 * plane.fuselage.length.v - lerx_root + wing_root;
 
-    sec0 = new_section(lerx_root, wing_le_x, 0.1, tc=0.06);
-    sec1 = new_section(wing_root, wing_le_x + lerx_root - wing_root, sec0.le_yp.v + 0.08 * wing_span, tc=0.04);
-    sec6 = new_section(wing_tip, sec1.le_x.v + sind(sweep)*(wing_span/2 - sec1.le_y.v), wing_span/2, tc=0.02);
+    sec0 = new_section(lerx_root, wing_le_x, 1, tc=0.06);
+    sec1 = new_section(in2m(174.1), wing_le_x + lerx_root - wing_root, 2, tc=0.04);
+    sec6 = new_section(0.14 * in2m(174.1), wing_le_x + lerx_root - wing_root + sind(25)*(in2m(426.5)/2 - 2), in2m(426.5)/2, tc=0.02);
     
     % MAIN FLAP
     sec2 = btw_section(sec1, sec6, 0.1, flap_length=0.2, control_name="Main Flap");
@@ -40,24 +44,15 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
     sec5 = btw_section(sec1, sec6, 0.9);
     
     plane.wing = assemble_surface([sec0, sec1, sec2, sec3, sec4, sec5, sec6]);
+    % plane.wing = assemble_surface([sec0, sec1, sec6]);
 
 % ELEVATOR DEFENITION
-    root_chord = 2.25;
-    tip_chord = 0.75;
-    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord - 3.5, 0, tc=0.04);
-    sec2 = new_section(tip_chord, plane.fuselage.length.v - tip_chord - 3.5, 2, tc=0.03);
-    
-    % Flap
-    sec1 = btw_section(sec0, sec2, 0.1, flap_length=1, control_name="Elevator"); % Full Flying
-    
-    plane.elevator = assemble_surface([sec0, sec1, sec2]);
-    % plane.elevator = assemble_surface([sec0, sec2]);
 
 % VTAIL DEFENITION
-    root_chord = 2.5;
-    tip_chord = 1;
-    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, 0, tc=0.04, dihedral=80);
-    sec3 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 2.25, tc=0.03, dihedral=80);
+    root_chord = in2m(79.02);
+    tip_chord = in2m(98.62) * 0.4705;
+    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, 1, tc=0.04, dihedral=60);
+    sec3 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 1+in2m(44.5), tc=0.03, dihedral=60);
     
     % Flap
     sec1 = btw_section(sec0, sec3, 0.1, flap_length=0.15, control_name="Rudder"); % vtail
@@ -76,6 +71,9 @@ plane.prop.engine = json_entry("Engine Name", "F110", "s");
 plane.racks = [-1 -0.7 -0.5 -0.2 0.2 0.5 0.7 1]; % spanwise position of the racks
 % plane.stores = []; % clean confiuration
 
-plane = setLoadout(plane, ["" "" "" "" "" "" "" ""]);
+plane = setLoadout(plane, ["AIM-9X" "" "" "" "" "" "" "AIM-9X"]);
+% 
+% plane.airfoil = json_entry("Airfoil Code", "NACAXXX", "s")
+
 writeAircraftFile(plane);
     % Writes the actual file generally. This also means the location only needs to be changed in one place

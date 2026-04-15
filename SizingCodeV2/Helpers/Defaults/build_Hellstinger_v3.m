@@ -48,17 +48,6 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
 
 % ELEVATOR DEFENITION
 
-    root_chord = 4;
-    tip_chord = 1.8;
-    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, 0, tc=0.04);
-    sec2 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 3.5, tc=0.03);
-    
-    % Flap
-    sec1 = btw_section(sec0, sec2, 0.1, flap_length=1, control_name="Elevator"); % Full Flying
-    
-    plane.elevator = assemble_surface([sec0, sec1, sec2]);
-    % plane.elevator = assemble_surface([sec0, sec2]);
-
 % VTAIL DEFENITION
     root_chord = in2m(79.02);
     tip_chord = in2m(98.62) * 0.4705;

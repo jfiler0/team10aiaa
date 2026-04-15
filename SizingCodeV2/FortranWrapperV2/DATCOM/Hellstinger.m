@@ -7,11 +7,11 @@ close all
 %% ---- Startup -----------------------------------------------------------
 initialize
 matlabSetup
-build_Hellstinger_v3
+build_hellstinger
 
 build_default_settings
 settings = readSettings();
-geom     = loadAircraft("Hellstinger v3", settings);
+geom     = loadAircraft("HellstingerV3", settings);
 model    = model_class(settings, geom);
 N        = 100;
 perf     = performance_class(model);
@@ -418,7 +418,7 @@ b_w       = model.geom.wing.span.v;   % m
 
 % HT moment arm (from xcg to HT quarter-chord, ft)
 l_h = m2ft(model.geom.elevator.qrtr_chd_x.v - model.geom.wing.qrtr_chd_x.v);
-%l_h = 27;
+
 % Vertical offset HT from wing (ft) — hardcoded if field unavailable
 z_H = 0.1;
 
@@ -475,7 +475,7 @@ K_A      = 1/AR_w - 1/(1 + AR_w^1.7);
 K_lambda = (10 - 3*lambda_w) / 7;
 K_H      = (1 - abs(z_H / b_w)) / (2 * l_h / b_w)^(1/3);
 depsda = 4.44 * (K_A * K_lambda * K_H * sqrt(cos(Lambda_c4)))^1.19;
-%depsda = 0.8;
+%depsda = 0.1;
 fprintf('  dε/dα = %.4f (clamped)\n', depsda);
 
 % ---- Wing CMac (sweep correction) ---------------------------------------
@@ -486,14 +486,14 @@ xcg_ac_norm = linspace(-0.35, 0.35, 400);
 
 % Stability limit (positive slope)
 K_stab      = CLalpha_H * eta_H * (1 - depsda) * (l_h / cbar_ft);
-SHSW_stab   = @(x) CLalpha_wb .* x ./ K_stab;
+SHSW_stab   = @(x) CLalpha_wb*180/pi .* x ./ K_stab;
 
 % Control limit (negative slope)
-inc = -0.05;
+inc = -0.065;
 eps0      = 2 * model.cond.CL.v / (pi * model.geom.wing.AR.v);
-CLH_max   = CLalpha_H * (-eps0 + delta_e_max*pi/180 + inc);
+CLH_max   = CLalpha_H * (-eps0-inc);
 K_ctrl    = CLH_max * eta_H * (l_h / cbar_ft);
-SHSW_ctrl = @(x) (CL_design .* x +CMW + CM_E) ./ K_ctrl;
+SHSW_ctrl = @(x) (model.cond.CL.v .* x +CMW + CM_E) ./ K_ctrl;
 
 % Normalised CG limits
 Xcg_full_norm  = (x_cg_full  - x_ac_wb) / cbar_ft;
@@ -547,10 +547,13 @@ text(-0.33, SH_design+0.07, sprintf('  S_H/S_W = %.3f', SH_design), ...
      'FontSize',11,'Color','b','FontWeight','bold');
 
 %% CN_beta vs. alpha generation
-% figure; 
-% CN_beta = allTables(1).data(:,11);
-% Alpha_vec = allTables(1).data(:,1);
-% plot(Alpha_vec,CN_beta);
+CN_beta = 180/pi *-1*[-0.0007911 -0.0007198 -0.0006842 -0.0007198 -0.0007882 -0.000919];
+Alpha_vec = [-4 -2 0 2 4 8];
+figure; 
+plot(Alpha_vec,CN_beta);
+xlabel('alpha (deg)')
+ylabel('Cn_beta (/deg)')
+title('Cn_Beta vs. alpha');
 
 % =========================================================================
 function v = getval(x)

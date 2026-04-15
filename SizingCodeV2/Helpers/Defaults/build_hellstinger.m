@@ -3,7 +3,7 @@ clear; % Start fresh
 plane = struct();
 
 plane.name = json_entry("Aircraft Name", "HellstingerV3", "s");
-plane.id = json_entry("Aircraft ID", "hellstingerv3", "s");
+plane.id = json_entry("Aircraft ID", "HellstingerV3", "s");
 
 plane.fuselage.length = json_entry("Fuselage Length", ft2m(50), "m");
 plane.fuselage.max_area = json_entry("Fuselage Max Area", in2m(in2m(4650)), "m2");
@@ -42,10 +42,10 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
     plane.wing = assemble_surface([sec0, sec1, sec2, sec3, sec4, sec5, sec6]);
 
 % ELEVATOR DEFENITION
-    root_chord = 0.17 * plane.fuselage.length.v;
-    tip_chord = 0.17 * plane.fuselage.length.v * 0.5544;
-    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, 1, tc=0.04);
-    sec2 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 1+in2m(82.22), tc=0.03);
+    root_chord = 2.25;
+    tip_chord = 0.75;
+    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord - 3.5, 0, tc=0.04);
+    sec2 = new_section(tip_chord, plane.fuselage.length.v - tip_chord - 3.5, 2, tc=0.03);
     
     % Flap
     sec1 = btw_section(sec0, sec2, 0.1, flap_length=1, control_name="Elevator"); % Full Flying
@@ -54,10 +54,10 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
     % plane.elevator = assemble_surface([sec0, sec2]);
 
 % VTAIL DEFENITION
-    root_chord = in2m(79.02);
-    tip_chord = in2m(98.62) * 0.4705;
-    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, 1, tc=0.04, dihedral=60);
-    sec3 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 1+in2m(44.5), tc=0.03, dihedral=60);
+    root_chord = 2.5;
+    tip_chord = 1;
+    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, 0, tc=0.04, dihedral=80);
+    sec3 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 2.25, tc=0.03, dihedral=80);
     
     % Flap
     sec1 = btw_section(sec0, sec3, 0.1, flap_length=0.15, control_name="Rudder"); % vtail

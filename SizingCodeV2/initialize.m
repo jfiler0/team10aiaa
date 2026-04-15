@@ -9,6 +9,7 @@ build_sample_missions;
 
 build_f18_template; % creates a sample JSON file called f18_superhornet
 build_kevin_cad;
+build_hellstinger;
 
 build_sample_missions();
 build_atmosphere_lookup(-5000, ft2m(100000), 500); % Refresh atmosphere lookup

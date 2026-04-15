@@ -7,11 +7,11 @@ close all
 %% ---- Startup -----------------------------------------------------------
 initialize
 matlabSetup
-build_kevin_cad
+% build_kevin_cad
 
 build_default_settings
 settings = readSettings();
-geom     = loadAircraft("0412_Optimization", settings);
+geom     = loadAircraft("Copy_of_kevin_cad", settings);
 model    = model_class(settings, geom);
 N        = 100;
 perf     = performance_class(model);
@@ -27,8 +27,8 @@ perf.model.cond = levelFlightCondition(perf, 0, 0.3, model.geom.weights.mtow.v);
 VLM_LIMIT = 0.60;
 alphaVec  = [-4, -2, 0, 2, 4, 8, 12, 16, 20];
 
-machVLM = [0.30, 0.40, 0.50];
-reVLM   = [0.9e6, 1.3e6, 1.6e6];
+machVLM = [0.20, 0.30, 0.40, 0.50];
+reVLM   = [0.75e6, 0.9e6, 1.3e6, 1.6e6];
 
 vlmCfg.machVec  = machVLM;
 vlmCfg.alphaVec = alphaVec;
@@ -515,6 +515,10 @@ text(-0.33, SH_design+0.03, sprintf('  S_H/S_W = %.3f', SH_design), ...
      'FontSize',11,'Color','b','FontWeight','bold');
 
 
+plot_0412_planform('datcom', xb, rb, x_cg_full, x_cg_empty, ...
+                   x_ac_wb, Xnp_ft, SM_mach, machPts, ...
+                   VLM_LIMIT, cbar_ft, validMask, isVLMpts)
+
 % =========================================================================
 function v = getval(x)
 if isstruct(x), v = x.v; else, v = double(x); end
@@ -523,3 +527,4 @@ end
 function s = ternary(cond, a, b)
 if cond, s = a; else, s = b; end
 end
+

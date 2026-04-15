@@ -18,5 +18,6 @@ caseDef.conds = [ ...
     2.0 35.0
 ];
 
-out = runFriction(caseDef);
+out = run_Friction(caseDef);
 disp(out.table)
+displayAircraftGeom("Copy_of_0412_Optimization")

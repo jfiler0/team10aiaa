@@ -26,6 +26,12 @@ cond = levelFlightCondition(perf, 0, 0.5, 1); % M0.5, sea level, MTOW
 % W_final_Air2Air - weightRatio(0, geom);
 % mission_calc.plot_hist
 
-W_final = eval_air2air(perf, 500)
-W_final - geom.weights.empty.v;
+[W_final, empty_weight] = eval_air2gnd(perf, 800, 50);
+W_final - empty_weight
+[W_final, empty_weight] = eval_air2air(perf, 800, 20);
+W_final - empty_weight
 
+perf.model.COST
+
+
+% 2.6576, 2.2055

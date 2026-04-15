@@ -14,20 +14,20 @@ plane.input.kloc = json_entry("KLOC", 5000, "");
 plane.input.fold_ratio = json_entry("Fold Ratio", 0, ""); % there is no fold right now
 plane.input.WF_ratio = json_entry("WF Ratio", 0.6119, "");  % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
 
-plane.weights.mtow = json_entry("Max Takeoff Weight", lb2N(79081), "N");
+mtow = lb2N(68400);
+plane.weights.mtow = json_entry("Max Takeoff Weight", mtow, "N");
 plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
 
 % MAIN WING DEFENITION - only the inboard side of the flap must be defined
-    wing_root = 4.7;
-    wing_span = 17.55;
-    wing_tip = 0.64;
+    wing_root = 4.4;
+    wing_span = 18.2;
+    wing_tip = 0.6;
     sweep = 30; % to match mach angle
     
     lerx_root = wing_root*1.7;
-    % wing_le_x = 0.48 * plane.fuselage.length.v - lerx_root + wing_root;
-    wing_le_x = 1.165;
+    wing_le_x = 4;
 
-    sec0 = new_section(lerx_root, wing_le_x, 0.1, tc=0.06);
+    sec0 = new_section(lerx_root, wing_le_x, 0.8, tc=0.06);
     sec1 = new_section(wing_root, wing_le_x + lerx_root - wing_root, sec0.le_yp.v + 0.08 * wing_span, tc=0.04);
     sec6 = new_section(wing_tip, sec1.le_x.v + sind(sweep)*(wing_span/2 - sec1.le_y.v), wing_span/2, tc=0.02);
     

@@ -1,0 +1,627 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html;charset=utf-8'></meta>
+    <link rel='stylesheet' type='text/css' href='https://www.x3dom.org/download/x3dom.css'></link>
+    <script type='text/javascript' src='https://www.x3dom.org/download/x3dom.js'></script>
+    <title>SuperDuperHornet</title>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      html, body {
+         height: 100%;
+      }
+      #HUDs_Div {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+        background-color: rgba(255, 255, 255, 0.7);
+        padding: 10px;
+        border-radius: 5px;
+        font-family: sans-serif;
+      }
+      /* Container for text and graph, allowing side-by-side layout */
+      #output-container {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+        color: white; /* White text */
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 80%;
+        max-width: 1000px; /* Increased max-width for graph space */
+        font-family: sans-serif;
+        font-size: 1.1em;
+        line-height: 1.4;
+        display: flex; /* Enable flexbox for side-by-side content */
+        justify-content: center;
+        align-items: flex-start; 
+        gap: 20px; /* Space between text and graph */
+      }
+      #output-text {
+        flex: 1; /* Allows text to take available space */
+        text-align: left; 
+      }
+      #output-text h3 {
+        margin-top: 0;
+      }
+      #output-text p {
+        margin-bottom: 0;
+      }
+      #graph-container {
+        flex: 0 0 350px; /* Fixed width for the graph (adjust as needed) */
+        display: none; /* Hidden by default */
+        text-align: center;
+      }
+      #graph-container img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 5px;
+      }
+    </style>
+
+    <script>
+      // ------------------------------
+      // Color-based highlighting system
+      // Hover -> cyan ; Click/select -> yellow
+      // No bboxDisplay changes anywhere (no bounding boxes)
+      // ------------------------------
+
+      const PART_DEFS = [
+        'Fuselage',
+        'Canopy',
+        'HorStab',
+        'VTail',
+        'Wing',
+        'Inlet',
+        'Box'
+      ];
+
+      // Info object matching your original descriptions (shortened where repeated)
+      const INFO = {
+        Fuselage: {
+          title: 'Plane Fuselage',
+          text:
+            "stores fuel and stuff",
+        },
+        Canopy: {
+          title: 'Canopy',
+          text:
+            "super awesome pilot man",
+        },
+        HorStab: {
+          title: 'Horizontal Stabilators',
+          text:
+            "supermaneuverability go brrrrrr",
+        },
+        VTail: {
+          title: 'V-Tail',
+          text:
+            "V-tail so we aren't the size of New York on radar",
+        },
+        Wing: {
+          title: 'Wings',
+          text:
+            'Red Bull gives you wiiiiiiiiiiiiings',
+        },
+        Inlet: {
+          title: 'Engine Inlets',
+          text:
+            'feed air to the Very Hungry Catipillar of our 2 F-110 engines',
+        },
+        Box: {
+          title: 'box',
+          text:
+          'box box box',
+        }
+      }; 
+
+      const initialText =
+            "hi we are Roy and Sons and we da best";
+
+      // hover -> blue ; select -> red (visually distinct)
+      const Colors = { hover: '0 0 1', select: '1 0 0' };
+
+      // Stores the currently selected Transform (if any)
+      let currentSelection = null;
+      // Stores baseline material attributes per Transform to restore later
+      const baselineByPart = new Map();
+      // Stores override Material nodes added per Transform so they can be removed
+      const overrideByPart = new Map();
+      // WeakMap to store per-element baseline attributes (diffuseColor, emissiveColor, etc.)
+      const elementBaseline = new WeakMap();
+      // (we no longer override textures with a white pixel)
+      // Tracks which parts are currently hidden
+      const hiddenParts = new Set();
+
+      // Helpers to find material nodes under a Transform
+      function getMaterials(part) {
+        // X3D can have different material tag names; handle both
+        const phys = Array.from(part.getElementsByTagName('PhysicalMaterial'));
+        const classic = Array.from(part.getElementsByTagName('Material'));
+        // Debug: report what we found (helpful when Inlines load asynchronously)
+        try { console.log('getMaterials for', part.getAttribute && part.getAttribute('DEF'), 'PhysicalMaterial:', phys.length, 'Material:', classic.length); } catch (e) { /* ignore */ }
+        return { phys, classic };
+      }
+
+      // Capture baseline attribute values per element (use WeakMap for safety)
+      function captureBaseline(part) {
+        const mats = getMaterials(part);
+        const elements = [];
+        try {
+          mats.phys.forEach(el => {
+            if (!elementBaseline.has(el)) {
+              const baseline = {
+                diffuseColor: el.getAttribute('diffuseColor'),
+                hadDiffuseColor: el.hasAttribute('diffuseColor'),
+                diffuseFactor: el.getAttribute('diffuseFactor'),
+                hadDiffuseFactor: el.hasAttribute('diffuseFactor'),
+                emissiveColor: el.getAttribute('emissiveColor'),
+                hadEmissiveColor: el.hasAttribute('emissiveColor'),
+                emissiveFactor: el.getAttribute('emissiveFactor'),
+                hadEmissiveFactor: el.hasAttribute('emissiveFactor'),
+                roughness: el.getAttribute('roughnessValue') || el.getAttribute('roughness'),
+                hadRoughness: el.hasAttribute('roughnessValue') || el.hasAttribute('roughness'),
+                metallic: el.getAttribute('metallicValue') || el.getAttribute('metallic'),
+                hadMetallic: el.hasAttribute('metallicValue') || el.hasAttribute('metallic'),
+                transparency: el.getAttribute('transparency'),
+                hadTransparency: el.hasAttribute('transparency')
+              };
+              elementBaseline.set(el, baseline);
+              try { console.log('captured PhysicalMaterial baseline:', baseline); } catch (e) { }
+            }
+            elements.push(el);
+          });
+          mats.classic.forEach(el => {
+            if (!elementBaseline.has(el)) {
+              const baseline = {
+                diffuseColor: el.getAttribute('diffuseColor'),
+                hadDiffuseColor: el.hasAttribute('diffuseColor'),
+                emissiveColor: el.getAttribute('emissiveColor'),
+                hadEmissiveColor: el.hasAttribute('emissiveColor'),
+                transparency: el.getAttribute('transparency'),
+                hadTransparency: el.hasAttribute('transparency'),
+                shininess: el.getAttribute('shininess'),
+                hadShininess: el.hasAttribute('shininess')
+              };
+              elementBaseline.set(el, baseline);
+              try { console.log('captured classic Material baseline:', baseline); } catch (e) { }
+            }
+            elements.push(el);
+          });
+        } catch (e) { /* ignore */ }
+        baselineByPart.set(part, elements);
+        try { console.log('captureBaseline', part.getAttribute && part.getAttribute('DEF'), 'elements:', elements.length); } catch (e) { }
+      }
+
+      // We no longer replace ImageTexture URLs with a white pixel. Instead
+      // we rely on setting emissive/diffuse attributes on materials so the
+      // highlight shows through textured materials when possible.
+
+      // Add a classic Material under each Shape->Appearance to force visible tint
+      function addOverrideMaterials(part, color) {
+        try {
+          // don't add overrides if we've already added them
+          if (overrideByPart.has(part) && overrideByPart.get(part).materials) return;
+          const shapes = Array.from(part.getElementsByTagName('Shape'));
+          const created = [];
+          for (const s of shapes) {
+            let app = s.getElementsByTagName('Appearance')[0];
+            if (!app) {
+              app = document.createElement('Appearance');
+              s.appendChild(app);
+            }
+            const mat = document.createElement('Material');
+            mat.setAttribute('diffuseColor', color);
+            // emissive helps make tint obvious even under PBR textures
+            mat.setAttribute('emissiveColor', color);
+            mat.setAttribute('data-generated', 'true');
+            app.appendChild(mat);
+            created.push(mat);
+          }
+          if (created.length) {
+            const data = overrideByPart.get(part) || {};
+            data.materials = created;
+            overrideByPart.set(part, data);
+          }
+          console.log('addOverrideMaterials for', part.getAttribute && part.getAttribute('DEF'), 'created:', created.length);
+        } catch (e) { console.log('addOverrideMaterials error', e); }
+      }
+
+      // Apply color to all material nodes under the part
+      // Sets all material properties to neutral so the highlight is consistent
+      function setPartColor(part, color) {
+        const mats = getMaterials(part);
+        try { console.log('setPartColor', part.getAttribute && part.getAttribute('DEF'), 'color:', color, mats); } catch (e) { /* ignore */ }
+        for (const el of mats.phys) {
+          try { el.setAttribute('diffuseColor', '0.2 0.2 0.2'); } catch (e) { /* ignore */ }
+          try { el.setAttribute('diffuseFactor', '0.1'); } catch (e) { /* ignore */ }
+          // Use emissive with HIGH factor to dominate the appearance
+          try { 
+            el.setAttribute('emissiveColor', color); 
+            console.log('set emissiveColor to:', color); 
+          } catch (e) { /* ignore */ }
+          try { el.setAttribute('emissiveFactor', '10'); } catch (e) { /* ignore */ }
+        }
+        for (const el of mats.classic) {
+          try { el.setAttribute('diffuseColor', '0.2 0.2 0.2'); } catch (e) { /* ignore */ }
+          try { el.setAttribute('emissiveColor', color); } catch (e) { /* ignore */ }
+        }
+      }
+
+      // Restore saved baseline attributes per element. Also remove generated
+      // override Materials and restore any texture URLs that we replaced.
+      function restorePartFromBaseline(part) {
+        const elements = baselineByPart.get(part) || [];
+        try { console.log('restorePartFromBaseline', part.getAttribute && part.getAttribute('DEF'), 'elements:', elements.length); } catch (e) { }
+        try {
+          for (const el of elements) {
+            try {
+              const saved = elementBaseline.get(el);
+              if (!saved) continue;
+              if ('hadDiffuseColor' in saved) {
+                if (saved.hadDiffuseColor) {
+                  if (saved.diffuseColor === null || saved.diffuseColor === undefined) el.setAttribute('diffuseColor', '');
+                  else el.setAttribute('diffuseColor', saved.diffuseColor);
+                } else {
+                  el.removeAttribute('diffuseColor');
+                }
+              }
+              if ('hadDiffuseFactor' in saved) {
+                if (saved.hadDiffuseFactor) {
+                  if (saved.diffuseFactor === null || saved.diffuseFactor === undefined) el.setAttribute('diffuseFactor', '');
+                  else el.setAttribute('diffuseFactor', saved.diffuseFactor);
+                } else {
+                  el.removeAttribute('diffuseFactor');
+                }
+              }
+              if ('hadEmissiveColor' in saved) {
+                if (saved.hadEmissiveColor) {
+                  if (saved.emissiveColor === null || saved.emissiveColor === undefined) el.setAttribute('emissiveColor', '');
+                  else el.setAttribute('emissiveColor', saved.emissiveColor);
+                } else {
+                  el.removeAttribute('emissiveColor');
+                }
+              }
+              if ('hadEmissiveFactor' in saved) {
+                if (saved.hadEmissiveFactor) {
+                  if (saved.emissiveFactor === null || saved.emissiveFactor === undefined) el.setAttribute('emissiveFactor', '');
+                  else el.setAttribute('emissiveFactor', saved.emissiveFactor);
+                } else {
+                  el.removeAttribute('emissiveFactor');
+                }
+              }
+              // Restore roughness/metallic for PhysicalMaterial
+              if ('hadRoughness' in saved) {
+                if (saved.hadRoughness) {
+                  const attr = el.hasAttribute('roughnessValue') ? 'roughnessValue' : 'roughness';
+                  if (saved.roughness === null || saved.roughness === undefined) el.setAttribute(attr, '');
+                  else el.setAttribute(attr, saved.roughness);
+                } else {
+                  el.removeAttribute('roughnessValue');
+                  el.removeAttribute('roughness');
+                }
+              }
+              if ('hadMetallic' in saved) {
+                if (saved.hadMetallic) {
+                  const attr = el.hasAttribute('metallicValue') ? 'metallicValue' : 'metallic';
+                  if (saved.metallic === null || saved.metallic === undefined) el.setAttribute(attr, '');
+                  else el.setAttribute(attr, saved.metallic);
+                } else {
+                  el.removeAttribute('metallicValue');
+                  el.removeAttribute('metallic');
+                }
+              }
+              if ('hadTransparency' in saved) {
+                if (saved.hadTransparency) {
+                  if (saved.transparency === null || saved.transparency === undefined) el.setAttribute('transparency', '');
+                  else el.setAttribute('transparency', saved.transparency);
+                } else {
+                  el.removeAttribute('transparency');
+                }
+              }
+              // Restore shininess for classic Material
+              if ('hadShininess' in saved) {
+                if (saved.hadShininess) {
+                  if (saved.shininess === null || saved.shininess === undefined) el.setAttribute('shininess', '');
+                  else el.setAttribute('shininess', saved.shininess);
+                } else {
+                  el.removeAttribute('shininess');
+                }
+              }
+            } catch (e) { /* ignore per-element */ }
+          }
+        } catch (e) { /* ignore */ }
+        // remove any override materials we added and restore textures
+        try {
+          const data = overrideByPart.get(part) || {};
+          const created = data.materials || [];
+          for (const n of created) {
+            if (n && n.parentNode) n.parentNode.removeChild(n);
+          }
+          try { console.log('restorePartFromBaseline removed', created.length, 'override materials'); } catch (e) { }
+          overrideByPart.delete(part);
+        } catch (e) { }
+        // We do not replace Inline nodes (that causes x3dom to reload the GLB).
+        // Restoring attributes and removing override Materials is sufficient.
+      }
+
+      // Select a part by DEF (only valid parts). Do NOT use for 'initial'.
+      function selectPartByDEF(partDEF) {
+        // Only allow selection for known parts
+        if (!PART_DEFS.includes(partDEF)) return;
+
+        // Restore previous selection (if any)
+        if (currentSelection && currentSelection !== null) {
+          try { restorePartFromBaseline(currentSelection); } catch (e) { /* ignore */ }
+          currentSelection = null;
+        }
+
+        const part = document.querySelector("Transform[DEF='" + partDEF + "']");
+        if (!part) {
+          console.warn("Part with DEF='" + partDEF + "' not found.");
+          return;
+        }
+
+        // Ensure baseline exists for this part before applying overrides
+        try { if (!baselineByPart.get(part) || baselineByPart.get(part).length === 0) captureBaseline(part); } catch (e) { /* ignore */ }
+        // Apply yellow selection color (same method as hover, no injected Material)
+        setPartColor(part, Colors.select);
+        currentSelection = part;
+        updateHideUI();
+      }
+
+      // Hide the currently selected part by setting visible=false
+      function hidePart() {
+        if (!currentSelection) return;
+        try {
+          const partDEF = currentSelection.getAttribute('DEF');
+          currentSelection.setAttribute('visible', 'false');
+          hiddenParts.add(partDEF);
+          console.log('hidePart:', partDEF);
+          updateHideUI();
+        } catch (e) { console.log('hidePart error:', e); }
+      }
+
+      // Show all hidden parts
+      function restoreAllParts() {
+        for (const partDEF of hiddenParts) {
+          const part = document.querySelector("Transform[DEF='" + partDEF + "']");
+          if (part) {
+            try {
+              part.setAttribute('visible', 'true');
+              console.log('restored:', partDEF);
+            } catch (e) { /* ignore */ }
+          }
+        }
+        hiddenParts.clear();
+        updateHideUI();
+      }
+
+      // Update visibility of hide/restore buttons based on state
+      function updateHideUI() {
+        const hideBtn = document.getElementById('hide-selected-btn');
+        const restoreBtn = document.getElementById('restore-all-btn');
+        if (hideBtn) hideBtn.style.display = currentSelection && !hiddenParts.has(currentSelection.getAttribute('DEF')) ? 'block' : 'none';
+        if (restoreBtn) restoreBtn.style.display = hiddenParts.size > 0 ? 'block' : 'none';
+      }
+
+      // Attach hover handlers which set hover color unless that part is selected
+      function attachHoverHandlers(part) {
+        part.addEventListener('mouseover', function () {
+          if (currentSelection === part) return;
+          try { console.log('hover over', part.getAttribute && part.getAttribute('DEF')); } catch (e) { }
+          try { if (!baselineByPart.get(part) || baselineByPart.get(part).length === 0) captureBaseline(part); } catch (e) { }
+          setPartColor(part, Colors.hover);
+        });
+        part.addEventListener('mouseout', function () {
+          if (currentSelection === part) return;
+          try { console.log('hover out', part.getAttribute && part.getAttribute('DEF')); } catch (e) { }
+          restorePartFromBaseline(part);
+        })
+      }
+
+      // Initialize once X3DOM runtime is ready
+      x3dom.runtime.ready = function () {
+        // Reset view to ensure consistent start
+        var x3dElement = document.getElementById('x3dElement');
+        if (x3dElement && x3dElement.runtime && x3dElement.runtime.resetView) {
+          try { x3dElement.runtime.resetView(); } catch (e) { /* ignore */ }
+        }
+
+        // Capture baselines and attach hover handlers for each defined part
+        for (let i = 0; i < PART_DEFS.length; i++) {
+          const def = PART_DEFS[i];
+          const part = document.querySelector("Transform[DEF='" + def + "']");
+          if (!part) {
+            try { console.log('ready: part not found', def); } catch (e) { }
+            continue;
+          }
+          try { captureBaseline(part); } catch (e) { /* ignore */ }
+          attachHoverHandlers(part);
+          try { console.log('ready: attached handlers for', def, 'materials:', getMaterials(part)); } catch (e) { }
+        }
+      };
+
+      // --- showDetail keeps same signature as your original page ---
+      function showDetail(partName) {
+        console.log("Clicked on:", partName);
+
+        let infoTitle = "";
+        let infoDescription = "";
+        let graphImageFile = ""; 
+
+        const graphContainer = document.getElementById('graph-container');
+        if (graphContainer) graphContainer.style.display = 'none';
+
+        // If the partName matches a known part, use the INFO block; else show initial text
+        if (PART_DEFS.includes(partName)) {
+          const info = INFO[partName];
+          infoTitle = info.title;
+          infoDescription = info.text;
+          // map images same as original logic
+          if (partName === 'Wing') graphImageFile = 'Graph2.png';
+          if (partName === 'Fuselage' || partName === 'Canopy' || partName === 'HorStab') graphImageFile = 'Graph1.png';
+
+          // Select and color the part (yellow). Selection is only applied for recognized parts.
+          selectPartByDEF(partName);
+        } else {
+          // Default intro: show initial text and clear any selection without altering materials unexpectedly
+          infoTitle = "FA-24 HellStinger";
+          infoDescription = initialText;
+
+          // If a part is currently selected, restore it
+          if (currentSelection) {
+            try { restorePartFromBaseline(currentSelection); } catch (e) { /* ignore */ }
+            currentSelection = null;
+          }
+          updateHideUI();
+        }
+
+        // Update DOM text
+        const titleEl = document.getElementById('info-title');
+        const descEl = document.getElementById('info-description');
+        if (titleEl) titleEl.innerText = infoTitle;
+        if (descEl) descEl.innerHTML = infoDescription;
+
+        // Show graph if present
+        if (graphImageFile) {
+          const img = document.getElementById('graph-image');
+          if (img) img.src = graphImageFile;
+          if (graphContainer) graphContainer.style.display = 'block';
+        }
+      }
+
+      // Expose bindButtonName for the radio buttons (no change)
+      function bindButtonName(viewpointID) 
+      {
+        console.log(viewpointID);
+        document.getElementById(viewpointID).bind = true;
+      }
+
+      // Show the intro on DOM ready
+      document.addEventListener("DOMContentLoaded", function() {
+        showDetail('initial');
+      });
+    </script>
+</head>
+
+<body>
+    <div id='HUDs_Div'> 
+      <div id='X3DOM_AOPT_Links' class='group'> 
+        AOE 4066: Xander Fry <br> Visualization of Hellstinger in HTML<br>
+        <hr>
+        <form>
+          <label><input type="radio" name="buttons" value="Viewpoint1" checked onclick="bindButtonName('Viewpoint1')"> Viewpoint 1</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint2" onclick="bindButtonName('Viewpoint2')"> Viewpoint 2</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint3" onclick="bindButtonName('Viewpoint3')"> Viewpoint 3</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint4" onclick="bindButtonName('Viewpoint4')"> Viewpoint 4</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint5" onclick="bindButtonName('Viewpoint5')"> Viewpoint 5</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint6" onclick="bindButtonName('Viewpoint6')"> Viewpoint 6</label><br>
+        </form>
+        <hr style="margin-top: 15px; margin-bottom: 10px;">
+        <button id="restore-all-btn" onclick="restoreAllParts()" style="display:none; width: 100%; padding: 8px 12px; background-color: #51cf66; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Restore All Hidden</button>
+      </div>
+    </div>
+
+    <x3d id='x3dElement' showStat='false' showLog='false' style='width:100%; height:100%; border:0; margin:0; padding:0;'>
+      <Scene>
+        <Viewpoint id='Viewpoint1' position="16.11338 80 -19.95448" orientation="-0.00040 0.99989 0.01496 2.32263" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 1"></Viewpoint>
+        <Viewpoint id='Viewpoint2' position="-9.07127 80 2.47211" orientation="-0.00850 0.99941 0.03342 2.30075" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 2"></Viewpoint>
+        <Viewpoint id='Viewpoint3' position="-34.65802 80 33.63939" orientation="-0.01098 0.99894 0.04477 2.38209" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 3"></Viewpoint>
+        <Viewpoint id='Viewpoint4' position="-11.25579 80 47.44333" orientation="-0.01024 0.99957 0.02746 1.59191" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 4"></Viewpoint>
+        <Viewpoint id='Viewpoint5' position="-24.74979 80 61.72199" orientation="-0.02138 0.99950 0.02327 1.84958" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 5"></Viewpoint>
+        <Viewpoint id='Viewpoint6' position="200 800 0" orientation="1 0 0 -1.5708" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="Top Down"></Viewpoint>
+
+<NavigationInfo type='"EXAMINE" "ANY"' avatarSize="0.25 1.75 0.75" headlight="false" visibilityLimit="50000"></NavigationInfo>
+        
+        <DirectionalLight direction='-.8 -.8 -.8' intensity='.7'></DirectionalLight>
+        <DirectionalLight direction='-.8 -.8 .8' intensity='.7'></DirectionalLight>
+        <DirectionalLight direction='.8 -.8 .8' intensity='.7'></DirectionalLight>
+        <DirectionalLight direction='.8 -.8 -.8' intensity='.7'></DirectionalLight>
+        <DirectionalLight direction='0 1 0' intensity='.2'></DirectionalLight>
+        <background skyColor="0.53 0.75 0.98" groundColor="0.0 0.2 0.5"></background>
+
+        <Transform translation="0 -0.25 0" onclick="showDetail('initial')">
+          <Shape><Appearance> <Material diffuseColor="0.6 0.8 1.0"></Material> <ImageTexture url='wataa.jpg'></ImageTexture> <TextureTransform center="0.5 0.5" scale="1 1" rotation="0" translation="0 0"></TextureTransform></Appearance>
+          <Box size="5000 .5 5000"></Box></Shape>
+        </Transform>
+
+        <Transform translation="0 0 0" rotation="0 0 0 0" scale='0.05 0.05 0.05'>
+          <Inline url='uss_nimitz_cvn-68_aircraft_carrier.glb'></Inline>
+        </Transform>
+
+        <Transform DEF="Box" id="Box" translation="600 60 0" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Box')" scale="7 7 7">
+            <Inline DEF="BoxInline" url="greenish_cube.glb" mapDEFToID="true" nameSpaceName="Box"></Inline>
+          </Transform>
+
+        <Transform DEF="PlanePitch" translation="650 42 0" rotation="0 0 1 3.1415926" scale='0.05 0.05 0.05'>
+        <Transform DEF="PlaneRotation" translation="0 0 0" rotation="0 1 0 0" scale='1 1 1'>
+        <Transform DEF="PlaneGroup" translation="0 0 0" rotation="1 0 0 0" scale='1 1 1'>
+        
+        <Transform DEF="PlaneGroup" translation="35 0 -40" rotation="1 0 0 -1.57" scale='1 1 1'>
+
+          <Transform DEF="Fuselage" id="Fuselage" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Fuselage')">
+            <Inline DEF="FuselageInline" url="GLB_Output/TestAssm - Param_Fuselage_Cut_V2.5-1.glb" mapDEFToID="true" nameSpaceName="Fuselage" ></Inline>
+          </Transform>
+          <Transform DEF="Wing" id="Wing" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Wing')">
+            <Inline DEF="WingInline" url="GLB_Output/TestAssm - Param_Wing_V3.01-1.glb" mapDEFToID="true" nameSpaceName="Wing"></Inline>
+          </Transform>
+          <Transform DEF="Canopy" id="Canopy" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Canopy')">
+            <Inline DEF="CanopyInline" url="GLB_Output/TestAssm - Param_Canopy-1.glb" mapDEFToID="true" nameSpaceName="Canopy"></Inline>
+          </Transform>
+          <Transform DEF="HorStab" id="HorStab" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('HorStab')">
+            <Inline DEF="HorStabInline" url="GLB_Output/TestAssm - Param_Horstab_V2-1.glb" mapDEFToID="true" nameSpaceName="HorStab"></Inline>
+          </Transform>
+          <Transform DEF="VTail" id="VTail" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('VTail')">
+            <Inline DEF="VTailInline" url="GLB_Output/TestAssm - Param_VTail_V2-1.glb" mapDEFToID="true" nameSpaceName="VTail"></Inline>
+          </Transform>
+          <Transform DEF="Inlet" id="Inlet" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Inlet')">
+            <Inline DEF="InletInline" url="GLB_Output/TestAssm - Param_Inlet_V5-1.glb" mapDEFToID="true" nameSpaceName="Inlet"></Inline>
+          </Transform>
+        </Transform>
+      
+
+        <!--
+        <Transform DEF="PlanePitch" translation="0 0 0" rotation="1 0 0 0" scale='1 1 1'>
+        <Transform DEF="Boeing737Part" id="Boeing737Part" translation="38 -10 -50" rotation="0 1 0 3.14" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Boeing737Part')">
+          <Inline DEF="Boeing737Inline" url="./boeing737.glb" mapDEFToID="true" nameSpaceName="Boeing737"></Inline>
+        </Transform>
+        </Transform>
+
+        <Transform DEF="Cessna172Part" id="Cessna172Part" translation="20 7 -20" rotation="0 1 0 -1.5708" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Boeing737Part')">
+          <Inline DEF="Cessna172Inline" url="./cessna172.glb" mapDEFToID="true" nameSpaceName="Cessna172"></Inline>
+        </Transform>
+
+        <Transform DEF="X57Part" id="X57Part" translation="20 5 -5" rotation="0 1 0" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0">
+          <Inline DEF="X57Inline" url="./x57.glb" mapDEFToID="true" nameSpaceName="X57"></Inline>
+        </Transform>
+        -->
+      </Scene>
+    </x3d>
+    
+    <div id="output-container">
+      <div id="output-text">
+        <h3 id="info-title"></h3>
+        <p id="info-description"></p>
+        <div id="button-container" style="margin-top: 15px;">
+          <button id="hide-selected-btn" onclick="hidePart()" style="display:none; padding: 8px 12px; background-color: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer;">Hide Selected</button>
+        </div>
+      </div>
+      <div id="graph-container">
+        <img id="graph-image" src="" alt="Relevant Graph">
+      </div>
+    </div>
+    
+</body>
+</html>

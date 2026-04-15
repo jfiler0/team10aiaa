@@ -304,6 +304,7 @@ pairs = addScalar(pairs, f, 'sspndd', 'SSPNDD');
 pairs = addScalar(pairs, f, 'dhdadi', 'DHDADI');
 pairs = addScalar(pairs, f, 'dhdado', 'DHDADO');
 pairs = addScalar(pairs, f, 'type',   'TYPE');
+
 % Horizontal tail extras
 pairs = addVector(pairs, f, 'shb',   'SHB');
 pairs = addVector(pairs, f, 'sext',  'SEXT');

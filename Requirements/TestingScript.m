@@ -31,10 +31,15 @@ classdef TestingScript < matlab.unittest.TestCase
             design_load_factor = getComposerVal("Fuselage", "DesignLoadFactor");
             testCase.verifyGreaterThanOrEqual(design_load_factor, 7);
         end
-        function verifyCombatRadius(testCase)
-            combat_radius = getComposerVal("Fuselage", "CombatRadius");
-            testCase.verifyGreaterThan(combat_radius, ft2m(699));
+        function verifyA2ACombatRadius(testCase)
+            A2A_combat_radius = getComposerVal("Fuselage/Fuel Tanks", "A2Acombatradius");
+            testCase.verifyTrue(A2A_combat_radius >= 700);
         end
+
+        function verifyA2GCombatRadius(testCase)
+            A2G_combat_radius = getComposerVal("Fuselage/Fuel Tanks", "A2Gcombatradius");
+            testCase.verifyTrue(A2G_combat_radius >= 700);
+        end        
     end
 end
 

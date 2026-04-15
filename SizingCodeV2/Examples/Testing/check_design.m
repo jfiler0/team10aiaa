@@ -2,6 +2,8 @@ matlabSetup;
 build_hellstinger
 settings = readSettings();
 
+settings.WF_ratio = 0.6;
+
 file_name = "HellstingerV3";
 geom = loadAircraft(file_name, settings);
 geom = updateGeom(geom, settings, false);

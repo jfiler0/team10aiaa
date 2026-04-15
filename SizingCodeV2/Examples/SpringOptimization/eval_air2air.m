@@ -1,5 +1,7 @@
-function [W_final, empty_weight] = eval_air2air(perf, range_nm, time_min)
-    loadout = ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "" "AIM-120" "AIM-120" "AIM-9x"];
+function [W_final, empty_weight] = eval_air2air(perf, range_nm, time_min, loadout)
+    if nargin < 4
+        loadout = ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"];
+    end
     
     geom = perf.model.geom;
     geom = setLoadout(geom, loadout);
@@ -19,6 +21,7 @@ function [W_final, empty_weight] = eval_air2air(perf, range_nm, time_min)
 end
 
 function fuel_weight = do_cruise(perf, empty_weight, fuel_weight, range)
+    perf.clear_data();
     % range in meters
     h_cruise = ft2m(40000);
     v_cruise = kt2ms(480);
@@ -33,6 +36,7 @@ function fuel_weight = do_cruise(perf, empty_weight, fuel_weight, range)
 end
 
 function fuel_weight = do_combat(perf, empty_weight, fuel_weight, time, M)
+    perf.clear_data();
     % time in seconds
     h_combat = ft2m(20000);
     N_seg = 10; % number of times to split it up
@@ -45,6 +49,7 @@ function fuel_weight = do_combat(perf, empty_weight, fuel_weight, time, M)
 end
 
 function fuel_weight = do_loiter(perf, empty_weight, fuel_weight, endurance)
+    perf.clear_data();
     % endurance in seconds
     h_loiter = ft2m(10000);
     v_loiter = kt2ms(300);

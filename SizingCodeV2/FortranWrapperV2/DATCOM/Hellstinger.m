@@ -7,11 +7,11 @@ close all
 %% ---- Startup -----------------------------------------------------------
 initialize
 matlabSetup
-build_kevin_cad
+build_Hellstinger_v3
 
 build_default_settings
 settings = readSettings();
-geom     = loadAircraft("0412_Optimization", settings);
+geom     = loadAircraft("Hellstinger v3", settings);
 model    = model_class(settings, geom);
 N        = 100;
 perf     = performance_class(model);
@@ -85,9 +85,6 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     end
     clmaxWing = linspace(1.40, 0.45, nMach);
     clmaxHT   = linspace(1.10, 0.35, nMach);
-    model.geom.elevator.root_chord.v = 4;
-    model.geom.elevator.tip_chord.v = 1.8;
-    model.geom.elevator.span.v = 7;
     
     c = struct();
     c.caseid = 'GENERIC SUPERSONIC FIGHTER - BASELINE';
@@ -126,7 +123,7 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     c.wgplnf.chstat = 0.25;
     c.wgplnf.swafp  = 0.0;  c.wgplnf.twista = 0.0;
     c.wgplnf.sspndd = 0.0;  c.wgplnf.dhdadi = 0.0;  c.wgplnf.dhdado = 0.0;
-    c.wgplnf.type   = 1;
+    c.wgplnf.type   = 2;
     c.wgschr.tovc   = geom.wing.average_tc.v;
     c.wgschr.tovco  = geom.wing.average_tc.v;
     c.wgschr.xovc   = 0.40;
@@ -477,8 +474,8 @@ x_ac_wb = 31.5;
 K_A      = 1/AR_w - 1/(1 + AR_w^1.7);
 K_lambda = (10 - 3*lambda_w) / 7;
 K_H      = (1 - abs(z_H / b_w)) / (2 * l_h / b_w)^(1/3);
-depsdacalc = 4.44 * (K_A * K_lambda * K_H * sqrt(cos(Lambda_c4)))^1.19;
-depsda = 0.8;
+depsda = 4.44 * (K_A * K_lambda * K_H * sqrt(cos(Lambda_c4)))^1.19;
+%depsda = 0.8;
 fprintf('  dε/dα = %.4f (clamped)\n', depsda);
 
 % ---- Wing CMac (sweep correction) ---------------------------------------
@@ -492,9 +489,9 @@ K_stab      = CLalpha_H * eta_H * (1 - depsda) * (l_h / cbar_ft);
 SHSW_stab   = @(x) CLalpha_wb .* x ./ K_stab;
 
 % Control limit (negative slope)
-inc = 0.2;
+inc = -0.05;
 eps0      = 2 * model.cond.CL.v / (pi * model.geom.wing.AR.v);
-CLH_max   = CLalpha_H * ((-eps0 - tau +inc)*pi/180);
+CLH_max   = CLalpha_H * (-eps0 + delta_e_max*pi/180 + inc);
 K_ctrl    = CLH_max * eta_H * (l_h / cbar_ft);
 SHSW_ctrl = @(x) (CL_design .* x +CMW + CM_E) ./ K_ctrl;
 
@@ -550,10 +547,10 @@ text(-0.33, SH_design+0.07, sprintf('  S_H/S_W = %.3f', SH_design), ...
      'FontSize',11,'Color','b','FontWeight','bold');
 
 %% CN_beta vs. alpha generation
-figure; 
-CN_beta = allTables(1).data(:,11);
-Alpha_vec = allTables(1).data(:,1);
-plot(Alpha_vec,CN_beta);
+% figure; 
+% CN_beta = allTables(1).data(:,11);
+% Alpha_vec = allTables(1).data(:,1);
+% plot(Alpha_vec,CN_beta);
 
 % =========================================================================
 function v = getval(x)

@@ -1,4 +1,4 @@
-function [obj, output] = objective2(X, model, base_geom, settings)
+function [obj, output] = objective3(X, model, base_geom, settings)
     model.clear_mem();
     % codes for which constraint type to use
     OVER = 1; 
@@ -65,23 +65,12 @@ function [obj, output] = objective2(X, model, base_geom, settings)
     cost = model.COST;
 
     %% STEP 4: Build vector of constraints
-    
-    % output = compute_missions_res(output, readMissionStruct("OPM_Air2Air_700nm"), perf, settings, "Air2Air");
 
-    % x0 = [ft2m(30000), 0.7];
-    % 
-    % perf.model.geom = setLoadout(geom, ["AIM-9X" "AIM-120" "AIM-120" "AIM-120" "AIM-120" "AIM-120" "AIM-120" "AIM-9X"]);
-    % range_air2air = estimate_max_range(perf, 1, x0_override=x0);    
-    % output = add_const(output, m2nm(range_air2air), 1600, OVER, "800nm Radius (Air2Air)");
-    % 
-    % perf.model.geom = setLoadout(geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
-    % range_air2air = estimate_max_range(perf, 1, x0_override=x0);    
-    % output = add_const(output, m2nm(range_air2air), 1600, OVER, "800nm Radius (Air2Gnd)");
-
+    perf.clear_data();
     [W_final, W_empty] = eval_air2air(perf, 800, 2); % 2 minutes of combat
     output = add_const(output, W_final, W_empty, OVER, "800nm Radius (Air2Air)");
-    [W_final, W_empty] = eval_air2gnd(perf, 800, 50); % 50nm dash
-    output = add_const(output, W_final, W_empty, OVER, "800nm Radius (Air2Gnd)");
+    % [W_final, W_empty] = eval_air2gnd(perf, 800, 50); % 50nm dash
+    % output = add_const(output, W_final, W_empty, OVER, "800nm Radius (Air2Gnd)");
 
     try
         [v_land, glide_angle, ~] = compute_landing_speed(perf, 1); % landing at full weight
@@ -89,31 +78,25 @@ function [obj, output] = objective2(X, model, base_geom, settings)
         disp("break")
     end
         % could constrain glide_angle
+    perf.clear_data();
     output = add_const(output, ms2kt(v_land), 145, UNDER, "145kt Landing Speed");
 
-    % if m2nm(range) < 1700
-    %     % Don't even bother with the more advanced mission sims
-    %     output = add_const(output, 1, 1, OVER, "Air2Gnd (IGNORED)");
-    %     output = add_const(output, 1, 1, OVER, "Air2Air (IGNORED)");
-    % else
-    %     output = compute_missions_res(output, readMissionStruct("OPM_Air2Air_700nm"), perf, settings, "Air2Air");
-    %     output = compute_missions_res(output, readMissionStruct("OPM_Air2Gnd_700nm"), perf, settings, "Air2Gnd");
-    % end
-
-    max_mach_30 = compute_max_mach_at_h(perf, 0.5, ft2m(30000));
+    max_mach_30 = compute_max_mach_at_h(perf, 0.5, ft2m(30000)); perf.clear_data();
     output = add_const(output, max_mach_30, 1.6, OVER, "M1.6 at 30kf");
 
-    max_mach_0 = compute_max_mach_at_h(perf, 0.5, 0);
+    max_mach_0 = compute_max_mach_at_h(perf, 0.5, 0); perf.clear_data();
     output = add_const(output, max_mach_0, 0.8, OVER, "M0.8 at Sealevel");
 
     output = add_const(output, m2ft(geom.wing.span.v), 60, UNDER, "60ft Unfolded Limit");
 
-    % then max mach for wing dimensions
+    output = add_const(output, perf.model.COST, 90, UNDER, "90mil Max Cost"); perf.clear_data();
+
 
     %% STEP 5: Apply penalities and return obj
     R = 100;
 
-    obj = cost / 100 + R * max([0, output.g_vec]); % diving cost serves to normalize it closer to 1 
+    obj = geom.wing.area.v; % try to minimize
+    obj = obj / 10 + R * max([0, output.g_vec]); % diving cost serves to normalize it closer to 1 
     
     % fprintf("obj = %.5g | X = [%.3g %.3g %.3g %.3g]\n", obj, X(1), X(2), X(3), X(4))
 
@@ -147,26 +130,4 @@ end
     output.target = [output.target, target];
     output.g_names = [output.g_names, name];
     output.type = [output.type, type];
-end
-
-function output = compute_missions_res(output, mission, perf, settings, des)
-    % copying performance is a bit safer
-    temp_perf = perf; % the loadout being set transfer back out cause yay memory based variables
-    temp_perf.clear_data; temp_perf.model.clear_mem();
-
-    temp_calc = mission_calculator(temp_perf, settings); % loadout is applied internally
-    temp_calc.record_hist = false; % true for plotting
-    temp_calc.do_print = false;
-    temp_calc.build_map(); % assembles v, h, W map for key performance info
-
-    W_final = temp_calc.solve_mission(mission, 0, kt2ms(135), 1); % starts at 135 kt at full weight
-
-    if isnan(W_final) % it failed -> set a high penalty that forces mtow higher
-        output = add_const(output, perf.model.geom.weights.mtow.v, lb2N(120000), 1, des, weight=100); % manually large number
-    else
-        % everything is fine
-        output = add_const(output, W_final, weightRatio(0, temp_perf.model.geom), 1, des);
-    end
-
-    % temp_calc.plot_hist
 end

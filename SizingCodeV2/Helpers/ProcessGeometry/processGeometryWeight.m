@@ -25,9 +25,7 @@ function geom = processGeometryWeight(geom, settings)
             model = model_class(settings, geom);
             perf = performance_class(model);
 
-            output = RoskamWeightCalculator(geom, perf);
-
-            weight_comps = output; % set this to your list of components
+            weight_comps = RoskamWeightCalculator(geom, perf); % set this to your list of components
     end
 
     if isnan(WE)

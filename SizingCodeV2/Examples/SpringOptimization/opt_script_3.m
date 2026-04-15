@@ -5,10 +5,13 @@ build_kevin_cad % editing this geometry as it already holds to most constraints
 % INITIAL OBJECTS TO LOAD
 build_default_settings
 settings = readSettings();
+% 0.059408
 
 settings.WF_ratio = 0.6; % important override here
 
 geom = loadAircraft("kevin_cad", settings); % note that this included loading prop which is why it is disabled in the loop
+geom.prop.engine.v = "F110";
+geom = updateGeom(geom, settings, true);
 model = model_class(settings, geom);
 
 %% MISSIONS TO RUN
@@ -48,15 +51,21 @@ writeMissionStruct(Air2Gnd_700nm, "OPM_Air2Gnd_700nm",  ["AIM-9X" "Mk-83" "Mk-83
 
 % X0 = [lb2N(58000) 6.1 ft2m(49) 1.5]; xs = X0;
 
-X0 = [lb2N(59500) 7.0 16.8 1.6]; xs = X0;
+% X0 = [lb2N(59500) 7.0 16.8 1.6]; xs = X0;
 
-fun = @(X) objective2(X, model, geom, settings);
+% X0 = [lb2N(77709) 4.7 17.55 0.64]; xs = X0;
+% X0 = [3E5 4.7 17.55 0.64]; xs = X0;
+X0 = [lb2N(68400) 4.4 18.2 0.6]; xs = X0;
 
-% %% OPTIMIZE
+% X0 = [lb2N(64254) 6.58 18.27 0.82]; xs = X0;
+
+fun = @(X) objective3(X, model, geom, settings);
+
+%% OPTIMIZE
 % % Normalize X so fmincon sees O(1) variables
 % X_scale = abs(X0);
 % 
-% fun_norm = @(X_n) objective2(X_n .* X_scale, model, geom, settings);
+% fun_norm = @(X_n) objective3(X_n .* X_scale, model, geom, settings);
 % 
 % X0_n = X0 ./ X_scale;   % all ones at start
 % lb_n = [lb2N(30000), 1.5,  5, 0.1] ./ X_scale;
@@ -66,7 +75,7 @@ fun = @(X) objective2(X, model, geom, settings);
 %     'Algorithm',                'sqp',  ...
 %     'Display',                  'iter', ...
 %     'FiniteDifferenceStepSize', 1e-3,   ...  % 5% in normalized space = meaningful for all vars
-%     'StepTolerance',            1e-4,   ...
+%     'StepTolerance',            1e-5,   ...
 %     'FunctionTolerance',        1e-5,   ...
 %     'OptimalityTolerance',      1e-5,   ...
 %     'MaxFunctionEvaluations',   300);
@@ -76,19 +85,20 @@ fun = @(X) objective2(X, model, geom, settings);
 % xs   = xs_n .* X_scale;
 
 %% REPORT OUT
-[~, output] = objective2(xs, model, geom, settings);
+[~, output] = objective3(xs, model, geom, settings);
 
 [v_land, glide_angle, ~] = compute_landing_speed(output.perf, 1);
 
-fprintf("MTOW = %.0f lb. root = %.2f m. span = %.2f m. sweep = %.2f deg .Landing speed of %.4f kt (against the cosntraint of 145). Process took %.3f sec\n", N2lb(xs(1)), xs(2), xs(3), xs(4), ms2kt(v_land), toc)
+fprintf("MTOW = %.0f lb. root = %.2f m. span = %.2f m. tip = %.2f m. Landing speed of %.4f kt (against the cosntraint of 145). Process took %.3f sec\n", N2lb(xs(1)), xs(2), xs(3), xs(4), ms2kt(v_land), toc)
 
 output.perf.clear_data();
 fprintf("COST = %.2f mil\n", output.perf.model.COST)
+fprintf("Area = %.2f m2\n", output.geom.wing.area.v)
 
-displayAircraftGeom(output.geom)
+% displayAircraftGeom(output.geom)
 
-output.geom.name.v = "HellstingerV3";
-output.geom.id.v = "HellstingerV3";
+output.geom.name.v = "HellstingerV3_OPM";
+output.geom.id.v = "HellstingerV3_OPM";
 writeAircraftFile(output.geom)
 
 T = table();
@@ -110,7 +120,7 @@ disp(T);
 % sweep_1d(fun, xs, 2, linspace(4, 10, N));
 % sweep_1d(fun, xs, 3, linspace(10, 20, N));
 % sweep_1d(fun, xs, 4, linspace(0.5, 6, N));
-% 
+
 % drag_ribbon_plot(output.perf, 6000, 200, 0.5)
 
 function sweep_1d(fun, X0, idx, range)
@@ -169,6 +179,7 @@ function sweep_1d(fun, X0, idx, range)
         'Label', 'X_0', 'LabelVerticalAlignment', 'bottom', ...
         'HandleVisibility', 'off');
 
+        g_ylim = [-0.05, 0.05];
     ylim(g_ylim);
     xlim([range(1), range(end)]);
     ylabel('Constraint g   (g $\leq$ 0 feasible)');

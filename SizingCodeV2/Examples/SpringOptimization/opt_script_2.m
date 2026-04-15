@@ -23,7 +23,7 @@ Air2Air_700nm = { ...
     missionSeg("APPROACH", 'LOITER', 5, [NaN, NaN], [ft2m(10000), 0] ), ... % descend from 10kf to sealevel in 5 minutes
     missionSeg("LANDING", 'FIXED_WF', [0.98, 5])}; % basic landing/taxi
 
-writeMissionStruct(Air2Air_700nm, "OPM_Air2Air_700nm",  ["AIM-9X" "AIM-120" "AIM-120" "AIM-120" "AIM-120" "AIM-120" "AIM-120" "AIM-9X"]);
+writeMissionStruct(Air2Air_700nm, "OPM_Air2Air_700nm",  ["AIM-9X" "AIM-120" "AIM-120" "" "" "AIM-120" "AIM-120" "AIM-9X"]);
 
 Air2Gnd_700nm = { ...
     missionSeg("TAKEOFF", 'FIXED_WF', [0.98, 5]), ... % basic takeoff
@@ -82,6 +82,9 @@ fun = @(X) objective2(X, model, geom, settings);
 
 fprintf("MTOW = %.0f lb. root = %.2f m. span = %.2f m. sweep = %.2f deg .Landing speed of %.4f kt (against the cosntraint of 145). Process took %.3f sec\n", N2lb(xs(1)), xs(2), xs(3), xs(4), ms2kt(v_land), toc)
 
+output.perf.clear_data();
+fprintf("COST = %.2f mil\n", output.perf.model.COST)
+
 displayAircraftGeom(output.geom)
 
 output.geom.name.v = "HellstingerV3";
@@ -102,13 +105,13 @@ T.("Varible Values") = [N2lb(xs(1)), xs(2), xs(3), xs(4)]';
 
 disp(T);
 
-N = 20;
-sweep_1d(fun, xs, 1, linspace(lb2N(50000), lb2N(120000), N));
-sweep_1d(fun, xs, 2, linspace(4, 10, N));
-sweep_1d(fun, xs, 3, linspace(10, 20, N));
-sweep_1d(fun, xs, 4, linspace(0.5, 6, N));
-
-drag_ribbon_plot(output.perf, 6000, 200, 0.5)
+% N = 20;
+% sweep_1d(fun, xs, 1, linspace(lb2N(50000), lb2N(120000), N));
+% sweep_1d(fun, xs, 2, linspace(4, 10, N));
+% sweep_1d(fun, xs, 3, linspace(10, 20, N));
+% sweep_1d(fun, xs, 4, linspace(0.5, 6, N));
+% 
+% drag_ribbon_plot(output.perf, 6000, 200, 0.5)
 
 function sweep_1d(fun, X0, idx, range)
     [~, output_x0] = fun(X0);

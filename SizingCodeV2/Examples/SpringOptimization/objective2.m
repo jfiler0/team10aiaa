@@ -78,9 +78,9 @@ function [obj, output] = objective2(X, model, base_geom, settings)
     % range_air2air = estimate_max_range(perf, 1, x0_override=x0);    
     % output = add_const(output, m2nm(range_air2air), 1600, OVER, "800nm Radius (Air2Gnd)");
 
-    [W_final, W_empty] = eval_air2air(perf, 800);
+    [W_final, W_empty] = eval_air2air(perf, 800, 2); % 2 minutes of combat
     output = add_const(output, W_final, W_empty, OVER, "800nm Radius (Air2Air)");
-    [W_final, W_empty] = eval_air2gnd(perf, 800);
+    [W_final, W_empty] = eval_air2gnd(perf, 800, 50); % 50nm dash
     output = add_const(output, W_final, W_empty, OVER, "800nm Radius (Air2Gnd)");
 
     try

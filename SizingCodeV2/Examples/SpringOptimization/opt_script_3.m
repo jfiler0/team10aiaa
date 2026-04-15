@@ -95,7 +95,7 @@ output.perf.clear_data();
 fprintf("COST = %.2f mil\n", output.perf.model.COST)
 fprintf("Area = %.2f m2\n", output.geom.wing.area.v)
 
-displayAircraftGeom(output.geom)
+% displayAircraftGeom(output.geom)
 
 output.geom.name.v = "HellstingerV3_OPM";
 output.geom.id.v = "HellstingerV3_OPM";
@@ -115,11 +115,11 @@ T.("Varible Values") = [N2lb(xs(1)), xs(2), xs(3), xs(4)]';
 
 disp(T);
 
-N = 20;
-sweep_1d(fun, xs, 1, linspace(lb2N(50000), lb2N(120000), N));
-sweep_1d(fun, xs, 2, linspace(4, 10, N));
-sweep_1d(fun, xs, 3, linspace(10, 20, N));
-sweep_1d(fun, xs, 4, linspace(0.5, 6, N));
+% N = 20;
+% sweep_1d(fun, xs, 1, linspace(lb2N(50000), lb2N(120000), N));
+% sweep_1d(fun, xs, 2, linspace(4, 10, N));
+% sweep_1d(fun, xs, 3, linspace(10, 20, N));
+% sweep_1d(fun, xs, 4, linspace(0.5, 6, N));
 
 % drag_ribbon_plot(output.perf, 6000, 200, 0.5)
 

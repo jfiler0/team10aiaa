@@ -1,7 +1,9 @@
 matlabSetup
 settings = readSettings();
 
-file_name = "HellstingerV3";
+settings.WF_ratio = 0.6;
+
+file_name = "HellstingerV3_OPM";
 geom = readAircraftFile(file_name);
 geom = updateGeom(geom, settings, true); % true -> update prop
 model = model_class(settings, geom);
@@ -19,31 +21,31 @@ h_vec = linspace(0, ft2m(80000), N);
 [M, H] = meshgrid(M_vec, h_vec);
 
 
-figure(Name="Max Mach");
-hold on
-plot_mach_contour(perf, loadout_clean, 1, 0.5, M, H, 'r-'); % clean - ab
-plot_mach_contour(perf, loadout_air2air, 1, 0.5, M, H, 'g-'); % air2air - ab
-plot_mach_contour(perf, loadout_air2gnd, 1, 0.5, M, H, 'b-'); % air2gnd - ab
-plot_mach_contour(perf, loadout_clean, 0.9, 0.5, M, H, 'r--'); % clean - mil
-plot_mach_contour(perf, loadout_air2air, 0.9, 0.5, M, H, 'g--'); % air2air - mil
-plot_mach_contour(perf, loadout_air2gnd, 0.9, 0.5, M, H, 'b--'); % air2gnd - mil
-
-h1 = plot(NaN, NaN, 'r-',  'LineWidth', 1.5);
-h2 = plot(NaN, NaN, 'g-',  'LineWidth', 1.5);
-h3 = plot(NaN, NaN, 'b-',  'LineWidth', 1.5);
-
-h4 = plot(NaN, NaN, 'k-',  'LineWidth', 1.5);   % solid meaning
-h5 = plot(NaN, NaN, 'k--', 'LineWidth', 1.5);   % dashed meaning
-
-legend([h1 h2 h3 h4 h5], ...
-    {'Clean', 'Air-to-Air', 'Air-to-Ground', ...
-     'Afterburner', 'Military Power'}, ...
-    'Location','eastoutside', 'FontSize',12);
-
-xlabel('Mach Number'); xlim([0 max(M_vec)])
-ylabel('Altitude (kft)');
-title('Max Mach Contours')
-grid on;
+% figure(Name="Max Mach");
+% hold on
+% plot_mach_contour(perf, loadout_clean, 1, 0.5, M, H, 'r-'); % clean - ab
+% plot_mach_contour(perf, loadout_air2air, 1, 0.5, M, H, 'g-'); % air2air - ab
+% plot_mach_contour(perf, loadout_air2gnd, 1, 0.5, M, H, 'b-'); % air2gnd - ab
+% plot_mach_contour(perf, loadout_clean, 0.9, 0.5, M, H, 'r--'); % clean - mil
+% plot_mach_contour(perf, loadout_air2air, 0.9, 0.5, M, H, 'g--'); % air2air - mil
+% plot_mach_contour(perf, loadout_air2gnd, 0.9, 0.5, M, H, 'b--'); % air2gnd - mil
+% 
+% h1 = plot(NaN, NaN, 'r-',  'LineWidth', 1.5);
+% h2 = plot(NaN, NaN, 'g-',  'LineWidth', 1.5);
+% h3 = plot(NaN, NaN, 'b-',  'LineWidth', 1.5);
+% 
+% h4 = plot(NaN, NaN, 'k-',  'LineWidth', 1.5);   % solid meaning
+% h5 = plot(NaN, NaN, 'k--', 'LineWidth', 1.5);   % dashed meaning
+% 
+% legend([h1 h2 h3 h4 h5], ...
+%     {'Clean', 'Air-to-Air', 'Air-to-Ground', ...
+%      'Afterburner', 'Military Power'}, ...
+%     'Location','eastoutside', 'FontSize',12);
+% 
+% xlabel('Mach Number'); xlim([0 max(M_vec)])
+% ylabel('Altitude (kft)');
+% title('Max Mach Contours')
+% grid on;
 
 function plot_mach_contour(perf, loadout, T, W, M, H, line_spec)
     % T -> throttle
@@ -67,33 +69,34 @@ function plot_mach_contour(perf, loadout, T, W, M, H, line_spec)
     contour(M, m2ft(H)/1000, EP_grid, [0 0], line_spec, 'LineWidth', 1.5, 'HandleVisibility','off');
 end
 
-close all;
+% close all;
 
 %% RANGE VS COMBAT TIME
-N = 50;
-time_vec = linspace(0, 15, N) * 60; % minutes to seconds
+N = 5;
+time_vec = linspace(0, 30, N); % minutes
 
 range_air2air = zeros(size(time_vec));
 range_air2gnd = zeros(size(time_vec));
 
+perf.clear_data();
 
-get_mission_range(@eval_air2air, 2, perf)
+for i = 1:length(time_vec)
+    range_air2air(i) = get_mission_range(@eval_air2air, time_vec(i), perf);
+end
 
-[W_final, empty_weight] = eval_air2air(perf, 700, 0);
-W_final - empty_weight
-
-% for i = 1:length(time_vec)
-%     range_air2air(i) = get_mission_range(@eval_air2air, time_vec(i), perf);
-%     range_air2gnd(i) = get_mission_range(@eval_air2gnd, time_vec(i), perf);
-% end
-% 
-% range_air2air
+plot(time_vec, range_air2air)
+xlabel("Combat Time [min]")
+ylabel("Combat Radius [nm]")
 
 function range_nm = get_mission_range(fun, time_min, perf)
-    range_nm = fzero(@(R) eval_res(fun, time_min, R, perf), 100);
+    try
+        range_nm = fzero(@(R) eval_res(perf, fun, R, time_min), 100);
+    catch exception
+        range_nm = NaN;
+    end
 
-    function res = eval_res(fun, time_min, range, perf)
-        [W_final, empty_weight] = fun(perf, range, time_min);
+    function res = eval_res(perf, fun, range_nm, time_min)
+        [W_final, empty_weight] = fun(perf, range_nm, time_min);
         res = W_final-empty_weight;
     end
 end

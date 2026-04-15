@@ -66,6 +66,7 @@ function [obj, output] = objective3(X, model, base_geom, settings)
 
     %% STEP 4: Build vector of constraints
 
+    perf.clear_data();
     [W_final, W_empty] = eval_air2air(perf, 800, 2); % 2 minutes of combat
     output = add_const(output, W_final, W_empty, OVER, "800nm Radius (Air2Air)");
     % [W_final, W_empty] = eval_air2gnd(perf, 800, 50); % 50nm dash

@@ -1,7 +1,8 @@
 matlabSetup
 settings = readSettings();
 
-% settings.WF_ratio = 0.45;
+% TODO
+%   Check glide angle
 
 file_name = "HellstingerV3";
 geom = readAircraftFile(file_name);

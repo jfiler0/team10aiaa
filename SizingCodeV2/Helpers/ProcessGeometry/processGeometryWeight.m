@@ -32,10 +32,10 @@ function geom = processGeometryWeight(geom, settings)
         fn = fieldnames(weight_comps);  % get all field names
         total = 0;
         for i = 1:numel(fn)
-            weight_comps.(fn{i}) = weight_comps.(fn{i}) * settings.WE_scaler;
+            weight_comps.(fn{i}) = weight_comps.(fn{i});
             total = total + weight_comps.(fn{i});
         end
-        WE = total;
+        WE = total * settings.WE_scaler;
     end
 
     % Usally, we enter derived equations as a string. This can be fixed later. Easier to just used derived override here

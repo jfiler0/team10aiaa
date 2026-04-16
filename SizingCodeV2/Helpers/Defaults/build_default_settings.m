@@ -32,8 +32,8 @@ set.COST_scaler = 1;
 set.TA_scaler = 0.9;
 set.TSFC_scaler = 1.7; % 1.3
 
-set.WE_scaler = 1.0568*0.8282; % scales all components and the final empty weight
-set.WF_ratio =  0.4555*0.9206; % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
+set.WE_scaler = 1; % scales all components and the final empty weight 0.8752
+set.WF_ratio =  0.432; % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
 
 set.codes = build_default_codes();
 

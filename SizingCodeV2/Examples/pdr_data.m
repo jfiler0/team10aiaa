@@ -22,6 +22,12 @@ fprintf("LANDING | RFP REQ WEIGHT (%.0f lb) | vel = %.3f kt < 145, glide_angle =
 [v_land, glide_angle, throttle] = compute_landing_speed(perf, 0); perf.clear_data(); % landing at empty weight
 fprintf("LANDING | EMPTY WEIGHT (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.3f perc\n", N2lb(weightRatio(0, perf.model.geom)), ms2kt(v_land), glide_angle, throttle)
 
+fprintf("Estimate of external storage max weight: %.3f lb\n", N2lb(geom.weights.mtow.v - geom.weights.empty.v - geom.weights.max_fuel_weight.v))
+
+fprintf("Max internal fuel weight: %.3f lb\n", N2lb(geom.weights.max_fuel_weight.v))
+
+fprintf("Total Cost: %.3f mil\n", model.COST);
+
 %% MISSIONS
 
 geom = setLoadout(geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
@@ -112,3 +118,11 @@ perf.model.geom = setLoadout(geom, ["" "" "" "" "" "" "" ""]);
 
 fprintf("Max combat alt (500ft/min) at empty weight + no stores: %.2f kft\n", m2ft(h_max)/1000)
 
+%% RATE OF CLIMB
+
+perf.clear_data();
+geom.prop.num_engine.v = 1;
+geom = updateGeom(geom, settings);
+model.geom = geom;
+model.cond = generateCondition(geom, 0, 0.5, 1, 0.5, 1);
+fprintf("SEROC = %.2ft kft/min", m2ft(perf.ExcessPower)*60/1000)

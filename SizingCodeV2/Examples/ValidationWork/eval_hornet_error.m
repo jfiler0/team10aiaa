@@ -11,8 +11,7 @@ geom =  setLoadout(geom, ["AIM-9X" "" "" "" "" "" "" "AIM-9X"]);
 model = model_class(settings, geom);
 perf = performance_class(model);
 
-WE = weightRatio(0, geom);
-data = res_cal(data, N2lb(WE), 30564, "Empty Weight");
+data = res_cal(data, N2lb(geom.weights.empty.v), 31855, "Empty Weight");
 
 WF_internal = geom.weights.max_fuel_weight.v;
 data = res_cal(data, N2lb(WF_internal), 14850, "Internal Fuel Weight");
@@ -29,35 +28,33 @@ perf.model.clear_mem(); perf.clear_data();
 [~, max_mach] = compute_max_mach(perf, 0.5);
 data = res_cal(data, max_mach, 1.65, "Max Mach");
 
-perf.clear_data();
-[h_opt, ~] = compute_combat_ceiling(perf, 0.5);
-data = res_cal(data, m2ft(h_opt), 46600, "Max Combat Celing");
+% perf.clear_data();
+% [h_opt, ~] = compute_combat_ceiling(perf, 0.5);
+% data = res_cal(data, m2ft(h_opt), 46600, "Max Combat Celing");
 
-perf.model.clear_mem(); perf.clear_data();
-perf.model.cond = generateCondition(geom, 0, 0.5, 1, 0.5, 0.9); 
-data = res_cal(data, m2ft(perf.ExcessPower)*60/1000, 12, "Military Sealevel ROC");
-
-perf.model.clear_mem(); perf.clear_data();
-perf.model.cond = generateCondition(geom, 0, 0.5, 1, 0.5, 1); 
-data = res_cal(data, m2ft(perf.ExcessPower)*60/1000, 44, "Afterburning Sealevel ROC");
+% perf.model.clear_mem(); perf.clear_data();
+% perf.model.cond = generateCondition(geom, 0, 0.5, 1, 0.5, 0.9); 
+% data = res_cal(data, m2ft(perf.ExcessPower)*60/1000, 12, "Military Sealevel ROC");
+% 
+% perf.model.clear_mem(); perf.clear_data();
+% perf.model.cond = generateCondition(geom, 0, 0.5, 1, 0.5, 1); 
+% data = res_cal(data, m2ft(perf.ExcessPower)*60/1000, 44, "Afterburning Sealevel ROC");
 
 perf.model.clear_mem(); perf.clear_data();
 perf.model.geom = setLoadout(perf.model.geom, ["AIM-9X" "" "" "FPU-12" "FPU-12" "FPU-12" "" "AIM-9X"]);
 [max_range_est, h_opt, ~, v_opt] = estimate_max_range(perf, 1);
 
-drag_ribbon_plot(perf,0, 50, 0.5)
-
 data = res_cal(data, m2nm(max_range_est), 1654, "Ferry Max Range");
-data = res_cal(data, m2ft(h_opt)/1000, 42, "Ferry Cruise Best Alt");
+% data = res_cal(data, m2ft(h_opt)/1000, 42, "Ferry Cruise Best Alt");
 data = res_cal(data, ms2kt(v_opt), 484, "Ferry Cruise Best Speed");
 
 %% Full Mission Simulations
-data = compute_missions_res(data, readMissionStruct("Hornet_Hi_Hi_Hi"), perf, settings, "Hi-Hi-Hi Mission End Weight");
-data = compute_missions_res(data, readMissionStruct("Hornet_Hi_Hi_Hi_AIM120"), perf, settings, "Hi-Hi-Hi Mission End Weight (2 Aim-120s)");
-data = compute_missions_res(data, readMissionStruct("Hornet_Hi_Hi_Hi_1TANK"), perf, settings, "Hi-Hi-Hi Mission End Weight (1 tank)");
-data = compute_missions_res(data, readMissionStruct("Hornet_Hi_Hi_Hi_3TANK"), perf, settings, "Hi-Hi-Hi Mission End Weight (3 tank)");
-data = compute_missions_res(data, readMissionStruct("Hornet_Intercept"), perf, settings, "Intercept Mission End Weight");
-data = compute_missions_res(data, readMissionStruct("Hornet_Intercept_3TANK"), perf, settings, "Intercept Mission End Weight (3 Tank)");
+% data = compute_missions_res(data, readMissionStruct("Hornet_Hi_Hi_Hi"), perf, settings, "Hi-Hi-Hi Mission End Weight");
+% data = compute_missions_res(data, readMissionStruct("Hornet_Hi_Hi_Hi_AIM120"), perf, settings, "Hi-Hi-Hi Mission End Weight (2 Aim-120s)");
+% data = compute_missions_res(data, readMissionStruct("Hornet_Hi_Hi_Hi_1TANK"), perf, settings, "Hi-Hi-Hi Mission End Weight (1 tank)");
+% data = compute_missions_res(data, readMissionStruct("Hornet_Hi_Hi_Hi_3TANK"), perf, settings, "Hi-Hi-Hi Mission End Weight (3 tank)");
+% data = compute_missions_res(data, readMissionStruct("Hornet_Intercept"), perf, settings, "Intercept Mission End Weight");
+% data = compute_missions_res(data, readMissionStruct("Hornet_Intercept_3TANK"), perf, settings, "Intercept Mission End Weight (3 Tank)");
 
 
 end

@@ -436,7 +436,8 @@ classdef model_class < handle
             function value = compute_SpotFactor_value(obj, code)
                 switch code
                     case obj.settings.codes.SpotFactor_BASIC
-                        value = obj.geom.wing.fold_area.v / obj.settings.spot_factor_reference;
+                        proj_area = obj.geom.wing.fold_area.v + obj.geom.fuselage.area.v;
+                        value = proj_area / obj.settings.spot_factor_reference;
 
                     otherwise
                         error("Code '%i' has no recognized definition for the SpotFactor model.", code)

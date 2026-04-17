@@ -57,5 +57,4 @@ perf.model.clear_mem(); perf.clear_data();
 
 [max_range_est, h_opt, M_opt, v_opt] = estimate_max_range(perf, 1);
 fprintf( "Found approximate F18 range: 1654 nm. Estimate of best total range: %.0f nm (h=%.2f kf , M=%.2f, v=%.0f kt)\n", m2nm(max_range_est), m2ft(h_opt)/1000, M_opt, ms2kt(v_opt))
-
-% mission_calculator.plot_hist
+fprintf("Spot Factor = %.2f (folded wing area = %.2f ft2)\n", model.SpotFactor, m2ft(m2ft(geom.wing.fold_area.v)));% mission_calculator.plot_hist

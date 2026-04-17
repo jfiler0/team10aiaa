@@ -11,19 +11,20 @@ geom = setLoadout(geom, ["" "" "" "" "" "" "" ""]);
 model = model_class(settings, geom);
 perf = performance_class(model);
 
-displayAircraftGeom(geom)
-
 %% LANDING
 
-[v_land, glide_angle, throttle] = compute_landing_speed(perf, geom.weights.mtow.v); perf.clear_data(); % landing at mtow
-fprintf("LANDING | MTOW (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.3f perc\n", N2lb(geom.weights.mtow.v), ms2kt(v_land), glide_angle, throttle)
+[v_land, glide_angle, throttle, descent_rate] = compute_landing_speed(perf, geom.weights.mtow.v); perf.clear_data(); % landing at mtow
+fprintf("LANDING | MTOW (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.3f perc, descent rate = %.2f ft/s\n", N2lb(geom.weights.mtow.v), ms2kt(v_land), glide_angle, throttle, m2ft(descent_rate))
+fprintf("       CMEA = %.2f kt\n", ms2kt(compute_cmea(perf, 1)) );
 
 rfp_landing_weight = compute_rfp_landing_weight(perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "" "" ""]); % half stores dropped
-[v_land, glide_angle, throttle] = compute_landing_speed(perf, rfp_landing_weight); perf.clear_data(); % landing at rfp req
-fprintf("LANDING | RFP REQ WEIGHT (%.0f lb) | vel = %.3f kt < 145, glide_angle = %.3f deg , throttle setting = %.3f perc\n", N2lb(rfp_landing_weight), ms2kt(v_land), glide_angle, throttle)
+[v_land, glide_angle, throttle, descent_rate] = compute_landing_speed(perf, rfp_landing_weight); perf.clear_data(); % landing at rfp req
+fprintf("LANDING | RFP REQ WEIGHT (%.0f lb) | vel = %.3f kt < 145, glide_angle = %.3f deg , throttle setting = %.3f perc, descent rate = %.2f ft/s\n", N2lb(rfp_landing_weight), ms2kt(v_land), glide_angle, throttle, m2ft(descent_rate))
+fprintf("       CMEA = %.2f kt\n", ms2kt(compute_cmea(perf, 1)) );
 
-[v_land, glide_angle, throttle] = compute_landing_speed(perf, 0); perf.clear_data(); % landing at empty weight
-fprintf("LANDING | EMPTY WEIGHT (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.3f perc\n", N2lb(weightRatio(0, perf.model.geom)), ms2kt(v_land), glide_angle, throttle)
+[v_land, glide_angle, throttle, descent_rate] = compute_landing_speed(perf, 0); perf.clear_data(); % landing at empty weight
+fprintf("LANDING | EMPTY WEIGHT (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.3f perc, descent rate = %.2f ft/s\n", N2lb(weightRatio(0, perf.model.geom)), ms2kt(v_land), glide_angle, throttle, m2ft(descent_rate))
+fprintf("       CMEA = %.2f kt\n", ms2kt(compute_cmea(perf, 1)) );
 
 fprintf("Estimate of external storage max weight: %.3f lb\n", N2lb(geom.weights.mtow.v - geom.weights.empty.v - geom.weights.max_fuel_weight.v))
 
@@ -128,4 +129,12 @@ geom.prop.num_engine.v = 1;
 geom = updateGeom(geom, settings);
 model.geom = geom;
 model.cond = generateCondition(geom, 0, 0.5, 1, 0.5, 1);
-fprintf("SEROC = %.2ft kft/min", m2ft(perf.ExcessPower)*60/1000)
+fprintf("SEROC = %.2ft kft/min\n", m2ft(perf.ExcessPower)*60/1000)
+geom.prop.num_engine.v = 2; % back to normal
+geom = updateGeom(geom, settings);
+model.geom = geom;
+perf.clear_data();
+
+%% Folding
+fprintf("Folded span = %.2f ft\n", m2ft(geom.wing.fold_span.v));
+fprintf("Spot Factor = %.2f ft (folded wing area = %.2f ft2)\n", model.SpotFactor, m2ft(m2ft(geom.wing.fold_area.v)));

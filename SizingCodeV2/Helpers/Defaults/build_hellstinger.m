@@ -44,8 +44,9 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
 % ELEVATOR DEFENITION
     root_chord = 2.25;
     tip_chord = 0.75;
-    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord - 3.5, 0, tc=0.04);
-    sec2 = new_section(tip_chord, plane.fuselage.length.v - tip_chord - 3.5, 2, tc=0.03);
+    semi_span = 2;
+    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, 0, tc=0.04, offset=[0 0.4 -0.1]);
+    sec2 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 2, tc=0.03);
     
     % Flap
     sec1 = btw_section(sec0, sec2, 0.1, flap_length=1, control_name="Elevator"); % Full Flying
@@ -56,7 +57,7 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
 % VTAIL DEFENITION
     root_chord = 2.5;
     tip_chord = 1;
-    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, 0, tc=0.04, dihedral=80);
+    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, 0, tc=0.04, dihedral=80, offset=[0 0.4 0]);
     sec3 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 2.25, tc=0.03, dihedral=80);
     
     % Flap

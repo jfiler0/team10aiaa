@@ -11,6 +11,8 @@ geom = setLoadout(geom, ["" "" "" "" "" "" "" ""]);
 model = model_class(settings, geom);
 perf = performance_class(model);
 
+displayAircraftGeom(geom)
+
 %% LANDING
 
 [v_land, glide_angle, throttle] = compute_landing_speed(perf, geom.weights.mtow.v); perf.clear_data(); % landing at mtow

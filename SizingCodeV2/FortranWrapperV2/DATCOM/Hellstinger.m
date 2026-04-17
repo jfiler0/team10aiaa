@@ -482,14 +482,15 @@ fprintf('  dε/dα = %.4f (clamped)\n', depsda);
 CMW = CM_ac_w * (AR_w + 2*cos(Lambda_c4)) / (AR_w + 4*cos(Lambda_c4));
 
 % ---- Scissor curve functions --------------------------------------------
-xcg_ac_norm = linspace(-0.35, 0.35, 400);
 
+xcg_ac_norm_cntrl = linspace(-0.35,0,400);
+xcg_ac_norm_stab = linspace(0,0.35,400);
 % Stability limit (positive slope)
 K_stab      = CLalpha_H * eta_H * (1 - depsda) * (l_h / cbar_ft);
 SHSW_stab   = @(x) CLalpha_wb*180/pi .* x ./ K_stab;
 
 % Control limit (negative slope)
-inc = -0.065;
+inc = -0.09;
 eps0      = 2 * model.cond.CL.v / (pi * model.geom.wing.AR.v);
 CLH_max   = CLalpha_H * (-eps0-inc);
 K_ctrl    = CLH_max * eta_H * (l_h / cbar_ft);
@@ -517,18 +518,14 @@ fprintf('  SH/SW design = %.4f   SH/SW actual = %.4f\n', SH_design, SH_SW_actual
 figure('Name','Hellstinger Scissor Plot','Position',[50 50 700 620]);
 hold on; grid on; box on;
 
-plot(xcg_ac_norm, SHSW_stab(xcg_ac_norm), 'r-',  'LineWidth', 2.5, 'DisplayName', 'Stability Limit');
-plot(xcg_ac_norm, SHSW_ctrl(xcg_ac_norm), 'g-',  'LineWidth', 2.5, 'DisplayName', 'Control Limit');
+plot(xcg_ac_norm_stab, SHSW_stab(xcg_ac_norm_stab), 'r-',  'LineWidth', 2.5, 'DisplayName', 'Stability Limit');
+plot(xcg_ac_norm_cntrl, SHSW_ctrl(xcg_ac_norm_cntrl), 'g-',  'LineWidth', 2.5, 'DisplayName', 'Control Limit');
 
 yline(SH_SW_actual, 'b--', 'LineWidth', 1.5, ...
       'DisplayName', sprintf('S_H/S_W actual = %.3f', SH_SW_actual));
 
-x_plot = linspace(min(x_stab_cross,x_ctrl_cross), max(x_stab_cross,x_ctrl_cross), 100);
-plot(x_plot, SH_design*ones(size(x_plot)), 'b-', 'LineWidth', 2, ...
-     'DisplayName', sprintf('S_H/S_W design = %.3f', SH_design));
-plot(x_stab_cross, SH_design, 'rs', 'MarkerFaceColor','r','MarkerSize',9,'HandleVisibility','off');
 plot(x_ctrl_cross, SH_design, 'gs', 'MarkerFaceColor','g','MarkerSize',9,'HandleVisibility','off');
-
+plot(0, (SHSW_stab(0) + SHSW_ctrl(0))/2, 'ks', 'MarkerFaceColor','k','MarkerSize',12,'HandleVisibility','off');
 xline(Xcg_full_norm,  'Color',[0.35 0.35 0.35],'LineWidth',2.5,'HandleVisibility','off');
 xline(Xcg_empty_norm, 'Color',[0.35 0.35 0.35],'LineWidth',2.5,'HandleVisibility','off');
 yl = ylim;
@@ -542,19 +539,82 @@ xlim([-0.35, 0.35]); ylim([-0.8, 0.8]);
 xlabel('x_{cg} - x_{ac} normalized','Interpreter','tex','FontSize',12);
 ylabel('S_H/S_W','Interpreter','tex','FontSize',12);
 title('Hellstinger Longitudinal Stability','FontSize',13);
-legend('Location','northwest','FontSize',10);
 text(-0.33, SH_design+0.07, sprintf('  S_H/S_W = %.3f', SH_design), ...
      'FontSize',11,'Color','b','FontWeight','bold');
+
+m_stab = CLalpha_wb*180/pi / K_stab;
+
+x_anchor = x_aft;        % right CG limit (already defined)
+y_anchor = SH_design;    % horizontal blue line value
+
+x_trunc = linspace(0, max(xcg_ac_norm_stab), 200);
+y_trunc = m_stab * (x_trunc - x_anchor) + y_anchor;
+
+plot(x_trunc, y_trunc, 'r--', 'LineWidth', 2, ...
+    'DisplayName','Stability (truncated)');
+x_blue = linspace(x_ctrl_cross, x_anchor, 100);
+plot(x_blue, SH_design*ones(size(x_blue)), 'b-', 'LineWidth', 2, ...
+    'DisplayName', sprintf('S_H/S_W design = %.3f', SH_design));
+
+plot(x_anchor, y_anchor, 'rs', ...
+    'MarkerFaceColor','r','MarkerSize',9,'HandleVisibility','off');
+
+% Intersection of stability line with horizontal design line
+x_int = SH_design / m_stab;
+
+% Static margin relative to aft CG
+static_margin = x_int - x_aft;
+
+plot(x_int, SH_design, 'ko', 'MarkerFaceColor','k')
+
+y_arrow = SH_design;   % keep it on the design line
+
+
+dx = (x_int - x_aft);
+
+% Draw thick arrow
+quiver(x_aft, y_arrow, ...
+       (x_int - x_aft), 0, ...   % horizontal arrow
+       0, ...                    % no auto scaling
+       'k', 'LineWidth', 3, 'MaxHeadSize', 4);
+
+% Arrow from intersection → aft CG (reverse direction)
+quiver(x_int, y_arrow, -dx, 0, 0, ...
+    'k','LineWidth',3,'MaxHeadSize',4,'HandleVisibility','off');
+
+% --- Text label ---
+x_mid = (x_aft + x_int)/2;
+
+text(0.1, y_arrow + 0.2, ...
+    sprintf('STATIC MARGIN = %.3f', static_margin), ...
+    'HorizontalAlignment','center', ...
+    'FontSize',18, ...
+    'FontWeight','bold', ...
+    'Color','k');
+legend('Location','northwest','FontSize',10);
 
 %% CN_beta vs. alpha generation
 CN_beta = 180/pi *-1*[-0.0007911 -0.0007198 -0.0006842 -0.0007198 -0.0007882 -0.000919];
 Alpha_vec = [-4 -2 0 2 4 8];
-figure; 
-plot(Alpha_vec,CN_beta);
-xlabel('alpha (deg)')
-ylabel('Cn_beta (/deg)')
-title('Cn_Beta vs. alpha');
 
+figure;
+plot(Alpha_vec, CN_beta, 'b-o', 'LineWidth', 1.5);
+xlabel('alpha (deg)')
+ylabel('Cn\_beta (/deg)')
+title('Cn\_Beta vs. alpha');
+
+% Set y-axis lower limit to -0.01
+ylim([-0.01, max(ylim)]);
+
+% Horizontal line at y = 0 — Level 1 flying qualities requirement
+yline(0, 'r--', 'LineWidth', 1.5, 'Label', 'Level 1 Flying Qualities Requirement', ...
+    'LabelHorizontalAlignment', 'left', 'LabelVerticalAlignment', 'bottom');
+
+% Horizontal line at y = 0.04 — Navy preferred yaw stability value
+yline(0.04, 'k--', 'LineWidth', 1.5, 'Label', 'Navy Preferred Yaw Stability value', ...
+    'LabelHorizontalAlignment', 'left', 'LabelVerticalAlignment', 'bottom');
+legend('Cn_beta');
+grid on;
 % =========================================================================
 function v = getval(x)
 if isstruct(x), v = x.v; else, v = double(x); end

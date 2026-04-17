@@ -43,10 +43,11 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
 
 % ELEVATOR DEFENITION
     root_chord = 2.25;
-    tip_chord = 0.75;
-    semi_span = 2;
-    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, 0, tc=0.04, offset=[0 0.4 -0.1]);
-    sec2 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 2, tc=0.03);
+    tip_chord = 1.2;
+    fus_rad = sqrt(plane.fuselage.max_area.v / pi);
+    lengthLE_stab = 1.65;
+    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, fus_rad, tc=0.04);
+    sec2 = new_section(tip_chord, plane.fuselage.length.v - root_chord + (lengthLE_stab*sin(pi/6)), fus_rad + lengthLE_stab*cos(pi/6), tc=0.03);
     
     % Flap
     sec1 = btw_section(sec0, sec2, 0.1, flap_length=1, control_name="Elevator"); % Full Flying
@@ -57,8 +58,8 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
 % VTAIL DEFENITION
     root_chord = 2.5;
     tip_chord = 1;
-    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, 0, tc=0.04, dihedral=80, offset=[0 0.4 0]);
-    sec3 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 2.25, tc=0.03, dihedral=80);
+    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, fus_rad/2, tc=0.04, dihedral=45);
+    sec3 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 2.25, tc=0.03, dihedral=45);
     
     % Flap
     sec1 = btw_section(sec0, sec3, 0.1, flap_length=0.15, control_name="Rudder"); % vtail

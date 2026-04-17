@@ -549,12 +549,25 @@ text(-0.33, SH_design+0.07, sprintf('  S_H/S_W = %.3f', SH_design), ...
 %% CN_beta vs. alpha generation
 CN_beta = 180/pi *-1*[-0.0007911 -0.0007198 -0.0006842 -0.0007198 -0.0007882 -0.000919];
 Alpha_vec = [-4 -2 0 2 4 8];
-figure; 
-plot(Alpha_vec,CN_beta);
-xlabel('alpha (deg)')
-ylabel('Cn_beta (/deg)')
-title('Cn_Beta vs. alpha');
 
+figure;
+plot(Alpha_vec, CN_beta, 'b-o', 'LineWidth', 1.5);
+xlabel('alpha (deg)')
+ylabel('Cn\_beta (/deg)')
+title('Cn\_Beta vs. alpha');
+
+% Set y-axis lower limit to -0.01
+ylim([-0.01, max(ylim)]);
+
+% Horizontal line at y = 0 — Level 1 flying qualities requirement
+yline(0, 'r--', 'LineWidth', 1.5, 'Label', 'Level 1 Flying Qualities Requirement', ...
+    'LabelHorizontalAlignment', 'left', 'LabelVerticalAlignment', 'bottom');
+
+% Horizontal line at y = 0.04 — Navy preferred yaw stability value
+yline(0.04, 'k--', 'LineWidth', 1.5, 'Label', 'Navy Preferred Yaw Stability value', ...
+    'LabelHorizontalAlignment', 'left', 'LabelVerticalAlignment', 'bottom');
+legend('Cn_beta');
+grid on;
 % =========================================================================
 function v = getval(x)
 if isstruct(x), v = x.v; else, v = double(x); end

@@ -11,9 +11,9 @@ function [W_final, empty_weight] = eval_air2gnd(perf, range_nm, dash_nm, loadout
     fuel_weight = weightRatio(1, geom) - empty_weight;
     
     fuel_weight = fuel_weight * 0.95; % TAKEOFF
-    fuel_weight = do_cruise(perf, empty_weight, fuel_weight, nm2m(range_nm)); % CURISE OUT
+    fuel_weight = do_cruise(perf, empty_weight, fuel_weight, nm2m(range_nm-dash_nm*0.5)); % CURISE OUT
     fuel_weight = do_combat(perf, empty_weight, fuel_weight, dash_nm); % COMBAT
-    fuel_weight = do_cruise(perf, empty_weight, fuel_weight, nm2m(range_nm)); % CURISE BACK
+    fuel_weight = do_cruise(perf, empty_weight, fuel_weight, nm2m(range_nm-dash_nm*0.5)); % CURISE BACK
     fuel_weight = do_loiter(perf, empty_weight, fuel_weight, 20 * 60); % LOITER
     fuel_weight = fuel_weight * 0.98; % LANDING
     

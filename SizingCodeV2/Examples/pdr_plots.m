@@ -73,8 +73,6 @@ function plot_mach_contour(perf, loadout, T, W, M, H, line_spec)
     contour(M, m2ft(H)/1000, EP_grid, [0 0], line_spec, 'LineWidth', 1.5, 'HandleVisibility','off');
 end
 
-close all;
-
 %% RANGE VS COMBAT TIME
 N = 5;
 time_vec = linspace(0, 8, N); % minutes

@@ -13,7 +13,7 @@ build_kevin_cad
 build_default_settings
 settings = readSettings();
 % geom = loadAircraft("kevin_cad", settings);
-geom = loadAircraft("0412_Optimization", settings);
+geom = loadAircraft("HellstingerV3_OPM", settings);
 
 model = model_class(settings, geom);
 perf = performance_class(model);
@@ -32,6 +32,9 @@ perf.model.CD0 % base: 0.0139
 
 perf.ExcessThrust
 % 0.0139    0.0139    0.0139 < e_osw
+
+displayAircraftGeom(geom)
+geom.wing.area
 
 % fprintf("Max Dynamic Pressure: %.4g kPa\n", compute_max_dynamic_pressure(perf, 1) / 1000 )
 % fprintf("Esimtated max range: %4g nm\n", m2nm(estimate_max_range(perf, 1)) )

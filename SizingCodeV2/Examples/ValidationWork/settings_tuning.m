@@ -6,15 +6,18 @@ function res = settings_tuning(X, print)
 % returns variable which is a measure of model error
 
 %% CHANGE THE SCALERS
+
 settings = readSettings();
 
-settings.TSFC_scaler = X(1);
-settings.CDp_scaler = X(2);
-
-settings.CDw_scaler  = X(3);
-settings.TA_scaler = X(4);
-% settings.WE_scaler = X(5); % scales all components and the final empty weight
-% settings.WF_ratio =  X(6); % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
+settings.CD0_scaler = X(1); % general scaler to parasite drag
+settings.CDi_scaler = X(2);
+settings.CDw_scaler = X(3); % general scaler to wave drag
+settings.CLa_scaler = X(4);
+settings.CDp_scaler = X(5);
+settings.TA_scaler = X(6);
+settings.TSFC_scaler = X(7); % 1.3
+settings.WE_scaler = X(8); % scales all components and the final empty weight 0.8752
+settings.WF_ratio =  X(9); % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
 
 %% BUILD MISSIONS - Hornet
 Hi_Hi_Hi = { ...
@@ -101,9 +104,9 @@ try
 
     data_corsair = eval_corsair_error(settings);
     res_corsair_tot = norm(rmmissing(data_corsair.res));
-catch
+catch Exception
     res = 1e6; % better than crashing
-    warning("Hit an error")
+    warning("Hit an error: %s", Exception.message);
     return
 end
 
@@ -145,8 +148,8 @@ if print
     fprintf("Total error for the corsair: %.2f percent \n", 100*res_corsair_tot )
 end
 
-% res = norm( rmmissing([data_hornet.res data_falcon.res data_tomact.res data_corsair.res]) );
+weighting = [3, 1, 0.5, 1]; % F18, F16, F14, A-7E
 
-res = norm( rmmissing([data_hornet.res]) );
+res = norm( weighting.*[res_hornet_tot, res_falcon_tot, res_tomcat_tot, res_corsair_tot]/norm(weighting) );
 
 end

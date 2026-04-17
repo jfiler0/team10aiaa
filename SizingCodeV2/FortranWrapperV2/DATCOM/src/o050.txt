@@ -25,30 +25,30 @@
 
    icase               =            3
    MACH NUMBER         =      0.50000
-   Sref                =     28.65000
-   c ref               =      4.05000
-   b ref               =     10.83000
+   Sref                =     51.52000
+   c ref               =      3.94000
+   b ref               =     18.20000
    HEIGHT ABOVE GROUND = 100000.00000
-   X-cg                =      9.31200
+   X-cg                =      9.75400
    Z-cg                =     -0.04600
    CL0                 =      0.00000
    Cm0                 =      0.00000
    Cdi(at alpha = 0)   =      0.00000
-   CL-alpha            =      2.53675
-   Cm-alpha            =      1.08215
-   Cm/CL               =      0.42659
-   Cdi/CL^2            =      0.16833
-   CL (at alpha = 5)   =      0.22137
-   Cdi(at alpha = 5)   =      0.00825
+   CL-alpha            =      5.08805
+   Cm-alpha            =      1.13104
+   Cm/CL               =      0.22229
+   Cdi/CL^2            =     -0.00047
+   CL (at alpha = 5)   =      0.44402
+   Cdi(at alpha = 5)   =     -0.00009
    Lift-curve slope of
    tail due to downwash
-   of wing             =      0.36352
-   CL-q                =      1.53968
-   CM-q                =     -2.24595
-   CL-delta [2 1]      =      0.56387
-   Cm-delta [2 1]      =     -0.56043
-   Cl-delta [2 1]      =     -0.09810
-   Cn-delta [2 1]      =      0.00567
+   of wing             =     -0.63582
+   CL-q                =      3.05328
+   CM-q                =     -1.04781
+   CL-delta [2 1]      =      0.22450
+   Cm-delta [2 1]      =      0.03829
+   Cl-delta [2 1]      =      0.03115
+   Cn-delta [2 1]      =      0.00095
    Cy-beta             =          NaN
    Cn-beta             =          NaN
    Cl-beta             =          NaN

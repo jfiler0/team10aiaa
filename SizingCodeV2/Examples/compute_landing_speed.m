@@ -2,10 +2,12 @@
 function [v_land, glide_angle, throttle] = compute_landing_speed(perf, W)
     v0  = 50; % strting guess
 
+    glide_angle = 3.5; % hard setting
+
     landing_descent_rate = ft2m(20);
     
     flap_inc    = 1.35;
-    aoa_limit = 10;
+    aoa_limit = 8;
 
     err = 1;
     tol = 1E-5;
@@ -15,12 +17,9 @@ function [v_land, glide_angle, throttle] = compute_landing_speed(perf, W)
 
     while err > tol
         i = i + 1;
-
-        if(v < landing_descent_rate)
-            warning("Landing velocity iteration is less than descent rate. That makes no sense. Exiting loop.")
-            break;
-        end
     
+        landing_descent_rate
+
         cond = P_Specified_Condition(perf, -landing_descent_rate, 0, v, W, perf.model.settings.codes.MV_DEC_VEL);
         perf.model.cond = cond;
 

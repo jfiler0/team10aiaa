@@ -19,7 +19,7 @@ set.jeta_density = 0.82; % kg/L
 
 set.be_imperial = true;
 
-set.spot_factor_reference = 52.7559; % Folded wing area of an f18e
+set.spot_factor_reference = 84.517; % Folded wing area of an f18e
 
 set.CD0_scaler = 1.1743; % general scaler to parasite drag
 set.CDi_scaler = 0.8929;

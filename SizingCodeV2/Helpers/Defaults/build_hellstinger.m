@@ -11,7 +11,7 @@ plane.fuselage.E_WD = json_entry("Fuselage Wave Drag Efficency", 2.2, "");
 
 plane.input.g_limit = json_entry("Structural G-Limit", 7.5, "");
 plane.input.kloc = json_entry("KLOC", 8000, "");
-plane.input.fold_ratio = json_entry("Fold Ratio", 0, ""); % there is no fold right now
+plane.input.fold_ratio = json_entry("Fold Ratio", 0.47, ""); % there is no fold right now
 plane.input.WF_ratio = json_entry("WF Ratio", 0.6119, "");  % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
 
 mtow = lb2N(68400);

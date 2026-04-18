@@ -34,21 +34,21 @@
    CL0                 =      0.00000
    Cm0                 =      0.00000
    Cdi(at alpha = 0)   =      0.00000
-   CL-alpha            =      3.72350
-   Cm-alpha            =      1.60195
-   Cm/CL               =      0.43023
-   Cdi/CL^2            =      0.06880
-   CL (at alpha = 5)   =      0.32494
-   Cdi(at alpha = 5)   =      0.00726
+   CL-alpha            =      3.71837
+   Cm-alpha            =      1.60520
+   Cm/CL               =      0.43170
+   Cdi/CL^2            =      0.06885
+   CL (at alpha = 5)   =      0.32449
+   Cdi(at alpha = 5)   =      0.00725
    Lift-curve slope of
    tail due to downwash
-   of wing             =      0.10738
-   CL-q                =      1.44531
-   CM-q                =     -1.41236
-   CL-delta [2 1]      =      0.17265
-   Cm-delta [2 1]      =     -0.11074
-   Cl-delta [2 1]      =     -0.01494
-   Cn-delta [2 1]      =      0.00049
+   of wing             =      0.10083
+   CL-q                =      1.42356
+   CM-q                =     -1.39937
+   CL-delta [2 1]      =      0.15994
+   Cm-delta [2 1]      =     -0.10202
+   Cl-delta [2 1]      =     -0.01360
+   Cn-delta [2 1]      =      0.00052
    Cy-beta             =          NaN
    Cn-beta             =          NaN
    Cl-beta             =          NaN

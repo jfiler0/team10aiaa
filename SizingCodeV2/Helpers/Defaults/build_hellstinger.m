@@ -43,9 +43,9 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
 
 % ELEVATOR DEFENITION
     root_chord = 2.25;
-    tip_chord = 1.2;
+    tip_chord = 1.5;
     fus_rad = sqrt(plane.fuselage.max_area.v / pi);
-    lengthLE_stab = 1.65;
+    lengthLE_stab = 1.575;
     sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, fus_rad, tc=0.04);
     sec2 = new_section(tip_chord, plane.fuselage.length.v - root_chord + (lengthLE_stab*sin(pi/6)), fus_rad + lengthLE_stab*cos(pi/6), tc=0.03);
     

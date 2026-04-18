@@ -1,0 +1,67 @@
+import bpy
+import os
+
+# ── Configuration ────────────────────────────────────────────────────────────
+INPUT_DIR  = r"C:\Users\xande\Documents\MATLAB\team10aiaa\VirtualHangar\PDR"
+OUTPUT_DIR = os.path.join(INPUT_DIR, "GLB_Output")
+
+# ── Setup ────────────────────────────────────────────────────────────────────
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+stl_files = [f for f in os.listdir(INPUT_DIR) if f.lower().endswith(".stl")]
+
+if not stl_files:
+    print("No STL files found in:", INPUT_DIR)
+else:
+    print(f"Found {len(stl_files)} STL file(s). Starting conversion...\n")
+
+# ── Find a 3D Viewport window for context override ───────────────────────────
+def get_viewport_context():
+    for window in bpy.context.window_manager.windows:
+        for area in window.screen.areas:
+            if area.type == 'VIEW_3D':
+                for region in area.regions:
+                    if region.type == 'WINDOW':
+                        return {
+                            'window': window,
+                            'screen': window.screen,
+                            'area': area,
+                            'region': region,
+                        }
+    return None
+
+# ── Conversion loop ──────────────────────────────────────────────────────────
+for filename in stl_files:
+    stl_path = os.path.join(INPUT_DIR, filename)
+    glb_name = os.path.splitext(filename)[0] + ".glb"
+    glb_path = os.path.join(OUTPUT_DIR, glb_name)
+
+    # Clear the scene
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+
+    # Re-acquire context after scene reset
+    ctx = get_viewport_context()
+    if ctx is None:
+        raise RuntimeError("No 3D Viewport found — make sure a VIEW_3D area is visible.")
+
+    with bpy.context.temp_override(**ctx):
+        # Import STL
+        bpy.ops.wm.stl_import(filepath=stl_path)
+
+        # Select all imported objects and set one as active
+        bpy.ops.object.select_all(action='SELECT')
+        if bpy.context.selected_objects:
+            bpy.context.view_layer.objects.active = bpy.context.selected_objects[0]
+
+        # Export as GLB (also inside the override so active_object is available)
+        bpy.ops.export_scene.gltf(
+            filepath=glb_path,
+            export_format='GLB',
+            use_selection=True,
+            export_apply=True,
+            export_yup=True,
+        )
+
+    print(f"  ✓  {filename}  →  {glb_name}")
+
+print(f"\nDone! GLB files saved to:\n  {OUTPUT_DIR}")

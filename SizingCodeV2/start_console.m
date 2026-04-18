@@ -6,7 +6,7 @@ matlabSetup;
 console = console_class();
 
 % cond order: H, MV, N, W, T
-commandList = [""];
+% commandList = ["load HellstingerV3"];
 
 % commandList = ["load kevin_cad","INSPECT","GRAPHING", "maxPerformance"];
 
@@ -18,7 +18,7 @@ commandList = [""];
 % commandList = ["load f18_superhornet", "geomInfo", "INSPECT", "setCond", "0", "2", "1", "1", "1", "printData"];
 
 % commandList = ["load kevin_cad"];
-% commandList = ["load f18_superhornet","geomInfo", "inspect", "printCostBreakdown"];
+commandList = ["load HellstingerV3","geomInfo", "inspect", "printCostBreakdown"];
 % commandList = ["load kevin_cad","INSPECT","GRAPHING", "maxPerformance"];
 % commandList = ["load f18_superhornet", "geomInfo", "INSPECT", "setCond", "10000", "2", "1", "1", "1", "printData", "q"];
 

@@ -11,7 +11,7 @@ plane.fuselage.E_WD = json_entry("Fuselage Wave Drag Efficency", 2.2, "");
 
 plane.input.g_limit = json_entry("Structural G-Limit", 7.5, "");
 plane.input.kloc = json_entry("KLOC", 8000, "");
-plane.input.fold_ratio = json_entry("Fold Ratio", 0, ""); % there is no fold right now
+plane.input.fold_ratio = json_entry("Fold Ratio", 0.47, ""); % there is no fold right now
 plane.input.WF_ratio = json_entry("WF Ratio", 0.6119, "");  % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
 
 mtow = lb2N(68400);
@@ -43,9 +43,9 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
 
 % ELEVATOR DEFENITION
     root_chord = 2.25;
-    tip_chord = 1.2;
+    tip_chord = 1.5;
     fus_rad = sqrt(plane.fuselage.max_area.v / pi);
-    lengthLE_stab = 1.65;
+    lengthLE_stab = 1.575;
     sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, fus_rad, tc=0.04);
     sec2 = new_section(tip_chord, plane.fuselage.length.v - root_chord + (lengthLE_stab*sin(pi/6)), fus_rad + lengthLE_stab*cos(pi/6), tc=0.03);
     
@@ -75,9 +75,7 @@ plane.weights.raymer.C = json_entry("Raymer C Coeff", getRaymerCoefficents(plane
 plane.prop.num_engine = json_entry("Number of Engines", 2, "");
 plane.prop.engine = json_entry("Engine Name", "F110", "s");
 
-plane.racks = [-1 -0.7 -0.5 -0.2 0.2 0.5 0.7 1]; % spanwise position of the racks
-% plane.stores = []; % clean confiuration
-
-plane = setLoadout(plane, ["" "" "" "" "" "" "" ""]);
+plane.racks = [-1 -0.7 -0.6 -0.5 -0.2 0 0.2 0.5 0.6 0.7 1]; % spanwise position of the racks
+plane = setLoadout(plane, ["" "" "" "" "" "" "" "" "" "" ""]);
 writeAircraftFile(plane);
     % Writes the actual file generally. This also means the location only needs to be changed in one place

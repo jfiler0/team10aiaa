@@ -366,6 +366,64 @@ classdef planeObj
             % Downwash slope calculation
             obj.depsdalph = 2*CL_alpha_wing /(pi*obj.AR);
 
+<<<<<<< HEAD
+            obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
+            obj.y_MAC_wing = (obj.span/6)*((1 + 2*obj.tr)/(1+obj.tr));
+            obj.x_MAC_wing = obj.x_rootLE_wing + obj.y_MAC_wing*tand(obj.Lambda_LE);
+
+            % Some fixes so the tail code works -> Liam correct how you want
+            obj.lam_h = obj.tr; % set taper ratio to be the same as the wing for stealth reasons
+
+            obj.MAC_horstab = (2/3)*obj.c_r_horstab*(1 + obj.lam_h + obj.lam_h.^2)/(1+obj.lam_h);
+            obj.y_MAC_horstab = (obj.b_h/6)*((1 + 2*obj.lam_h)/(1+obj.lam_h));
+            obj.x_MAC_horstab = obj.x_horstab + obj.y_MAC_horstab*tand(obj.LAM_LE_horstab);
+            obj.AR_horstab = obj.b_h / obj.MAC_horstab;
+            % swapped lam for obj.tr
+            obj.MAC_strake = (2/3)*obj.c_root_strake*(1 + obj.lam_strake + obj.lam_strake.^2)/(1+obj.lam_strake);
+            obj.y_MAC_strake = (obj.b_strake/6)*((1 + 2*obj.lam_strake)/(1+obj.lam_strake));
+            obj.x_MAC_strake = obj.x_strake + obj.y_MAC_strake*tand(obj.Lambda_LE_strake);
+
+            obj.MAC_verstab = (2/3)*obj.c_r_v*(1 + obj.lam_v + obj.lam_v.^2)/(1+ obj.lam_v);
+            obj.z_MAC_verstab = (obj.b_v/6)*((1 + 2*obj.lam_v)/(1 + obj.lam_v));
+            obj.x_MAC_verstab = obj.x_verstab + obj.z_MAC_verstab*tan(deg2rad(obj.LAM_v));
+
+            % Calculating Aerodynamic Centers of Each Portion 
+            obj.x_ac_wings = obj.x_MAC_wing + 0.25*obj.MAC_wing;
+            obj.x_ac_horstabs = obj.x_MAC_horstab + 0.25*obj.MAC_horstab;
+            obj.x_ac_strakes = obj.x_MAC_strake + 0.25*obj.MAC_strake;
+            obj.x_ac_verstabs = obj.x_MAC_verstab +0.25*obj.MAC_verstab;
+
+            obj.x_ac_wings_strakes = obj.x_ac_wings + (obj.x_ac_strakes - obj.x_ac_wings)*obj.S_strakes/((2*obj.S_wing)+obj.S_strakes);
+            obj.x_ac_wings_strakes_fuselage = obj.x_ac_wings_strakes - ((obj.L_fuselage*obj.A_max^2)*(0.005 + 0.111*(obj.x_ac_wings_strakes/obj.L_fuselage)^2)/((2*obj.S_wing)*CL_alpha_wing*57.29)); 
+            obj.x_bar_ac_wings_strakes_fuselage = (obj.x_ac_wings_strakes_fuselage - obj.x_MAC_wing)/obj.MAC_wing;
+
+            % tail arm
+            obj.l_ht = obj.x_ac_horstabs - obj.x_ac_wings_strakes_fuselage; % tail arm from aerodynamic centers
+            obj.V_hor = obj.S_h*obj.l_ht/(obj.S_wing*obj.MAC_wing);
+
+            % Tail lift slope calculation
+            obj.e_notoswald_horstab = 2/(2 - obj.AR_horstab + sqrt(4 + obj.AR_horstab^2 * (1 + (tand(obj.LAM_LE_horstab))^2)));
+            CL_alpha_tail = obj.cl_alpha_horstab/(1 + 57.3 * obj.cl_alpha_horstab/(pi * obj.e_notoswald_horstab * obj.AR_horstab));
+            CLalph_CLalpht = CL_alpha_tail/CL_alpha_wing;
+
+            obj.x_bar_n = obj.x_bar_ac_wings_strakes_fuselage + obj.V_hor*(CLalph_CLalpht*(1-obj.depsdalph));
+            %% CG Calculation
+            S_exposed_PSC = obj.S_exposed;
+            S_wet_PSC = obj.S_wet;
+            W_engine_PSC = obj.engine_dry_weight;
+            TOGW_PSC = obj.MTOW;
+            c_PSC = [obj.c_avg,obj.MAC_horstab,obj.MAC_verstab,obj.L_fuselage];
+            xstart_PSC = [obj.x_rootLE_wing,obj.x_horstab,obj.x_verstab,0];
+            
+            % Run function
+            [x_cg_est,~,~] = CG_Location(S_exposed_PSC,S_wet_PSC,W_engine_PSC,TOGW_PSC,c_PSC,xstart_PSC);
+            obj.x_cg = ft2m(30.3045); %m
+            % Final Static Margin Calculations
+            obj.x_np = obj.x_MAC_wing + (obj.x_bar_n*obj.MAC_wing);
+            obj.X_bar_cg = obj.x_cg/obj.x_MAC_wing;
+            obj.X_bar_np = obj.x_np/obj.x_MAC_wing;
+            obj.SM = obj.X_bar_np - obj.X_bar_cg;
+=======
             % obj.MAC_wing = (2/3)*obj.c_r*(1 + obj.tr + obj.tr.^2)/(1+obj.tr);
             % obj.y_MAC_wing = (obj.span/6)*((1 + 2*obj.tr)/(1+obj.tr));
             % obj.x_MAC_wing = obj.x_rootLE_wing + obj.y_MAC_wing*tand(obj.Lambda_LE);
@@ -422,6 +480,7 @@ classdef planeObj
             % obj.X_bar_cg = obj.x_cg/obj.x_MAC_wing;
             % obj.X_bar_np = obj.x_np/obj.x_MAC_wing;
             % obj.SM = obj.X_bar_np - obj.X_bar_cg;
+>>>>>>> fd78bec5d6f43a606e196b19ae111f965ac3061e
 
             %% Interpolants
             M_vec = linspace(obj.mach_range(1), obj.mach_range(2), 100); % Can change last number to increase/decrease resolution

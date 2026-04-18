@@ -21,9 +21,9 @@ data = res_cal(data, N2lb(weightRatio(0, geom_swept)), 43470, "Empty Weight");
 WF_internal = geom_unswept.weights.max_fuel_weight.v;
 data = res_cal(data, N2lb(WF_internal), 16200, "Internal Fuel Weight");
 
-perf_unswept.clear_data();
-v_land = compute_landing_speed(perf_unswept, 0.5); % taking mid mission weight
-data = res_cal(data, ms2kt(v_land), 109, "Landing Speed");
+% perf_unswept.clear_data();
+% v_land = compute_landing_speed(perf_unswept, 0.5); % taking mid mission weight
+% data = res_cal(data, ms2kt(v_land), 109, "Landing Speed");
 
 perf_swept.clear_data();
 h0_dash_mach = compute_max_mach_at_h(perf_swept, 0.5, 0); % taking mid mission weight

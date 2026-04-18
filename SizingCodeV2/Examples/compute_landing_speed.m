@@ -1,12 +1,12 @@
 % claude added some stability modifications. Nvm. fuck claude ill do this myself
-function [v_land, glide_angle, throttle] = compute_landing_speed(perf, W)
+function [v_land, glide_angle, throttle, landing_descent_rate] = compute_landing_speed(perf, W)
     v0  = 50; % strting guess
 
     glide_angle = 3.5; % hard setting
 
     landing_descent_rate = ft2m(20);
     
-    flap_inc    = 1.35;
+    flap_inc = 1.55;
     aoa_limit = 8;
 
     err = 1;
@@ -18,16 +18,13 @@ function [v_land, glide_angle, throttle] = compute_landing_speed(perf, W)
     while err > tol
         i = i + 1;
     
-        landing_descent_rate
+        landing_descent_rate = v * sind(glide_angle);
 
         cond = P_Specified_Condition(perf, -landing_descent_rate, 0, v, W, perf.model.settings.codes.MV_DEC_VEL);
         perf.model.cond = cond;
 
         CLa = perf.model.CLa * pi/180;
-        % alpha = ( cond.W.v / cosd(glide_angle) ) / ( flap_inc * CLa * cond.qinf.v * perf.model.geom.ref_area.v );
-        % alpha = ( cond.W.v / cosd(glide_angle) ) / ( flap_inc * CLa * 0.5 * cond.rho.v * cond.vel.v^2 * perf.model.geom.ref_area.v );
 
-        glide_angle = asind(landing_descent_rate / v);
         v_next = sqrt( ( cond.W.v / cosd(glide_angle) ) / ( flap_inc * aoa_limit * CLa * 0.5 * cond.rho.v * perf.model.geom.ref_area.v ) );
 
         err = abs(v_next - v)/v;

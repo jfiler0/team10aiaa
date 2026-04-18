@@ -24,7 +24,7 @@
    VLM Based Stability & Control Evaluation Code
 
    icase               =            3
-   MACH NUMBER         =      0.50000
+   MACH NUMBER         =      0.60000
    Sref                =     51.52000
    c ref               =      3.94000
    b ref               =     18.20000
@@ -34,21 +34,21 @@
    CL0                 =      0.00000
    Cm0                 =      0.00000
    Cdi(at alpha = 0)   =      0.00000
-   CL-alpha            =      3.86959
-   Cm-alpha            =      1.04050
-   Cm/CL               =      0.26889
-   Cdi/CL^2            =      0.06705
-   CL (at alpha = 5)   =      0.33769
-   Cdi(at alpha = 5)   =      0.00765
+   CL-alpha            =      3.98637
+   Cm-alpha            =      1.04659
+   Cm/CL               =      0.26254
+   Cdi/CL^2            =      0.06566
+   CL (at alpha = 5)   =      0.34788
+   Cdi(at alpha = 5)   =      0.00795
    Lift-curve slope of
    tail due to downwash
-   of wing             =      0.10468
-   CL-q                =      2.72154
-   CM-q                =     -1.37726
-   CL-delta [2 1]      =      0.17289
-   Cm-delta [2 1]      =     -0.13987
-   Cl-delta [2 1]      =     -0.01488
-   Cn-delta [2 1]      =      0.00086
+   of wing             =      0.10193
+   CL-q                =      2.83294
+   CM-q                =     -1.43590
+   CL-delta [2 1]      =      0.17286
+   Cm-delta [2 1]      =     -0.14163
+   Cl-delta [2 1]      =     -0.01481
+   Cn-delta [2 1]      =      0.00102
    Cy-beta             =          NaN
    Cn-beta             =          NaN
    Cl-beta             =          NaN

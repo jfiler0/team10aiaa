@@ -13,8 +13,7 @@ geom =  setLoadout(geom, ["" "" "" "" "" "" "" ""]); % fully clean (unlike horne
 model = model_class(settings, geom);
 perf = performance_class(model);
 
-WE = weightRatio(0, geom);
-data = res_cal(data, N2lb(WE), 19576, "Empty Weight");
+data = res_cal(data, N2lb(weightRatio(0, geom)), 19576, "Empty Weight");
 
 WF_internal = geom.weights.max_fuel_weight.v;
 data = res_cal(data, N2lb(WF_internal), 10036, "Internal Fuel Weight");
@@ -31,12 +30,12 @@ perf.clear_data();
 [h_opt, ~] = compute_combat_ceiling(perf, 0.5);
 data = res_cal(data, m2ft(h_opt), 44490, "Max Combat Celing");
 
-perf.model.clear_mem(); perf.clear_data();
-perf.model.cond = generateCondition(geom, 0, 0.5, 1, 0.5, 0.9); 
-data = res_cal(data, m2ft(perf.ExcessPower)*60/1000, 9.38, "Military Sealevel ROC");
+% perf.model.clear_mem(); perf.clear_data();
+% perf.model.cond = generateCondition(geom, 0, 0.5, 1, 0.5, 0.9); 
+% data = res_cal(data, m2ft(perf.ExcessPower)*60/1000, 9.38, "Military Sealevel ROC");
 
 %% Full Mission Simulations
-data = compute_missions_res(data, readMissionStruct("Corsair_Hi_Hi_Hi"), perf, settings, "Hi-Hi-Hi Mission End Weight");
+% data = compute_missions_res(data, readMissionStruct("Corsair_Hi_Hi_Hi"), perf, settings, "Hi-Hi-Hi Mission End Weight");
 
 end
 

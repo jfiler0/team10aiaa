@@ -29,5 +29,5 @@ function geom = processGeometryDerived(geom)
 
     geom.wing.fold_tip_chord = json_entry("Folded Tip Chord", geom.wing.root_chord.v + (geom.wing.root_chord.v - geom.wing.tip_chord.v) * ( 1 - geom.input.fold_ratio.v), "m", true);
 
-    geom.wing.fold_area = json_entry("Folded Wing Area", 0.5 * geom.wing.fold_span.v * (geom.wing.fold_tip_chord.v + geom.wing.root_chord.v), "m2", true);
+    geom.wing.fold_area = json_entry("Folded Wing Area", geom.wing.fold_span.v * geom.wing.average_chord.v, "m2", true); % TODO: This is an estimate
 end

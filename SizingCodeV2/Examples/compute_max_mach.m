@@ -1,5 +1,6 @@
 function [h_opt, M_opt] = compute_max_mach(perf, W)
     % Compute maximum Mach number and corresponding altitude for a given weight
+    perf.clear_data();
     
     % Initial guess
     x0 = [10000, 1.2];  % [h, M]

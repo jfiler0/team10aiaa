@@ -11,7 +11,11 @@ plane.fuselage.E_WD = json_entry("Fuselage Wave Drag Efficency", 2.2, "");
 
 plane.input.g_limit = json_entry("Structural G-Limit", 7.5, "");
 plane.input.kloc = json_entry("KLOC", 8000, "");
+<<<<<<< HEAD
 plane.input.fold_ratio = json_entry("Fold Ratio", 0, ""); % there is no fold right now
+=======
+plane.input.fold_ratio = json_entry("Fold Ratio", 0.47, ""); % there is no fold right now
+>>>>>>> fbd36938ebc874f1489480024bc7a27b62e46a83
 plane.input.WF_ratio = json_entry("WF Ratio", 0.6119, "");  % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
 
 mtow = lb2N(68400);
@@ -43,9 +47,11 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
 
 % ELEVATOR DEFENITION
     root_chord = 2.25;
-    tip_chord = 0.75;
-    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord - 3.5, 0, tc=0.04);
-    sec2 = new_section(tip_chord, plane.fuselage.length.v - tip_chord - 3.5, 2, tc=0.03);
+    tip_chord = 1.5;
+    fus_rad = sqrt(plane.fuselage.max_area.v / pi);
+    lengthLE_stab = 1.575;
+    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, fus_rad, tc=0.04);
+    sec2 = new_section(tip_chord, plane.fuselage.length.v - root_chord + (lengthLE_stab*sin(pi/6)), fus_rad + lengthLE_stab*cos(pi/6), tc=0.03);
     
     % Flap
     sec1 = btw_section(sec0, sec2, 0.1, flap_length=1, control_name="Elevator"); % Full Flying
@@ -56,8 +62,8 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
 % VTAIL DEFENITION
     root_chord = 2.5;
     tip_chord = 1;
-    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, 0, tc=0.04, dihedral=80);
-    sec3 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 2.25, tc=0.03, dihedral=80);
+    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, fus_rad/2, tc=0.04, dihedral=45);
+    sec3 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 2.25, tc=0.03, dihedral=45);
     
     % Flap
     sec1 = btw_section(sec0, sec3, 0.1, flap_length=0.15, control_name="Rudder"); % vtail
@@ -73,9 +79,7 @@ plane.weights.raymer.C = json_entry("Raymer C Coeff", getRaymerCoefficents(plane
 plane.prop.num_engine = json_entry("Number of Engines", 2, "");
 plane.prop.engine = json_entry("Engine Name", "F110", "s");
 
-plane.racks = [-1 -0.7 -0.5 -0.2 0.2 0.5 0.7 1]; % spanwise position of the racks
-% plane.stores = []; % clean confiuration
-
-plane = setLoadout(plane, ["" "" "" "" "" "" "" ""]);
+plane.racks = [-1 -0.7 -0.6 -0.5 -0.2 0 0.2 0.5 0.6 0.7 1]; % spanwise position of the racks
+plane = setLoadout(plane, ["" "" "" "" "" "" "" "" "" "" ""]);
 writeAircraftFile(plane);
     % Writes the actual file generally. This also means the location only needs to be changed in one place

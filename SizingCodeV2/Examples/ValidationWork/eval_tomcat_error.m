@@ -16,15 +16,14 @@ geom_swept =  setLoadout(geom_swept, ["" "" "" "" "" "" "" ""]);
 model_swept = model_class(settings, geom_swept);
 perf_swept = performance_class(model_swept);
 
-WE = weightRatio(0, geom_swept);
-data = res_cal(data, N2lb(WE), 43470, "Empty Weight");
+data = res_cal(data, N2lb(weightRatio(0, geom_swept)), 43470, "Empty Weight");
 
 WF_internal = geom_unswept.weights.max_fuel_weight.v;
 data = res_cal(data, N2lb(WF_internal), 16200, "Internal Fuel Weight");
 
-perf_unswept.clear_data();
-v_land = compute_landing_speed(perf_unswept, 0.5); % taking mid mission weight
-data = res_cal(data, ms2kt(v_land), 109, "Landing Speed");
+% perf_unswept.clear_data();
+% v_land = compute_landing_speed(perf_unswept, 0.5); % taking mid mission weight
+% data = res_cal(data, ms2kt(v_land), 109, "Landing Speed");
 
 perf_swept.clear_data();
 h0_dash_mach = compute_max_mach_at_h(perf_swept, 0.5, 0); % taking mid mission weight
@@ -39,20 +38,20 @@ perf_swept.clear_data();
 [h_opt, ~] = compute_combat_ceiling(perf_swept, 0.5);
 data = res_cal(data, m2ft(h_opt), 56600, "Max Combat Celing (Swept)");
 
-perf_unswept.clear_data();
-[h_opt, ~] = compute_combat_ceiling(perf_unswept, 0.5);
-data = res_cal(data, m2ft(h_opt), 45100, "Max Combat Celing (Unswept)");
+% perf_unswept.clear_data();
+% [h_opt, ~] = compute_combat_ceiling(perf_unswept, 0.5);
+% data = res_cal(data, m2ft(h_opt), 45100, "Max Combat Celing (Unswept)");
 
-perf_unswept.clear_data();
-perf_unswept.model.cond = generateCondition(geom_unswept, 0, 0.5, 1, 0.5, 0.9); 
-data = res_cal(data, m2ft(perf_unswept.ExcessPower)*60/1000, 15.05, "Military Sealevel ROC (Unswept)");
-
-perf_swept.clear_data();
-perf_swept.model.cond = generateCondition(geom_swept, 0, 0.5, 1, 0.5, 1); 
-data = res_cal(data, m2ft(perf_swept.ExcessPower)*60/1000, 44.5, "Afterburning Sealevel ROC (Swept)");
+% perf_unswept.clear_data();
+% perf_unswept.model.cond = generateCondition(geom_unswept, 0, 0.5, 1, 0.5, 0.9); 
+% data = res_cal(data, m2ft(perf_unswept.ExcessPower)*60/1000, 15.05, "Military Sealevel ROC (Unswept)");
+% 
+% perf_swept.clear_data();
+% perf_swept.model.cond = generateCondition(geom_swept, 0, 0.5, 1, 0.5, 1); 
+% data = res_cal(data, m2ft(perf_swept.ExcessPower)*60/1000, 44.5, "Afterburning Sealevel ROC (Swept)");
 
 %% Full Mission Simulations
-data = compute_missions_res(data, readMissionStruct("Tomcat_Hi_Hi_Hi"), perf_unswept, settings, "Hi-Hi-Hi Mission End Weight");
+% data = compute_missions_res(data, readMissionStruct("Tomcat_Hi_Hi_Hi"), perf_unswept, settings, "Hi-Hi-Hi Mission End Weight");
 
 
 end

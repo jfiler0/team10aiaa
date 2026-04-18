@@ -25,30 +25,48 @@
 
    icase               =            3
    MACH NUMBER         =      0.40000
-   Sref                =     56.64000
-   c ref               =      4.15000
-   b ref               =     17.55000
+   Sref                =     51.52000
+   c ref               =      3.94000
+   b ref               =     18.20000
    HEIGHT ABOVE GROUND = 100000.00000
-   X-cg                =     10.36300
+   X-cg                =      9.75400
    Z-cg                =     -0.04600
    CL0                 =      0.00000
    Cm0                 =      0.00000
    Cdi(at alpha = 0)   =      0.00000
-   CL-alpha            =      4.57140
-   Cm-alpha            =      4.90624
-   Cm/CL               =      1.07325
-   Cdi/CL^2            =      0.01010
-   CL (at alpha = 5)   =      0.39893
-   Cdi(at alpha = 5)   =      0.00161
+<<<<<<< HEAD
+   CL-alpha            =      3.78443
+   Cm-alpha            =      1.03463
+   Cm/CL               =      0.27339
+   Cdi/CL^2            =      0.06807
+   CL (at alpha = 5)   =      0.33025
+   Cdi(at alpha = 5)   =      0.00742
    Lift-curve slope of
    tail due to downwash
-   of wing             =      0.26167
-   CL-q                =     -2.96166
-   CM-q                =     -6.36351
-   CL-delta [2 1]      =      0.45014
-   Cm-delta [2 1]      =      0.11879
-   Cl-delta [2 1]      =     -0.01373
-   Cn-delta [2 1]      =     -0.00015
+   of wing             =      0.10635
+   CL-q                =      2.64272
+   CM-q                =     -1.33578
+   CL-delta [2 1]      =      0.17279
+   Cm-delta [2 1]      =     -0.13848
+   Cl-delta [2 1]      =     -0.01492
+   Cn-delta [2 1]      =      0.00075
+=======
+   CL-alpha            =      3.77935
+   Cm-alpha            =      1.61946
+   Cm/CL               =      0.42850
+   Cdi/CL^2            =      0.06811
+   CL (at alpha = 5)   =      0.32981
+   Cdi(at alpha = 5)   =      0.00741
+   Lift-curve slope of
+   tail due to downwash
+   of wing             =      0.09959
+   CL-q                =      1.46014
+   CM-q                =     -1.42438
+   CL-delta [2 1]      =      0.15990
+   Cm-delta [2 1]      =     -0.10283
+   Cl-delta [2 1]      =     -0.01356
+   Cn-delta [2 1]      =      0.00058
+>>>>>>> bb3c1e8a2080cd8aaf3b17a2c1c8aa01f15628ec
    Cy-beta             =          NaN
    Cn-beta             =          NaN
    Cl-beta             =          NaN

@@ -139,7 +139,7 @@ for i = 1:length(dash_radius_nm)
     % range_air2gnd_clean(1, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf, ["" "" "" "" "" "" "" ""]);
 
     range_air2gnd(2, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf_f18, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
-    range_air2gnd_notank(2, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf_f18, ["AIM-9X" "Mk-83" "Mk-83" "" "" "Mk-83" "Mk-83" "AIM-9x"]);
+    % range_air2gnd_notank(2, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf_f18, ["AIM-9X" "Mk-83" "Mk-83" "" "" "Mk-83" "Mk-83" "AIM-9x"]);
     % range_air2gnd_clean(2, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf_f18, ["" "" "" "" "" "" "" ""]);
 end
 
@@ -150,8 +150,8 @@ plot(dash_radius_nm, range_air2gnd(1, :), 'k-', DisplayName="Full Strike Loadout
 plot(dash_radius_nm, range_air2gnd_notank(1, :), 'r-', DisplayName="Strike Loadout - No Tanks")
 % plot(dash_radius_nm, range_air2gnd_clean(1, :), 'b-', DisplayName="Clean")
 
-plot(dash_radius_nm, range_air2gnd(2, :), 'k--', DisplayName="Full Strike Loadout (F18)")
-plot(dash_radius_nm, range_air2gnd_notank(2, :), 'r--', DisplayName="Strike Loadout - No Tanks (F18)")
+plot(dash_radius_nm, range_air2gnd(2, :), 'k--', DisplayName="Full Strike Loadout (3 Tanks) (F18)")
+% plot(dash_radius_nm, range_air2gnd_notank(2, :), 'r--', DisplayName="Strike Loadout - No Tanks (F18)")
 % plot(dash_radius_nm, range_air2gnd_clean(2, :), 'b--', DisplayName="Clean (F18)")
 
 plot(50, 700, 'gx', MarkerSize=15, DisplayName="RFP Requirement")

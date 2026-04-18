@@ -155,3 +155,10 @@ perf.clear_data();
 %% Folding
 fprintf("Folded span = %.2f ft\n", m2ft(geom.wing.fold_span.v));
 fprintf("Spot Factor = %.2f ft (folded wing area = %.2f ft2)\n", model.SpotFactor, m2ft(m2ft(geom.wing.fold_area.v)));
+
+%% LOITER
+perf.model.geom = setLoadout(geom, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+perf.clear_data();
+
+time_hr = esimtate_max_loiter(perf);
+fprintf("Starting at full fuel a combat loadout (+3 tanks), lotier time is %.3f hr\n", time_hr)

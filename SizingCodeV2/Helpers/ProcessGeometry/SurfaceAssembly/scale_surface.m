@@ -1,4 +1,7 @@
 function surf = scale_surface(surf, scale, P)
+    if nargin < 3
+        P = [surf.qrtr_chd_x.v, surf.le_y.v, 0]; % estimate
+    end
     % loop through each of the sections and rebuild with everything scaled by scale
     % scales around P (likely set to the 1/4 chord of the main wing
 

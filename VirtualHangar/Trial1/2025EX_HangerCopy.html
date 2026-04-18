@@ -1,339 +1,340 @@
+
 <!DOCTYPE html>
 <html>
 <head>
     <meta http-equiv='Content-Type' content='text/html;charset=utf-8'></meta>
     <link rel='stylesheet' type='text/css' href='x3dom.css'></link>
     <script type='text/javascript' src='x3dom.js'></script>
-    <title>SUSAN Animation</title>
+    <title>SuperDuperHornet</title>
 
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
-        #HUDs_Div {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 1000;
-            background-color: rgba(255, 255, 255, 0.7);
-            padding: 10px;
-            border-radius: 5px;
-            font-family: sans-serif;
-        }
-        /* Container for text and graph, allowing side-by-side layout */
-        #output-container {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-            color: white; /* White text */
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 80%;
-            max-width: 1000px; /* Increased max-width for graph space */
-            font-family: sans-serif;
-            font-size: 1.1em;
-            line-height: 1.4;
-            display: flex; /* Enable flexbox for side-by-side content */
-            justify-content: center;
-            align-items: flex-start;
-            gap: 20px; /* Space between text and graph */
-        }
-        #output-text {
-            flex: 1; /* Allows text to take available space */
-            text-align: left;
-        }
-        #output-text h3 {
-            margin-top: 0;
-        }
-        #output-text p {
-            margin-bottom: 0;
-        }
-        #graph-container {
-            flex: 0 0 350px; /* Fixed width for the graph (adjust as needed) */
-            display: none; /* Hidden by default */
-            text-align: center;
-        }
-        #graph-container img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 5px;
-        }
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      #HUDs_Div {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+        background-color: rgba(255, 255, 255, 0.7);
+        padding: 10px;
+        border-radius: 5px;
+        font-family: sans-serif;
+      }
+      /* Container for text and graph, allowing side-by-side layout */
+      #output-container {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+        color: white; /* White text */
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 80%;
+        max-width: 1000px; /* Increased max-width for graph space */
+        font-family: sans-serif;
+        font-size: 1.1em;
+        line-height: 1.4;
+        display: flex; /* Enable flexbox for side-by-side content */
+        justify-content: center;
+        align-items: flex-start; 
+        gap: 20px; /* Space between text and graph */
+      }
+      #output-text {
+        flex: 1; /* Allows text to take available space */
+        text-align: left; 
+      }
+      #output-text h3 {
+        margin-top: 0;
+      }
+      #output-text p {
+        margin-bottom: 0;
+      }
+      #graph-container {
+        flex: 0 0 350px; /* Fixed width for the graph (adjust as needed) */
+        display: none; /* Hidden by default */
+        text-align: center;
+      }
+      #graph-container img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 5px;
+      }
     </style>
 
     <script>
-        // ------------------------------
-        // Color-based highlighting system
-        // Hover -> cyan ; Click/select -> yellow
-        // No bboxDisplay changes anywhere (no bounding boxes)
-        // ------------------------------
+      // ------------------------------
+      // Color-based highlighting system
+      // Hover -> cyan ; Click/select -> yellow
+      // No bboxDisplay changes anywhere (no bounding boxes)
+      // ------------------------------
 
-        const PART_DEFS = [
-            'FuselagePart',
-            'WingPart',
-            'ElectricEnginePart',
-            'TailPart',
-            'ExteriorEnginePart',
-            'InteriorEnginePart'
-        ];
+      const PART_DEFS = [
+        'FuselagePart',
+        'WingPart',
+        'ElectricEnginePart',
+        'TailPart',
+        'ExteriorEnginePart',
+        'InteriorEnginePart'
+      ];
 
-        // Info object matching your original descriptions (shortened where repeated)
-        const INFO = {
-            FuselagePart: {
-                title: 'Plane Fuselage',
-                text:
-                    "SUSAN's is designed to accommodate up to 180 passengers (the same capacity as a large single-aisle plane) and boasts a 10 MW class EAP system to electrify this regional-class aircraft. The SUSAN concept was inspired by the idea that it may be possible to create a transport category aircraft with a single fuel burning engine if it is combined in a hybrid configuration with electric engines and an electrical power source.",
-            },
-            WingPart: {
-                title: 'Wings',
-                text:
-                    'The SUSAN aircraft has a wingspan of 116 ft. The wings have been designed for an 8.3% reduction in drag through studies of the laminar flow, or smooth-traveling airflow, over the aircraft wings. Additionally, the wings are designed for an efficient thermal management system with three loops at different temperatures that manage the engines, electrical system, and batteries.',
-            },
-            ElectricEnginePart: {
-                title: 'Wing-Mounted Electric Engines',
-                text:
-                    'The wing-mounted engines provide 65% of the total thrust of the aircraft and are entirely electric. They draw from the power generated by the tail-mounted turbojet engine through the generators and the rechargeable battery, and under nominal conditions the entire system is self-sufficient. The electric engines on either side of the plane are encased in an outer shell to reduce drag from the suction effect of the fanblades. Each wing-mounted electric engine has a system with a main generator converter, a rechargeable battery, a single use battery for emergency purposes, the electric engine motor, and circuitry.',
-            },
-            TailPart: {
-                title: 'T-Tail',
-                text:
-                    'The vertical tail features an innovative design in which the structure is partially embedded in the exterior of the engine and the primary loads are shared between the tail and the engine. This design also minimizes engine flow blockage, and was tested to optimize airflow along the body of the plane.',
-            },
-            ExteriorEnginePart: {
-                title: 'Tail-Mounted Turbo Jet-Engine - Exterior',
-                text:
-                    'The tail-mounted engine combines a traditional gas turbine with a mechanism called boundary layer ingesting (BLI) concept, that uses the flow along the body of the plane to produce the required thrust. It uses hydrocarbon fuel to provide 35% of the total thrust for the aircraft and generates the power required for the wing-mounted electric propulsors. The power is extracted and managed via generators and a rechargeable battery connected at the front of the engine to the wing-mounted propulsors. In case of turbo fan failure a single use battery is employed.',
-            },
-            InteriorEnginePart: {
-                title: 'Tail-Mounted Turbo Jet-Engine - Interior',
-                text:
-                    'The tail-mounted engine combines a traditional gas turbine with a mechanism called boundary layer ingesting (BLI) concept, that uses the flow along the body of the plane to produce the required thrust. It uses hydrocarbon fuel to provide 35% of the total thrust for the aircraft and generates the power required for the wing-mounted electric propulsors. The power is extracted and managed via generators and a rechargeable battery connected at the front of the engine to the wing-mounted propulsors. In case of turbo fan failure a single use battery is employed.',
-            },
-        };
+      // Info object matching your original descriptions (shortened where repeated)
+      const INFO = {
+        FuselagePart: {
+          title: 'Plane Fuselage',
+          text:
+            "SUSAN's is designed to accommodate up to 180 passengers (the same capacity as a large single-aisle plane) and boasts a 10 MW class EAP system to electrify this regional-class aircraft. The SUSAN concept was inspired by the idea that it may be possible to create a transport category aircraft with a single fuel burning engine if it is combined in a hybrid configuration with electric engines and an electrical power source.",
+        },
+        WingPart: {
+          title: 'Wings',
+          text:
+            'The SUSAN aircraft has a wingspan of 116 ft. The wings have been designed for an 8.3% reduction in drag through studies of the laminar flow, or smooth-traveling airflow, over the aircraft wings. Additionally, the wings are designed for an efficient thermal management system with three loops at different temperatures that manage the engines, electrical system, and batteries.',
+        },
+        ElectricEnginePart: {
+          title: 'Wing-Mounted Electric Engines',
+          text:
+            'The wing-mounted engines provide 65% of the total thrust of the aircraft and are entirely electric. They draw from the power generated by the tail-mounted turbojet engine through the generators and the rechargeable battery, and under nominal conditions the entire system is self-sufficient. The electric engines on either side of the plane are encased in an outer shell to reduce drag from the suction effect of the fanblades. Each wing-mounted electric engine has a system with a main generator converter, a rechargeable battery, a single use battery for emergency purposes, the electric engine motor, and circuitry.',
+        },
+        TailPart: {
+          title: 'T-Tail',
+          text:
+            'The vertical tail features an innovative design in which the structure is partially embedded in the exterior of the engine and the primary loads are shared between the tail and the engine. This design also minimizes engine flow blockage, and was tested to optimize airflow along the body of the plane.',
+        },
+        ExteriorEnginePart: {
+          title: 'Tail-Mounted Turbo Jet-Engine - Exterior',
+          text:
+            'The tail-mounted engine combines a traditional gas turbine with a mechanism called boundary layer ingesting (BLI) concept, that uses the flow along the body of the plane to produce the required thrust. It uses hydrocarbon fuel to provide 35% of the total thrust for the aircraft and generates the power required for the wing-mounted electric propulsors. The power is extracted and managed via generators and a rechargeable battery connected at the front of the engine to the wing-mounted propulsors. In case of turbo fan failure a single use battery is employed.',
+        },
+        InteriorEnginePart: {
+          title: 'Tail-Mounted Turbo Jet-Engine - Interior',
+          text:
+            'The tail-mounted engine combines a traditional gas turbine with a mechanism called boundary layer ingesting (BLI) concept, that uses the flow along the body of the plane to produce the required thrust. It uses hydrocarbon fuel to provide 35% of the total thrust for the aircraft and generates the power required for the wing-mounted electric propulsors. The power is extracted and managed via generators and a rechargeable battery connected at the front of the engine to the wing-mounted propulsors. In case of turbo fan failure a single use battery is employed.',
+        },
+      };
 
-        const initialText =
-            "NASA's Subsonic Single Aft Engine (SUSAN) Electrofan is an advanced hybrid electric concept aircraft that could transform the future of commercial air travel by reducing fuel burn and improving performance. Take a look around and explore some of the unique features onboard the aircraft.<br><br>Navigate by clicking on the parts of the aircraft you wish to learn more about.";
+      const initialText =
+        "NASA's Subsonic Single Aft Engine (SUSAN) Electrofan is an advanced hybrid electric concept aircraft that could transform the future of commercial air travel by reducing fuel burn and improving performance. Take a look around and explore some of the unique features onboard the aircraft.<br><br>Navigate by clicking on the parts of the aircraft you wish to learn more about.";
 
-        const Colors = { hover: '0 1 1', select: '0 0 0.5' };
+      const Colors = { hover: '0 1 1', select: '0 0 0.5' };
 
-        // Stores the currently selected Transform (if any)
-        let currentSelection = null;
-        // Stores baseline material attributes per Transform to restore later
-        const baselineByPart = new Map();
+      // Stores the currently selected Transform (if any)
+      let currentSelection = null;
+      // Stores baseline material attributes per Transform to restore later
+      const baselineByPart = new Map();
 
-        // Helpers to find material nodes under a Transform
-        function getMaterials(part) {
-            // X3D can have different material tag names; handle both
-            const phys = Array.from(part.getElementsByTagName('PhysicalMaterial'));
-            const classic = Array.from(part.getElementsByTagName('Material'));
-            return { phys, classic };
+      // Helpers to find material nodes under a Transform
+      function getMaterials(part) {
+        // X3D can have different material tag names; handle both
+        const phys = Array.from(part.getElementsByTagName('PhysicalMaterial'));
+        const classic = Array.from(part.getElementsByTagName('Material'));
+        return { phys, classic };
+      }
+
+      // Capture baseline attributes so we can restore them later
+      function captureBaseline(part) {
+        const mats = getMaterials(part);
+        const existing = baselineByPart.get(part) || [];
+        const seen = new Set(existing.map(r => r.element));
+        for (const el of mats.phys) {
+          if (seen.has(el)) continue;
+          existing.push({
+            element: el,
+            attr: 'diffuseFactor',
+            value: el.getAttribute('diffuseFactor'),
+            hadAttr: el.hasAttribute('diffuseFactor')
+          });
+          seen.add(el);
         }
-
-        // Capture baseline attributes so we can restore them later
-        function captureBaseline(part) {
-            const mats = getMaterials(part);
-            const existing = baselineByPart.get(part) || [];
-            const seen = new Set(existing.map(r => r.element));
-            for (const el of mats.phys) {
-                if (seen.has(el)) continue;
-                existing.push({
-                    element: el,
-                    attr: 'diffuseFactor',
-                    value: el.getAttribute('diffuseFactor'),
-                    hadAttr: el.hasAttribute('diffuseFactor')
-                });
-                seen.add(el);
-            }
-            for (const el of mats.classic) {
-                if (seen.has(el)) continue;
-                existing.push({
-                    element: el,
-                    attr: 'diffuseColor',
-                    value: el.getAttribute('diffuseColor'),
-                    hadAttr: el.hasAttribute('diffuseColor')
-                });
-                seen.add(el);
-            }
-            baselineByPart.set(part, existing);
+        for (const el of mats.classic) {
+          if (seen.has(el)) continue;
+          existing.push({
+            element: el,
+            attr: 'diffuseColor',
+            value: el.getAttribute('diffuseColor'),
+            hadAttr: el.hasAttribute('diffuseColor')
+          });
+          seen.add(el);
         }
+        baselineByPart.set(part, existing);
+      }
 
-        // Apply color to all material nodes under the part
-        function setPartColor(part, color) {
-            captureBaseline(part);
-            const mats = getMaterials(part);
-            for (const el of mats.phys) {
-                try { el.setAttribute('diffuseFactor', color); } catch (e) { /* ignore */ }
-            }
-            for (const el of mats.classic) {
-                try { el.setAttribute('diffuseColor', color); } catch (e) { /* ignore */ }
-            }
+      // Apply color to all material nodes under the part
+      function setPartColor(part, color) {
+        captureBaseline(part);
+        const mats = getMaterials(part);
+        for (const el of mats.phys) {
+          try { el.setAttribute('diffuseFactor', color); } catch (e) { /* ignore */ }
         }
-
-        // Restore saved baseline attributes
-        function restorePartFromBaseline(part) {
-            const records = baselineByPart.get(part) || [];
-            for (const r of records) {
-                if (r.hadAttr) {
-                    if (r.value === null || r.value === undefined) {
-                        // ensure we set empty string if original was empty
-                        r.element.setAttribute(r.attr, '');
-                    } else {
-                        r.element.setAttribute(r.attr, r.value);
-                    }
-                } else {
-                    // attribute wasn't present originally -> remove it
-                    r.element.removeAttribute(r.attr);
-                }
-            }
+        for (const el of mats.classic) {
+          try { el.setAttribute('diffuseColor', color); } catch (e) { /* ignore */ }
         }
+      }
 
-        // Select a part by DEF (only valid parts). Do NOT use for 'initial'.
-        function selectPartByDEF(partDEF) {
-            // Only allow selection for known parts
-            if (!PART_DEFS.includes(partDEF)) return;
-
-            // Restore previous selection (if any)
-            if (currentSelection && currentSelection !== null) {
-                try { restorePartFromBaseline(currentSelection); } catch (e) { /* ignore */ }
-                currentSelection = null;
-            }
-
-            const part = document.querySelector("Transform[DEF='" + partDEF + "']");
-            if (!part) {
-                console.warn("Part with DEF='" + partDEF + "' not found.");
-                return;
-            }
-
-            // Ensure we start from a clean baseline before applying selection color
-            restorePartFromBaseline(part);
-            setPartColor(part, Colors.select);
-            currentSelection = part;
-        }
-
-        // Attach hover handlers which set hover color unless that part is selected
-        function attachHoverHandlers(part) {
-            part.addEventListener('mouseover', function () {
-                if (currentSelection === part) return;
-                setPartColor(part, Colors.hover);
-            });
-            part.addEventListener('mouseout', function () {
-                if (currentSelection === part) return;
-                restorePartFromBaseline(part);
-            })
-        }
-
-        // Initialize once X3DOM runtime is ready
-        x3dom.runtime.ready = function () {
-            // Reset view to ensure consistent start
-            var x3dElement = document.getElementById('x3dElement');
-            if (x3dElement && x3dElement.runtime && x3dElement.runtime.resetView) {
-                try { x3dElement.runtime.resetView(); } catch (e) { /* ignore */ }
-            }
-
-            // Capture baselines and attach hover handlers for each defined part
-            for (let i = 0; i < PART_DEFS.length; i++) {
-                const def = PART_DEFS[i];
-                const part = document.querySelector("Transform[DEF='" + def + "']");
-                if (!part) continue;
-                try { captureBaseline(part); } catch (e) { /* ignore */ }
-                attachHoverHandlers(part);
-            }
-        };
-
-        // --- showDetail keeps same signature as your original page ---
-        function showDetail(partName) {
-            console.log("Clicked on:", partName);
-
-            let infoTitle = "";
-            let infoDescription = "";
-            let graphImageFile = "";
-
-            const graphContainer = document.getElementById('graph-container');
-            if (graphContainer) graphContainer.style.display = 'none';
-
-            // If the partName matches a known part, use the INFO block; else show initial text
-            if (PART_DEFS.includes(partName)) {
-                const info = INFO[partName];
-                infoTitle = info.title;
-                infoDescription = info.text;
-                // map images same as original logic
-                if (partName === 'WingPart') graphImageFile = 'Graph2.png';
-                if (partName === 'ElectricEnginePart' || partName === 'ExteriorEnginePart' || partName === 'InteriorEnginePart') graphImageFile = 'Graph1.png';
-
-                // Select and color the part (yellow). Selection is only applied for recognized parts.
-                selectPartByDEF(partName);
+      // Restore saved baseline attributes
+      function restorePartFromBaseline(part) {
+        const records = baselineByPart.get(part) || [];
+        for (const r of records) {
+          if (r.hadAttr) {
+            if (r.value === null || r.value === undefined) {
+              // ensure we set empty string if original was empty
+              r.element.setAttribute(r.attr, '');
             } else {
-                // Default intro: show initial text and clear any selection without altering materials unexpectedly
-                infoTitle = "NASA Subsonic Single Aft Engine (SUSAN) Aircraft";
-                infoDescription = initialText;
-
-                // If a part is currently selected, restore it
-                if (currentSelection) {
-                    try { restorePartFromBaseline(currentSelection); } catch (e) { /* ignore */ }
-                    currentSelection = null;
-                }
+              r.element.setAttribute(r.attr, r.value);
             }
+          } else {
+            // attribute wasn't present originally -> remove it
+            r.element.removeAttribute(r.attr);
+          }
+        }
+      }
 
-            // Update DOM text
-            const titleEl = document.getElementById('info-title');
-            const descEl = document.getElementById('info-description');
-            if (titleEl) titleEl.innerText = infoTitle;
-            if (descEl) descEl.innerHTML = infoDescription;
+      // Select a part by DEF (only valid parts). Do NOT use for 'initial'.
+      function selectPartByDEF(partDEF) {
+        // Only allow selection for known parts
+        if (!PART_DEFS.includes(partDEF)) return;
 
-            // Show graph if present
-            if (graphImageFile) {
-                const img = document.getElementById('graph-image');
-                if (img) img.src = graphImageFile;
-                if (graphContainer) graphContainer.style.display = 'block';
-            }
+        // Restore previous selection (if any)
+        if (currentSelection && currentSelection !== null) {
+          try { restorePartFromBaseline(currentSelection); } catch (e) { /* ignore */ }
+          currentSelection = null;
         }
 
-        // Expose bindButtonName for the radio buttons (no change)
-        function bindButtonName(viewpointID)
-        {
-            console.log(viewpointID);
-            document.getElementById(viewpointID).bind = true;
+        const part = document.querySelector("Transform[DEF='" + partDEF + "']");
+        if (!part) {
+          console.warn("Part with DEF='" + partDEF + "' not found.");
+          return;
         }
 
-        // Show the intro on DOM ready
-        document.addEventListener("DOMContentLoaded", function() {
-            showDetail('initial');
+        // Ensure we start from a clean baseline before applying selection color
+        restorePartFromBaseline(part);
+        setPartColor(part, Colors.select);
+        currentSelection = part;
+      }
+
+      // Attach hover handlers which set hover color unless that part is selected
+      function attachHoverHandlers(part) {
+        part.addEventListener('mouseover', function () {
+          if (currentSelection === part) return;
+          setPartColor(part, Colors.hover);
         });
+        part.addEventListener('mouseout', function () {
+          if (currentSelection === part) return;
+          restorePartFromBaseline(part);
+        })
+      }
+
+      // Initialize once X3DOM runtime is ready
+      x3dom.runtime.ready = function () {
+        // Reset view to ensure consistent start
+        var x3dElement = document.getElementById('x3dElement');
+        if (x3dElement && x3dElement.runtime && x3dElement.runtime.resetView) {
+          try { x3dElement.runtime.resetView(); } catch (e) { /* ignore */ }
+        }
+
+        // Capture baselines and attach hover handlers for each defined part
+        for (let i = 0; i < PART_DEFS.length; i++) {
+          const def = PART_DEFS[i];
+          const part = document.querySelector("Transform[DEF='" + def + "']");
+          if (!part) continue;
+          try { captureBaseline(part); } catch (e) { /* ignore */ }
+          attachHoverHandlers(part);
+        }
+      };
+
+      // --- showDetail keeps same signature as your original page ---
+      function showDetail(partName) {
+        console.log("Clicked on:", partName);
+
+        let infoTitle = "";
+        let infoDescription = "";
+        let graphImageFile = ""; 
+
+        const graphContainer = document.getElementById('graph-container');
+        if (graphContainer) graphContainer.style.display = 'none';
+
+        // If the partName matches a known part, use the INFO block; else show initial text
+        if (PART_DEFS.includes(partName)) {
+          const info = INFO[partName];
+          infoTitle = info.title;
+          infoDescription = info.text;
+          // map images same as original logic
+          if (partName === 'WingPart') graphImageFile = 'Graph2.png';
+          if (partName === 'ElectricEnginePart' || partName === 'ExteriorEnginePart' || partName === 'InteriorEnginePart') graphImageFile = 'Graph1.png';
+
+          // Select and color the part (yellow). Selection is only applied for recognized parts.
+          selectPartByDEF(partName);
+        } else {
+          // Default intro: show initial text and clear any selection without altering materials unexpectedly
+          infoTitle = "NASA Subsonic Single Aft Engine (SUSAN) Aircraft";
+          infoDescription = initialText;
+
+          // If a part is currently selected, restore it
+          if (currentSelection) {
+            try { restorePartFromBaseline(currentSelection); } catch (e) { /* ignore */ }
+            currentSelection = null;
+          }
+        }
+
+        // Update DOM text
+        const titleEl = document.getElementById('info-title');
+        const descEl = document.getElementById('info-description');
+        if (titleEl) titleEl.innerText = infoTitle;
+        if (descEl) descEl.innerHTML = infoDescription;
+
+        // Show graph if present
+        if (graphImageFile) {
+          const img = document.getElementById('graph-image');
+          if (img) img.src = graphImageFile;
+          if (graphContainer) graphContainer.style.display = 'block';
+        }
+      }
+
+      // Expose bindButtonName for the radio buttons (no change)
+      function bindButtonName(viewpointID) 
+      {
+        console.log(viewpointID);
+        document.getElementById(viewpointID).bind = true;
+      }
+
+      // Show the intro on DOM ready
+      document.addEventListener("DOMContentLoaded", function() {
+        showDetail('initial');
+      });
     </script>
 </head>
 
 <body>
-<div id='HUDs_Div'>
-    <div id='X3DOM_AOPT_Links' class='group'>
+    <div id='HUDs_Div'> 
+      <div id='X3DOM_AOPT_Links' class='group'> 
         AOE 2994: Sanjana Anem <br> Flight Visualization of NASA Susan in VR<br>
         <hr>
         <form>
-            <label><input type="radio" name="buttons" value="Viewpoint1" checked onclick="bindButtonName('Viewpoint1')"> Viewpoint 1</label><br>
-            <label><input type="radio" name="buttons" value="Viewpoint2" onclick="bindButtonName('Viewpoint2')"> Viewpoint 2</label><br>
-            <label><input type="radio" name="buttons" value="Viewpoint3" onclick="bindButtonName('Viewpoint3')"> Viewpoint 3</label><br>
-            <label><input type="radio" name="buttons" value="Viewpoint4" onclick="bindButtonName('Viewpoint4')"> Viewpoint 4</label><br>
-            <label><input type="radio" name="buttons" value="Viewpoint5" onclick="bindButtonName('Viewpoint5')"> Viewpoint 5</label><br>
-            <label><input type="radio" name="buttons" value="Viewpoint6" onclick="bindButtonName('Viewpoint6')"> Viewpoint 6</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint1" checked onclick="bindButtonName('Viewpoint1')"> Viewpoint 1</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint2" onclick="bindButtonName('Viewpoint2')"> Viewpoint 2</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint3" onclick="bindButtonName('Viewpoint3')"> Viewpoint 3</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint4" onclick="bindButtonName('Viewpoint4')"> Viewpoint 4</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint5" onclick="bindButtonName('Viewpoint5')"> Viewpoint 5</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint6" onclick="bindButtonName('Viewpoint6')"> Viewpoint 6</label><br>
         </form>
+      </div>
     </div>
-</div>
 
-<x3d id='x3dElement' showStat='false' showLog='false' style='width:100%; height:100%; border:0; margin:0; padding:0;'>
-    <Scene>
+    <x3d id='x3dElement' showStat='false' showLog='false' style='width:100%; height:100%; border:0; margin:0; padding:0;'>
+      <Scene>
         <Viewpoint id='Viewpoint1' position="16.11338 14.93267 -19.95448" orientation="-0.00040 0.99989 0.01496 2.32263" zNear="0.04864" zFar="1486.37978" centerOfRotation="17.92187 4.55105 -21.97242" fieldOfView="0.78540" description="Port Side"></Viewpoint>
         <Viewpoint id='Viewpoint2' position="-9.07127 12.75588 2.47211" orientation="-0.00850 0.99941 0.03342 2.30075" zNear="0.04864" zFar="1486.37978" centerOfRotation="17.92187 4.55105 -21.97242" fieldOfView="0.78540" description="Port Side"></Viewpoint>
         <Viewpoint id='Viewpoint3' position="-34.65802 8.52826 33.63939" orientation="-0.01098 0.99894 0.04477 2.38209" zNear="0.04864" zFar="1486.37978" centerOfRotation="17.92187 4.55105 -21.97242" fieldOfView="0.78540" description="Port Side"></Viewpoint>
         <Viewpoint id='Viewpoint4' position="-11.25579 5.55428 47.44333" orientation="-0.01024 0.99957 0.02746 1.59191" zNear="0.04864" zFar="1486.37978" centerOfRotation="17.92187 4.55105 -21.97242" fieldOfView="0.78540" description="Port Side"></Viewpoint>
-        <Viewpoint id='Viewpoint5' position="-24.74979 5.01564 61.72199" orientation="-0.02138 0.99950 0.02327 1.84958" zNear="0.04864" zFar="1486.37978" centerOfRotation="17.92187 4.55105 -21.97242" fieldOfView="0.78540" description="Port Side"></Viewpoint>
+        <Viewpoint id='Viewpoint5' position="-24.74979 5.01564 61.72199" orientation="-0.02138 0.99950 0.02327 1.84958" zNear="0.04864" zFar="1486.37978" centerOfRotation="17.92187 4.55105 -21.97242" fieldOfView="0.78540" description="Port Side"></Viewpoint>                            
         <Viewpoint id='Viewpoint6' position="-101.81342 2.75360 65.28526" orientation="-0.00198 -1.00000 -0.00184 1.49657" zNear="0.04864" zFar="1486.37978" centerOfRotation="-80.65918 2.58211 63.71218" fieldOfView="0.78540" description="Port Side"></Viewpoint>
 
         <NavigationInfo type='"EXAMINE" "ANY"' avatarSize="0.25 1.75 0.75" headlight="false"></NavigationInfo>
-
+        
         <DirectionalLight direction='-.8 -.8 -.8' intensity='.7'></DirectionalLight>
         <DirectionalLight direction='-.8 -.8 .8' intensity='.7'></DirectionalLight>
         <DirectionalLight direction='.8 -.8 .8' intensity='.7'></DirectionalLight>
@@ -342,67 +343,67 @@
         <background DEF="WO_World" backUrl='./nz.png' bottomUrl='./ny.png' frontUrl='./pz.png' leftUrl='nx.png' rightUrl='./px.png' topUrl='./py.png' skyColor="0.05 0.05 0.05" groundColor=".1 1 .1"></background>
 
         <Transform translation="0 -0.25 0" onclick="showDetail('initial')">
-            <Shape><Appearance> <Material diffuseColor=".3 .3 .3"></Material> <ImageTexture url='floor.jpg'></ImageTexture> <TextureTransform center="0.5 0.5" scale="30 30" rotation="0.785" translation="-0.148 0.21"></TextureTransform></Appearance>
-                <Box size="500 .5 500"></Box>
+          <Shape><Appearance> <Material diffuseColor=".3 .3 .3"></Material> <ImageTexture url='floor.jpg'></ImageTexture> <TextureTransform center="0.5 0.5" scale="30 30" rotation="0.785" translation="-0.148 0.21"></TextureTransform></Appearance>
+          <Box size="500 .5 500"></Box>
         </Transform>
 
         <Transform translation="-77 0 77" rotation="0 1 0 .785" scale='4 4 4'>
-            <Inline url='./NATO_Shelter.glb'></Inline>
+          <Inline url='./NATO_Shelter.glb'></Inline>
         </Transform>
 
         <Transform DEF="PlanePitch" translation="-30 -5 25" rotation="0 0 1" scale='1 1 1'>
-            <Transform DEF="PlaneRotation" translation="0 0 0" rotation="0 1 0 3.1425926" scale='1 1 1'>
-                <Transform DEF="PlaneGroup" translation="0 0 0" rotation="1 0 0 0" scale='1 1 1'>
+        <Transform DEF="PlaneRotation" translation="0 0 0" rotation="0 1 0 3.1425926" scale='1 1 1'>
+        <Transform DEF="PlaneGroup" translation="0 0 0" rotation="1 0 0 0" scale='1 1 1'>
+        
+        <Transform DEF="PlaneGroup" translation="35 0 -40" rotation="1 0 0 -1.57" scale='1 1 1'>
 
-                    <Transform DEF="PlaneGroup" translation="35 0 -40" rotation="1 0 0 -1.57" scale='1 1 1'>
+          <Transform DEF="FuselagePart" id="FuselagePart" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('FuselagePart')">
+            <Inline DEF="FuselageInline" url="./fuselage.glb" mapDEFToID="true" nameSpaceName="Fuselage" ></Inline>
+          </Transform>
+          <Transform DEF="WingPart" id="WingPart" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('WingPart')">
+            <Inline DEF="WingInline" url="./wing.glb" mapDEFToID="true" nameSpaceName="WingP"></Inline>
+          </Transform>
+          <Transform DEF="ElectricEnginePart" id="ElectricEnginePart" rotation="0 0 0 0" scale="0.309 0.309 0.309" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('ElectricEnginePart')">
+            <Inline DEF="ElectricEngineInline" url="./electric engines animated.glb" mapDEFToID="true" nameSpaceName="Engine"></Inline>
+          </Transform>
+          <Transform DEF="TailPart" id="TailPart" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('TailPart')">
+            <Inline DEF="TailInline" url="./tail.glb" mapDEFToID="true" nameSpaceName="Tail"></Inline>
+          </Transform>
+          <Transform DEF="ExteriorEnginePart" id="ExteriorEnginePart" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('ExteriorEnginePart')">
+            <Inline DEF="ExteriorEngineInline" url="./exterior engine.glb" mapDEFToID="true" nameSpaceName="EngineExt"></Inline>
+          </Transform>
+          <Transform DEF="InteriorEnginePart" id="InteriorEnginePart" rotation="0 0 0 0" scale="0.309 0.309 0.309" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('InteriorEnginePart')">
+            <Inline DEF="InteriorEngineInline" url="./interior engine animated.glb" mapDEFToID="true" nameSpaceName="EngineInt"></Inline>
+          </Transform>
+        </Transform>
 
-                        <Transform DEF="FuselagePart" id="FuselagePart" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('FuselagePart')">
-                            <Inline DEF="FuselageInline" url="./fuselage.glb" mapDEFToID="true" nameSpaceName="Fuselage" ></Inline>
-                        </Transform>
-                        <Transform DEF="WingPart" id="WingPart" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('WingPart')">
-                            <Inline DEF="WingInline" url="./wing.glb" mapDEFToID="true" nameSpaceName="WingP"></Inline>
-                        </Transform>
-                        <Transform DEF="ElectricEnginePart" id="ElectricEnginePart" rotation="0 0 0 0" scale="0.309 0.309 0.309" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('ElectricEnginePart')">
-                            <Inline DEF="ElectricEngineInline" url="./electric engines animated.glb" mapDEFToID="true" nameSpaceName="Engine"></Inline>
-                        </Transform>
-                        <Transform DEF="TailPart" id="TailPart" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('TailPart')">
-                            <Inline DEF="TailInline" url="./tail.glb" mapDEFToID="true" nameSpaceName="Tail"></Inline>
-                        </Transform>
-                        <Transform DEF="ExteriorEnginePart" id="ExteriorEnginePart" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('ExteriorEnginePart')">
-                            <Inline DEF="ExteriorEngineInline" url="./exterior engine.glb" mapDEFToID="true" nameSpaceName="EngineExt"></Inline>
-                        </Transform>
-                        <Transform DEF="InteriorEnginePart" id="InteriorEnginePart" rotation="0 0 0 0" scale="0.309 0.309 0.309" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('InteriorEnginePart')">
-                            <Inline DEF="InteriorEngineInline" url="./interior engine animated.glb" mapDEFToID="true" nameSpaceName="EngineInt"></Inline>
-                        </Transform>
-                    </Transform>
+        <Transform DEF="PlanePitch" translation="0 0 0" rotation="1 0 0 0" scale='1 1 1'>
+        <Transform DEF="Boeing737Part" id="Boeing737Part" translation="38 -10 -50" rotation="0 1 0 3.14" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Boeing737Part')">
+          <Inline DEF="Boeing737Inline" url="./boeing737.glb" mapDEFToID="true" nameSpaceName="Boeing737"></Inline>
+        </Transform>
+        </Transform>
 
-                    <Transform DEF="PlanePitch" translation="0 0 0" rotation="1 0 0 0" scale='1 1 1'>
-                        <Transform DEF="Boeing737Part" id="Boeing737Part" translation="38 -10 -50" rotation="0 1 0 3.14" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Boeing737Part')">
-                            <Inline DEF="Boeing737Inline" url="./boeing737.glb" mapDEFToID="true" nameSpaceName="Boeing737"></Inline>
-                        </Transform>
-                    </Transform>
+        <Transform DEF="Cessna172Part" id="Cessna172Part" translation="20 7 -20" rotation="0 1 0 -1.5708" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Boeing737Part')">
+          <Inline DEF="Cessna172Inline" url="./cessna172.glb" mapDEFToID="true" nameSpaceName="Cessna172"></Inline>
+        </Transform>
 
-                    <Transform DEF="Cessna172Part" id="Cessna172Part" translation="20 7 -20" rotation="0 1 0 -1.5708" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Boeing737Part')">
-                        <Inline DEF="Cessna172Inline" url="./cessna172.glb" mapDEFToID="true" nameSpaceName="Cessna172"></Inline>
-                    </Transform>
-
-                    <Transform DEF="X57Part" id="X57Part" translation="20 5 -5" rotation="0 1 0" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0">
-                        <Inline DEF="X57Inline" url="./x57.glb" mapDEFToID="true" nameSpaceName="X57"></Inline>
-                    </Transform>
-                </Transform>
-            </Transform>
-    </Scene>
-</x3d>
-
-<div id="output-container">
-    <div id="output-text">
+        <Transform DEF="X57Part" id="X57Part" translation="20 5 -5" rotation="0 1 0" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0">
+          <Inline DEF="X57Inline" url="./x57.glb" mapDEFToID="true" nameSpaceName="X57"></Inline>
+        </Transform>
+</Transform>
+</Transform>
+      </Scene>
+    </x3d>
+    
+    <div id="output-container">
+      <div id="output-text">
         <h3 id="info-title"></h3>
         <p id="info-description"></p>
-    </div>
-    <div id="graph-container">
+      </div>
+      <div id="graph-container">
         <img id="graph-image" src="" alt="Relevant Graph">
+      </div>
     </div>
-</div>
-
+    
 </body>
 </html>

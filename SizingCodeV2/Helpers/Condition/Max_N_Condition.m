@@ -1,11 +1,11 @@
-function cond = Max_N_Condition(perf, h, M, W)
+function cond = Max_N_Condition(perf, h, MV, W)
     perf.model.clear_mem(); perf.clear_data();
 
-    cond_level = levelFlightCondition(perf, h, M, W);
+    cond_level = levelFlightCondition(perf, h, MV, W);
     can_turn = cond_level.throttle.v < 1;
 
     h_vec = h(can_turn);
-    M_vec = M(can_turn);
+    M_vec = cond_level.M.v(can_turn);
     W_vec = W(can_turn);
 
     options = optimset('Display', 'off');
@@ -19,7 +19,7 @@ function cond = Max_N_Condition(perf, h, M, W)
     perf.model.clear_mem(); perf.clear_data();
     N_final = ones(size(h));
     N_final(can_turn) = N_opt;
-    cond = generateCondition(perf.model.geom, h, M, N_final, W, ones(size(h)));
+    cond = generateCondition(perf.model.geom, h, cond_level.M.v, N_final, W, ones(size(h)));
 end
 
 function res = obj(perf, h, M, W, N)

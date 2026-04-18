@@ -1,0 +1,3012 @@
+{
+  "name": {
+    "n": "Aircraft Name",
+    "u": "s",
+    "c": [],
+    "d": false,
+    "eval": 0,
+    "v": "0412_Optimization"
+  },
+  "id": {
+    "n": "Aircraft ID",
+    "u": "s",
+    "c": [],
+    "d": false,
+    "eval": 0,
+    "v": "0412_Optimization"
+  },
+  "fuselage": {
+    "length": {
+      "n": "Fuselage Length",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 15.239999976835199
+    },
+    "max_area": {
+      "n": "Fuselage Max Area",
+      "u": "m2",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 2.9999939908800179
+    },
+    "E_WD": {
+      "n": "Fuselage Wave Drag Efficency",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 2.2
+    },
+    "diameter": {
+      "n": "Fuselage Equivalent Diameter",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 1.9544080902299545
+    },
+    "area": {
+      "n": "Fuselage Estimated Wetted Area",
+      "u": "m2",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 37.611914073283714
+    }
+  },
+  "input": {
+    "g_limit": {
+      "n": "Structural G-Limit",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 7.5
+    },
+    "kloc": {
+      "n": "KLOC",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 5000
+    },
+    "fold_ratio": {
+      "n": "Fold Ratio",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 0
+    },
+    "WF_ratio": {
+      "n": "WF Ratio",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 0.6119
+    }
+  },
+  "weights": {
+    "mtow": {
+      "n": "Max Takeoff Weight",
+      "u": "N",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 264669.1862253896
+    },
+    "w_fixed": {
+      "n": "Fixed Weight",
+      "u": "N",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 8896.4432344668767
+    },
+    "raymer": {
+      "A": {
+        "n": "Raymer A Coeff",
+        "u": "",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 2.34
+      },
+      "C": {
+        "n": "Raymer C Coeff",
+        "u": "",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": -0.13
+      }
+    },
+    "loaded": {
+      "n": "Loaded Weight",
+      "u": "N",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 0
+    },
+    "ext_max_fuel_weight": {
+      "n": "External Tank Max Fuel Weight",
+      "u": "N",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 0
+    },
+    "empty": {
+      "n": "Empty Weight",
+      "u": "N",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 157756.05071403808
+    },
+    "max_fuel_weight": {
+      "n": "Max Fuel Weight",
+      "u": "N",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 64147.881306810908
+    },
+    "components": {
+      "W_wing": 33254.730233127637,
+      "W_htail": 2105.5797387895223,
+      "W_vtail": 363.30277310586456,
+      "W_fuselage": 30761.774609508811,
+      "W_nacelles": 18475.499321651812,
+      "W_lg": 8994.1012893387287,
+      "W_eng": 36032.1984,
+      "W_ai": 2421.209555317068,
+      "W_ec": 74.758709997897171,
+      "W_ess": 628.16352201181,
+      "W_osc": 0,
+      "W_fc": 9996.50479308741,
+      "W_hps": 5030.8318917722054,
+      "W_els": 2584.7109095330156,
+      "W_iae": 1624.2347101458513,
+      "W_api": 608.00757838796119,
+      "W_ox": 79.384742269794842,
+      "W_apu": 1956.43462457808,
+      "W_fur": 1367.1700081445674,
+      "W_aux": 1397.4533032700572
+    }
+  },
+  "wing": {
+    "mirror": {
+      "n": "Is Mirrored",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 1
+    },
+    "le_x": {
+      "n": "Leading Edge X Position",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 2.4151999888808948
+    },
+    "le_y": {
+      "n": "Leading Edge Y Position",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 0.97720404511497727
+    },
+    "qrtr_chd_x": {
+      "n": "Quarter Chord X Position",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 5.3901999888808945
+    },
+    "root_chord": {
+      "n": "Root Chord",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 11.9
+    },
+    "tip_chord": {
+      "n": "Tip Chord",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 1.6
+    },
+    "span": {
+      "n": "Span",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 16.8
+    },
+    "taper_ratio": {
+      "n": "Taper Ratio",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 0.13445378151260504
+    },
+    "sections": [
+      {
+        "chord_length": {
+          "n": "Length",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 11.9
+        },
+        "le_x": {
+          "n": "Leading Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.4151999888808948
+        },
+        "le_yp": {
+          "n": "Leading Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.97720404511497727
+        },
+        "le_y": {
+          "n": "Leading Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.97720404511497727
+        },
+        "le_z": {
+          "n": "Leading Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "te_x": {
+          "n": "Trailing Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 14.315199988880895
+        },
+        "te_yp": {
+          "n": "Trailing Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.97720404511497727
+        },
+        "te_y": {
+          "n": "Trailing Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.97720404511497727
+        },
+        "te_z": {
+          "n": "Trailing Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "dihedral": {
+          "n": "Dihedral",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "twist": {
+          "n": "Twist",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "flap_length": {
+          "n": "Flap Length",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "tc": {
+          "n": "T/C - Thickness",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.06
+        },
+        "control_name": {
+          "n": "Control Name",
+          "u": "s",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": ""
+        },
+        "offset": [
+          0,
+          0,
+          0
+        ],
+        "le_coords": [
+          2.4151999888808948,
+          0.97720404511497727,
+          0
+        ],
+        "te_coords": [
+          14.315199988880895,
+          0.97720404511497727,
+          0
+        ],
+        "qrtr_chd_coords": [
+          5.3901999888808945,
+          0.97720404511497727,
+          0
+        ]
+      },
+      {
+        "chord_length": {
+          "n": "Length",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 7
+        },
+        "le_x": {
+          "n": "Leading Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 7.3151999888808952
+        },
+        "le_yp": {
+          "n": "Leading Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.3212040451149774
+        },
+        "le_y": {
+          "n": "Leading Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.3212040451149774
+        },
+        "le_z": {
+          "n": "Leading Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "te_x": {
+          "n": "Trailing Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 14.315199988880895
+        },
+        "te_yp": {
+          "n": "Trailing Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.3212040451149774
+        },
+        "te_y": {
+          "n": "Trailing Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.3212040451149774
+        },
+        "te_z": {
+          "n": "Trailing Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "dihedral": {
+          "n": "Dihedral",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "twist": {
+          "n": "Twist",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "flap_length": {
+          "n": "Flap Length",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "tc": {
+          "n": "T/C - Thickness",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.04
+        },
+        "control_name": {
+          "n": "Control Name",
+          "u": "s",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": ""
+        },
+        "offset": [
+          0,
+          0,
+          0
+        ],
+        "le_coords": [
+          7.3151999888808952,
+          2.3212040451149774,
+          0
+        ],
+        "te_coords": [
+          14.315199988880895,
+          2.3212040451149774,
+          0
+        ],
+        "qrtr_chd_coords": [
+          9.0651999888808952,
+          2.3212040451149774,
+          0
+        ]
+      },
+      {
+        "chord_length": {
+          "n": "Length",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 6.46
+        },
+        "le_x": {
+          "n": "Leading Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 7.7351999888808951
+        },
+        "le_yp": {
+          "n": "Leading Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.92908364060348
+        },
+        "le_y": {
+          "n": "Leading Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.92908364060348
+        },
+        "le_z": {
+          "n": "Leading Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "te_x": {
+          "n": "Trailing Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 14.195199988880896
+        },
+        "te_yp": {
+          "n": "Trailing Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.92908364060348
+        },
+        "te_y": {
+          "n": "Trailing Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.92908364060348
+        },
+        "te_z": {
+          "n": "Trailing Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "dihedral": {
+          "n": "Dihedral",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "twist": {
+          "n": "Twist",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "flap_length": {
+          "n": "Flap Length",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.2
+        },
+        "tc": {
+          "n": "T/C - Thickness",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.038000000000000006
+        },
+        "control_name": {
+          "n": "Control Name",
+          "u": "s",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": "Main Flap"
+        },
+        "offset": [
+          0,
+          0,
+          0
+        ],
+        "le_coords": [
+          7.7351999888808951,
+          2.92908364060348,
+          0
+        ],
+        "te_coords": [
+          14.195199988880896,
+          2.92908364060348,
+          0
+        ],
+        "qrtr_chd_coords": [
+          9.3501999888808953,
+          2.92908364060348,
+          0
+        ]
+      },
+      {
+        "chord_length": {
+          "n": "Length",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 4.3
+        },
+        "le_x": {
+          "n": "Leading Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 9.4151999888808948
+        },
+        "le_yp": {
+          "n": "Leading Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 5.3606020225574884
+        },
+        "le_y": {
+          "n": "Leading Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 5.3606020225574884
+        },
+        "le_z": {
+          "n": "Leading Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "te_x": {
+          "n": "Trailing Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 13.715199988880894
+        },
+        "te_yp": {
+          "n": "Trailing Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 5.3606020225574884
+        },
+        "te_y": {
+          "n": "Trailing Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 5.3606020225574884
+        },
+        "te_z": {
+          "n": "Trailing Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "dihedral": {
+          "n": "Dihedral",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "twist": {
+          "n": "Twist",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "flap_length": {
+          "n": "Flap Length",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "tc": {
+          "n": "T/C - Thickness",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.03
+        },
+        "control_name": {
+          "n": "Control Name",
+          "u": "s",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": ""
+        },
+        "offset": [
+          0,
+          0,
+          0
+        ],
+        "le_coords": [
+          9.4151999888808948,
+          5.3606020225574884,
+          0
+        ],
+        "te_coords": [
+          13.715199988880894,
+          5.3606020225574884,
+          0
+        ],
+        "qrtr_chd_coords": [
+          10.490199988880894,
+          5.3606020225574884,
+          0
+        ]
+      },
+      {
+        "chord_length": {
+          "n": "Length",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 3.7600000000000002
+        },
+        "le_x": {
+          "n": "Leading Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 9.8351999888808948
+        },
+        "le_yp": {
+          "n": "Leading Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 5.968481618045991
+        },
+        "le_y": {
+          "n": "Leading Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 5.968481618045991
+        },
+        "le_z": {
+          "n": "Leading Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "te_x": {
+          "n": "Trailing Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 13.595199988880895
+        },
+        "te_yp": {
+          "n": "Trailing Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 5.968481618045991
+        },
+        "te_y": {
+          "n": "Trailing Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 5.968481618045991
+        },
+        "te_z": {
+          "n": "Trailing Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "dihedral": {
+          "n": "Dihedral",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "twist": {
+          "n": "Twist",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "flap_length": {
+          "n": "Flap Length",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.1
+        },
+        "tc": {
+          "n": "T/C - Thickness",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.028
+        },
+        "control_name": {
+          "n": "Control Name",
+          "u": "s",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": "Aileron"
+        },
+        "offset": [
+          0,
+          0,
+          0
+        ],
+        "le_coords": [
+          9.8351999888808948,
+          5.968481618045991,
+          0
+        ],
+        "te_coords": [
+          13.595199988880895,
+          5.968481618045991,
+          0
+        ],
+        "qrtr_chd_coords": [
+          10.775199988880894,
+          5.968481618045991,
+          0
+        ]
+      },
+      {
+        "chord_length": {
+          "n": "Length",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.14
+        },
+        "le_x": {
+          "n": "Leading Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 11.095199988880895
+        },
+        "le_yp": {
+          "n": "Leading Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 7.7921204045114978
+        },
+        "le_y": {
+          "n": "Leading Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 7.7921204045114978
+        },
+        "le_z": {
+          "n": "Leading Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "te_x": {
+          "n": "Trailing Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 13.235199988880893
+        },
+        "te_yp": {
+          "n": "Trailing Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 7.7921204045114978
+        },
+        "te_y": {
+          "n": "Trailing Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 7.7921204045114978
+        },
+        "te_z": {
+          "n": "Trailing Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "dihedral": {
+          "n": "Dihedral",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "twist": {
+          "n": "Twist",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "flap_length": {
+          "n": "Flap Length",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "tc": {
+          "n": "T/C - Thickness",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.022000000000000002
+        },
+        "control_name": {
+          "n": "Control Name",
+          "u": "s",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": ""
+        },
+        "offset": [
+          0,
+          0,
+          0
+        ],
+        "le_coords": [
+          11.095199988880895,
+          7.7921204045114978,
+          0
+        ],
+        "te_coords": [
+          13.235199988880893,
+          7.7921204045114978,
+          0
+        ],
+        "qrtr_chd_coords": [
+          11.630199988880895,
+          7.7921204045114978,
+          0
+        ]
+      },
+      {
+        "chord_length": {
+          "n": "Length",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.6
+        },
+        "le_x": {
+          "n": "Leading Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 11.515199988880894
+        },
+        "le_yp": {
+          "n": "Leading Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 8.4
+        },
+        "le_y": {
+          "n": "Leading Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 8.4
+        },
+        "le_z": {
+          "n": "Leading Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "te_x": {
+          "n": "Trailing Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 13.115199988880894
+        },
+        "te_yp": {
+          "n": "Trailing Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 8.4
+        },
+        "te_y": {
+          "n": "Trailing Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 8.4
+        },
+        "te_z": {
+          "n": "Trailing Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "dihedral": {
+          "n": "Dihedral",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "twist": {
+          "n": "Twist",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "flap_length": {
+          "n": "Flap Length",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "tc": {
+          "n": "T/C - Thickness",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.02
+        },
+        "control_name": {
+          "n": "Control Name",
+          "u": "s",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": ""
+        },
+        "offset": [
+          0,
+          0,
+          0
+        ],
+        "le_coords": [
+          11.515199988880894,
+          8.4,
+          0
+        ],
+        "te_coords": [
+          13.115199988880894,
+          8.4,
+          0
+        ],
+        "qrtr_chd_coords": [
+          11.915199988880895,
+          8.4,
+          0
+        ]
+      }
+    ],
+    "area": {
+      "n": "Surface Area",
+      "u": "m2",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 38.839622606005605
+    },
+    "average_chord": {
+      "n": "Average Chord",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 6.32865193613319
+    },
+    "average_sweep": {
+      "n": "Average LE Sweep",
+      "u": "deg",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 47.728467520767587
+    },
+    "average_te_sweep": {
+      "n": "Average TESweep",
+      "u": "deg",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": -7.515345287087559
+    },
+    "average_qrtr_chd_sweep": {
+      "n": "Average Quarter Chord Sweep",
+      "u": "deg",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 39.766662216253891
+    },
+    "average_tc": {
+      "n": "Average t/c Ratio",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 0.037816309269935865
+    },
+    "x_cp": {
+      "n": "Surface CP X Pos from nose",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 8.6610836233427939
+    },
+    "AR": {
+      "n": "Aspect Ratio",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 2.6545937696590736
+    },
+    "fold_span": {
+      "n": "Folded Wing Span",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 16.8
+    },
+    "fold_tip_chord": {
+      "n": "Folded Tip Chord",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 22.200000000000003
+    },
+    "fold_area": {
+      "n": "Folded Wing Area",
+      "u": "m2",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 286.44
+    }
+  },
+  "elevator": {
+    "mirror": {
+      "n": "Is Mirrored",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 1
+    },
+    "le_x": {
+      "n": "Leading Edge X Position",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 12.649199980773215
+    },
+    "le_y": {
+      "n": "Leading Edge Y Position",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 1
+    },
+    "qrtr_chd_x": {
+      "n": "Quarter Chord X Position",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 13.29689997978871
+    },
+    "root_chord": {
+      "n": "Root Chord",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 2.5907999960619841
+    },
+    "tip_chord": {
+      "n": "Tip Chord",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 1.4363395178167639
+    },
+    "span": {
+      "n": "Span",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 6.1767759936513
+    },
+    "taper_ratio": {
+      "n": "Taper Ratio",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 0.5544
+    },
+    "sections": [
+      {
+        "chord_length": {
+          "n": "Length",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.5907999960619841
+        },
+        "le_x": {
+          "n": "Leading Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 12.649199980773215
+        },
+        "le_yp": {
+          "n": "Leading Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1
+        },
+        "le_y": {
+          "n": "Leading Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1
+        },
+        "le_z": {
+          "n": "Leading Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "te_x": {
+          "n": "Trailing Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 15.239999976835199
+        },
+        "te_yp": {
+          "n": "Trailing Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1
+        },
+        "te_y": {
+          "n": "Trailing Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1
+        },
+        "te_z": {
+          "n": "Trailing Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "dihedral": {
+          "n": "Dihedral",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "twist": {
+          "n": "Twist",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "flap_length": {
+          "n": "Flap Length",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "tc": {
+          "n": "T/C - Thickness",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.04
+        },
+        "control_name": {
+          "n": "Control Name",
+          "u": "s",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": ""
+        },
+        "offset": [
+          0,
+          0,
+          0
+        ],
+        "le_coords": [
+          12.649199980773215,
+          1,
+          0
+        ],
+        "te_coords": [
+          15.239999976835199,
+          1,
+          0
+        ],
+        "qrtr_chd_coords": [
+          13.29689997978871,
+          1,
+          0
+        ]
+      },
+      {
+        "chord_length": {
+          "n": "Length",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.475353948237462
+        },
+        "le_x": {
+          "n": "Leading Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 12.764646028597738
+        },
+        "le_yp": {
+          "n": "Leading Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.2088387996825651
+        },
+        "le_y": {
+          "n": "Leading Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.2088387996825651
+        },
+        "le_z": {
+          "n": "Leading Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "te_x": {
+          "n": "Trailing Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 15.239999976835199
+        },
+        "te_yp": {
+          "n": "Trailing Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.2088387996825651
+        },
+        "te_y": {
+          "n": "Trailing Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.2088387996825651
+        },
+        "te_z": {
+          "n": "Trailing Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "dihedral": {
+          "n": "Dihedral",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "twist": {
+          "n": "Twist",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "flap_length": {
+          "n": "Flap Length",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1
+        },
+        "tc": {
+          "n": "T/C - Thickness",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.039000000000000007
+        },
+        "control_name": {
+          "n": "Control Name",
+          "u": "s",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": "Elevator"
+        },
+        "offset": [
+          0,
+          0,
+          0
+        ],
+        "le_coords": [
+          12.764646028597738,
+          1.2088387996825651,
+          0
+        ],
+        "te_coords": [
+          15.239999976835199,
+          1.2088387996825651,
+          0
+        ],
+        "qrtr_chd_coords": [
+          13.383484515657104,
+          1.2088387996825651,
+          0
+        ]
+      },
+      {
+        "chord_length": {
+          "n": "Length",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.4363395178167639
+        },
+        "le_x": {
+          "n": "Leading Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 13.803660459018435
+        },
+        "le_yp": {
+          "n": "Leading Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 3.08838799682565
+        },
+        "le_y": {
+          "n": "Leading Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 3.08838799682565
+        },
+        "le_z": {
+          "n": "Leading Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "te_x": {
+          "n": "Trailing Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 15.239999976835199
+        },
+        "te_yp": {
+          "n": "Trailing Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 3.08838799682565
+        },
+        "te_y": {
+          "n": "Trailing Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 3.08838799682565
+        },
+        "te_z": {
+          "n": "Trailing Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "dihedral": {
+          "n": "Dihedral",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "twist": {
+          "n": "Twist",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "flap_length": {
+          "n": "Flap Length",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "tc": {
+          "n": "T/C - Thickness",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.03
+        },
+        "control_name": {
+          "n": "Control Name",
+          "u": "s",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": ""
+        },
+        "offset": [
+          0,
+          0,
+          0
+        ],
+        "le_coords": [
+          13.803660459018435,
+          3.08838799682565,
+          0
+        ],
+        "te_coords": [
+          15.239999976835199,
+          3.08838799682565,
+          0
+        ],
+        "qrtr_chd_coords": [
+          14.162745338472625,
+          3.08838799682565,
+          0
+        ]
+      }
+    ],
+    "area": {
+      "n": "Surface Area",
+      "u": "m2",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 4.2051149111633306
+    },
+    "average_chord": {
+      "n": "Average Chord",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 2.0284624753579106
+    },
+    "average_sweep": {
+      "n": "Average LE Sweep",
+      "u": "deg",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 28.933808987567627
+    },
+    "average_te_sweep": {
+      "n": "Average TESweep",
+      "u": "deg",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 0
+    },
+    "average_qrtr_chd_sweep": {
+      "n": "Average Quarter Chord Sweep",
+      "u": "deg",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 22.518889016671437
+    },
+    "average_tc": {
+      "n": "Average t/c Ratio",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 0.035129001544004113
+    },
+    "x_cp": {
+      "n": "Surface CP X Pos from nose",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 13.879750546193785
+    },
+    "AR": {
+      "n": "Aspect Ratio",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 3.0450531221
+    }
+  },
+  "rudder": {
+    "mirror": {
+      "n": "Is Mirrored",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 1
+    },
+    "le_x": {
+      "n": "Leading Edge X Position",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 13.232891979886002
+    },
+    "le_y": {
+      "n": "Leading Edge Y Position",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 0.5
+    },
+    "qrtr_chd_x": {
+      "n": "Quarter Chord X Position",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 13.7346689791233
+    },
+    "root_chord": {
+      "n": "Root Chord",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 2.0071079969491956
+    },
+    "tip_chord": {
+      "n": "Tip Chord",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 1.1785780322085615
+    },
+    "span": {
+      "n": "Span",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 2.1302999982819442
+    },
+    "taper_ratio": {
+      "n": "Taper Ratio",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 0.58720210073399148
+    },
+    "sections": [
+      {
+        "chord_length": {
+          "n": "Length",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.0071079969491956
+        },
+        "le_x": {
+          "n": "Leading Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 13.232891979886002
+        },
+        "le_yp": {
+          "n": "Leading Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1
+        },
+        "le_y": {
+          "n": "Leading Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.5
+        },
+        "le_z": {
+          "n": "Leading Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.8660254037844386
+        },
+        "te_x": {
+          "n": "Trailing Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 15.239999976835197
+        },
+        "te_yp": {
+          "n": "Trailing Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1
+        },
+        "te_y": {
+          "n": "Trailing Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.5
+        },
+        "te_z": {
+          "n": "Trailing Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.8660254037844386
+        },
+        "dihedral": {
+          "n": "Dihedral",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 60
+        },
+        "twist": {
+          "n": "Twist",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "flap_length": {
+          "n": "Flap Length",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "tc": {
+          "n": "T/C - Thickness",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.04
+        },
+        "control_name": {
+          "n": "Control Name",
+          "u": "s",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": ""
+        },
+        "offset": [
+          0,
+          0,
+          0
+        ],
+        "le_coords": [
+          13.232891979886002,
+          0.5,
+          0.8660254037844386
+        ],
+        "te_coords": [
+          15.239999976835197,
+          0.5,
+          0.8660254037844386
+        ],
+        "qrtr_chd_coords": [
+          13.7346689791233,
+          0.5,
+          0.8660254037844386
+        ]
+      },
+      {
+        "chord_length": {
+          "n": "Length",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.9242550004751322
+        },
+        "le_x": {
+          "n": "Leading Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 13.315744976360065
+        },
+        "le_yp": {
+          "n": "Leading Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.1130299998281945
+        },
+        "le_y": {
+          "n": "Leading Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.55651499991409725
+        },
+        "le_z": {
+          "n": "Leading Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.96391225502540578
+        },
+        "te_x": {
+          "n": "Trailing Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 15.239999976835197
+        },
+        "te_yp": {
+          "n": "Trailing Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.1130299998281945
+        },
+        "te_y": {
+          "n": "Trailing Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.55651499991409725
+        },
+        "te_z": {
+          "n": "Trailing Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.96391225502540578
+        },
+        "dihedral": {
+          "n": "Dihedral",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 60
+        },
+        "twist": {
+          "n": "Twist",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "flap_length": {
+          "n": "Flap Length",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.15
+        },
+        "tc": {
+          "n": "T/C - Thickness",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.039000000000000007
+        },
+        "control_name": {
+          "n": "Control Name",
+          "u": "s",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": "Rudder"
+        },
+        "offset": [
+          0,
+          0,
+          0
+        ],
+        "le_coords": [
+          13.315744976360065,
+          0.55651499991409725,
+          0.96391225502540578
+        ],
+        "te_coords": [
+          15.239999976835197,
+          0.55651499991409725,
+          0.96391225502540578
+        ],
+        "qrtr_chd_coords": [
+          13.796808726478847,
+          0.55651499991409725,
+          0.96391225502540578
+        ]
+      },
+      {
+        "chord_length": {
+          "n": "Length",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.2614310286826249
+        },
+        "le_x": {
+          "n": "Leading Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 13.978568948152574
+        },
+        "le_yp": {
+          "n": "Leading Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.0172699984537497
+        },
+        "le_y": {
+          "n": "Leading Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.0086349992268748
+        },
+        "le_z": {
+          "n": "Leading Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.7470070649531424
+        },
+        "te_x": {
+          "n": "Trailing Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 15.239999976835199
+        },
+        "te_yp": {
+          "n": "Trailing Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.0172699984537497
+        },
+        "te_y": {
+          "n": "Trailing Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.0086349992268748
+        },
+        "te_z": {
+          "n": "Trailing Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.7470070649531424
+        },
+        "dihedral": {
+          "n": "Dihedral",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 60
+        },
+        "twist": {
+          "n": "Twist",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "flap_length": {
+          "n": "Flap Length",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "tc": {
+          "n": "T/C - Thickness",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.031
+        },
+        "control_name": {
+          "n": "Control Name",
+          "u": "s",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": ""
+        },
+        "offset": [
+          0,
+          0,
+          0
+        ],
+        "le_coords": [
+          13.978568948152574,
+          1.0086349992268748,
+          1.7470070649531424
+        ],
+        "te_coords": [
+          15.239999976835199,
+          1.0086349992268748,
+          1.7470070649531424
+        ],
+        "qrtr_chd_coords": [
+          14.29392670532323,
+          1.0086349992268748,
+          1.7470070649531424
+        ]
+      },
+      {
+        "chord_length": {
+          "n": "Length",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.1785780322085615
+        },
+        "le_x": {
+          "n": "Leading Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 14.061421944626638
+        },
+        "le_yp": {
+          "n": "Leading Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.1302999982819442
+        },
+        "le_y": {
+          "n": "Leading Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.0651499991409721
+        },
+        "le_z": {
+          "n": "Leading Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.8448939161941096
+        },
+        "te_x": {
+          "n": "Trailing Edge X Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 15.239999976835199
+        },
+        "te_yp": {
+          "n": "Trailing Edge YP Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 2.1302999982819442
+        },
+        "te_y": {
+          "n": "Trailing Edge Y Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.0651499991409721
+        },
+        "te_z": {
+          "n": "Trailing Edge Z Position",
+          "u": "m",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 1.8448939161941096
+        },
+        "dihedral": {
+          "n": "Dihedral",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 60
+        },
+        "twist": {
+          "n": "Twist",
+          "u": "deg",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "flap_length": {
+          "n": "Flap Length",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0
+        },
+        "tc": {
+          "n": "T/C - Thickness",
+          "u": "",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": 0.03
+        },
+        "control_name": {
+          "n": "Control Name",
+          "u": "s",
+          "c": [],
+          "d": false,
+          "eval": 0,
+          "v": ""
+        },
+        "offset": [
+          0,
+          0,
+          0
+        ],
+        "le_coords": [
+          14.061421944626638,
+          1.0651499991409721,
+          1.8448939161941096
+        ],
+        "te_coords": [
+          15.239999976835199,
+          1.0651499991409721,
+          1.8448939161941096
+        ],
+        "qrtr_chd_coords": [
+          14.356066452678778,
+          1.0651499991409721,
+          1.8448939161941096
+        ]
+      }
+    ],
+    "area": {
+      "n": "Surface Area",
+      "u": "m2",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 1.8003904566419133
+    },
+    "average_chord": {
+      "n": "Average Chord",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 1.6102971558820074
+    },
+    "average_sweep": {
+      "n": "Average LE Sweep",
+      "u": "deg",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 36.242077811076854
+    },
+    "average_te_sweep": {
+      "n": "Average TESweep",
+      "u": "deg",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 1.8008979910030025E-13
+    },
+    "average_qrtr_chd_sweep": {
+      "n": "Average Quarter Chord Sweep",
+      "u": "deg",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 47.714035636588513
+    },
+    "average_tc": {
+      "n": "Average t/c Ratio",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 0.035210663971683785
+    },
+    "x_cp": {
+      "n": "Surface CP X Pos from nose",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 15.159875834790141
+    },
+    "AR": {
+      "n": "Aspect Ratio",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 1.3229235302940816
+    }
+  },
+  "type": {
+    "n": "Raymer Aircraft Type",
+    "u": "s",
+    "c": [],
+    "d": false,
+    "eval": 0,
+    "v": "Jet fighter"
+  },
+  "prop": {
+    "num_engine": {
+      "n": "Number of Engines",
+      "u": "",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 2
+    },
+    "engine": {
+      "n": "Engine Name",
+      "u": "s",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": "F110"
+    },
+    "dry_weight": {
+      "n": "Engine Dry Weight",
+      "u": "N",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 17060.7
+    },
+    "diam": {
+      "n": "Engine Diameter",
+      "u": "m",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 0.906
+    },
+    "T0_NoAB": {
+      "n": "Max Sealevel Military Thrust",
+      "u": "N",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 169000
+    },
+    "T0_AB": {
+      "n": "Max Sealevel Afterburning Thrust",
+      "u": "N",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 289200
+    },
+    "engine_cost_mil": {
+      "n": "Engine Purchase Cost",
+      "u": "million",
+      "c": [],
+      "d": false,
+      "eval": 0,
+      "v": 5.832
+    }
+  },
+  "racks": [
+    -1,
+    -0.7,
+    -0.5,
+    -0.2,
+    0.2,
+    0.5,
+    0.7,
+    1
+  ],
+  "stores": [
+    {
+      "short_name": {
+        "n": "File Name",
+        "u": "s",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": "AIM-9X"
+      },
+      "full_name": {
+        "n": "Full Name",
+        "u": "s",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": "AIM-9x Sidewinder"
+      },
+      "weight": {
+        "n": "Weight",
+        "u": "N",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 836.26566403988647
+      },
+      "length": {
+        "n": "Length",
+        "u": "m",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 3.02
+      },
+      "diameter": {
+        "n": "Diameter",
+        "u": "m",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 0.127
+      },
+      "frontal_area": {
+        "n": "Frontal Area",
+        "u": "m2",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 0.012667686977437444
+      },
+      "type": {
+        "n": "Store Type Code",
+        "u": "",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 10
+      },
+      "fuel_vol": {
+        "n": "Fuel Volume",
+        "u": "L",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 0
+      },
+      "rack_num": {
+        "n": "Rack Number",
+        "u": "",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 1
+      },
+      "rack_ypos": {
+        "n": "Rack Y-Position (normalized)",
+        "u": "",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": -1
+      }
+    },
+    {
+      "short_name": {
+        "n": "File Name",
+        "u": "s",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": "AIM-9X"
+      },
+      "full_name": {
+        "n": "Full Name",
+        "u": "s",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": "AIM-9x Sidewinder"
+      },
+      "weight": {
+        "n": "Weight",
+        "u": "N",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 836.26566403988647
+      },
+      "length": {
+        "n": "Length",
+        "u": "m",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 3.02
+      },
+      "diameter": {
+        "n": "Diameter",
+        "u": "m",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 0.127
+      },
+      "frontal_area": {
+        "n": "Frontal Area",
+        "u": "m2",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 0.012667686977437444
+      },
+      "type": {
+        "n": "Store Type Code",
+        "u": "",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 10
+      },
+      "fuel_vol": {
+        "n": "Fuel Volume",
+        "u": "L",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 0
+      },
+      "rack_num": {
+        "n": "Rack Number",
+        "u": "",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 8
+      },
+      "rack_ypos": {
+        "n": "Rack Y-Position (normalized)",
+        "u": "",
+        "c": [],
+        "d": false,
+        "eval": 0,
+        "v": 1
+      }
+    }
+  ],
+  "ref_area": {
+    "n": "Reference Area",
+    "u": "m2",
+    "c": [],
+    "d": false,
+    "eval": 0,
+    "v": 77.67924521201121
+  },
+  "wing_height": {
+    "n": "Wing Leading Edge Height",
+    "u": "m",
+    "c": [],
+    "d": false,
+    "eval": 0,
+    "v": 2.0314919969121319
+  },
+  "fold_height": {
+    "n": "Maximum Fold Height",
+    "u": "m",
+    "c": [],
+    "d": false,
+    "eval": 0,
+    "v": 2.0314919969121319
+  },
+  "outline": {
+    "coords": {
+      "wing": [
+        [
+          2.4151999888808948,
+          0.97720404511497727,
+          0
+        ],
+        [
+          7.3151999888808952,
+          2.3212040451149774,
+          0
+        ],
+        [
+          7.7351999888808951,
+          2.92908364060348,
+          0
+        ],
+        [
+          9.4151999888808948,
+          5.3606020225574884,
+          0
+        ],
+        [
+          9.8351999888808948,
+          5.968481618045991,
+          0
+        ],
+        [
+          11.095199988880895,
+          7.7921204045114978,
+          0
+        ],
+        [
+          11.515199988880894,
+          8.4,
+          0
+        ],
+        [
+          13.115199988880894,
+          8.4,
+          0
+        ],
+        [
+          13.235199988880893,
+          7.7921204045114978,
+          0
+        ],
+        [
+          13.595199988880895,
+          5.968481618045991,
+          0
+        ],
+        [
+          13.715199988880894,
+          5.3606020225574884,
+          0
+        ],
+        [
+          14.195199988880896,
+          2.92908364060348,
+          0
+        ],
+        [
+          14.315199988880895,
+          2.3212040451149774,
+          0
+        ],
+        [
+          14.315199988880895,
+          0.97720404511497727,
+          0
+        ]
+      ],
+      "elevator": [
+        [
+          12.649199980773215,
+          1,
+          0
+        ],
+        [
+          12.764646028597738,
+          1.2088387996825651,
+          0
+        ],
+        [
+          13.803660459018435,
+          3.08838799682565,
+          0
+        ],
+        [
+          15.239999976835199,
+          3.08838799682565,
+          0
+        ],
+        [
+          15.239999976835199,
+          1.2088387996825651,
+          0
+        ],
+        [
+          15.239999976835199,
+          1,
+          0
+        ]
+      ],
+      "rudder": [
+        [
+          13.232891979886002,
+          0.5,
+          0.8660254037844386
+        ],
+        [
+          13.315744976360065,
+          0.55651499991409725,
+          0.96391225502540578
+        ],
+        [
+          13.978568948152574,
+          1.0086349992268748,
+          1.7470070649531424
+        ],
+        [
+          14.061421944626638,
+          1.0651499991409721,
+          1.8448939161941096
+        ],
+        [
+          15.239999976835199,
+          1.0651499991409721,
+          1.8448939161941096
+        ],
+        [
+          15.239999976835199,
+          1.0086349992268748,
+          1.7470070649531424
+        ],
+        [
+          15.239999976835197,
+          0.55651499991409725,
+          0.96391225502540578
+        ],
+        [
+          15.239999976835197,
+          0.5,
+          0.8660254037844386
+        ]
+      ],
+      "fuseage": [
+        [
+          15.239999976835199,
+          0.906,
+          0
+        ],
+        [
+          12.649199980773215,
+          0.906,
+          0
+        ],
+        [
+          14.315199988880895,
+          0.97720404511497727,
+          0
+        ],
+        [
+          2.4151999888808948,
+          0.97720404511497727,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          2.4151999888808948,
+          -0.97720404511497727,
+          -0
+        ],
+        [
+          14.315199988880895,
+          -0.97720404511497727,
+          -0
+        ],
+        [
+          12.649199980773215,
+          -0.906,
+          -0
+        ],
+        [
+          15.239999976835199,
+          -0.906,
+          -0
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "program_name": "Sizing Code V2.1",
+    "transonic_range": [
+      0.95,
+      1.3
+    ],
+    "transonic_M_eps": 0.005,
+    "g_const": 9.8051,
+    "jeta_density": 0.82,
+    "be_imperial": true,
+    "spot_factor_reference": 52.7559,
+    "CD0_scaler": 1,
+    "CDi_scaler": 1,
+    "CDw_scaler": 1.5,
+    "CLa_scaler": 1,
+    "CDp_scaler": 1,
+    "SpotFactor_scaler": 1,
+    "COST_scaler": 1,
+    "TA_scaler": 0.9,
+    "TSFC_scaler": 1.7,
+    "WE_scaler": 1.056,
+    "WF_ratio": 0.6,
+    "codes": {
+      "CD0_BASIC": 101,
+      "CD0_IGNORE": 102,
+      "CD0_FRICTION": 103,
+      "CDw_BASIC": 201,
+      "CDw_AWAVE": 202,
+      "PROP_BASIC": 301,
+      "PROP_NPSS": 302,
+      "PROP_HOOK": 303,
+      "PROP_HYBRID": 304,
+      "CDi_BASIC_SUBSONIC": 401,
+      "CDi_IGNORE": 402,
+      "CDi_IDRAG": 403,
+      "CLa_BASIC": 501,
+      "CLa_RAYMER": 502,
+      "COST_BASIC": 601,
+      "COST_XANDERSCRIPT": 602,
+      "CDp_CONST": 801,
+      "CDp_IGNORE": 802,
+      "SpotFactor_BASIC": 1001,
+      "OVER_NONE": 900,
+      "OVER_NO_WRITE": 901,
+      "OVER_NO_READ": 902,
+      "OVER_NO_READ_NO_WRITE": 903,
+      "MISSILE": 10,
+      "BOMB": 11,
+      "TANK": 12,
+      "POD": 13,
+      "WE_RAYMER": 51,
+      "WE_COMPS": 52,
+      "WE_Nicolai": 53,
+      "WE_Roskam": 54,
+      "MV_DEC_UNKOWN": 2001,
+      "MV_DEC_VEL": 2002,
+      "MV_DEC_MACH": 2003
+    },
+    "WE_model": 54,
+    "CD0_model": 101,
+    "CDi_model": 401,
+    "CDw_model": 201,
+    "CLa_model": 502,
+    "COST_model": 602,
+    "PROP_model": 303,
+    "CDp_model": 801,
+    "SpotFactor_model": 1001,
+    "CDp_CONST_CD": 0.15
+  }
+}

@@ -1,5 +1,7 @@
 function geom = setLoadout(geom, storeNames)
 
+    settings = readSettings();
+
     % geom - the plane we are working with
     % storeNames - an array of strings that should match existing entries in the "Stores" folder
 
@@ -11,8 +13,15 @@ function geom = setLoadout(geom, storeNames)
     rack_positions = geom.racks; % array of normalized y positions for each rack
     num_racks = length(rack_positions);
 
-    if(length(storeNames) ~= num_racks)
-        error("Cannot set loadout. The number of provided store names does not match the number of defined racks.")
+    if(length(storeNames) > num_racks)
+        error("Cannot set loadout. The number of provided store names is greater thn number of defined racks.")
+    end
+
+    if(length(storeNames) < num_racks)
+        % need to append a couple of extra empty stores to fill remaining stores
+        temp = repmat("", [1, num_racks]);
+        temp(1:length(storeNames)) = storeNames;
+        storeNames = temp;
     end
 
     % Identify the empty stores
@@ -38,15 +47,17 @@ function geom = setLoadout(geom, storeNames)
     % Prefill with empty stores to make sure fields are correct
     geom.stores = repmat(readStoreFile("X", storesFolder), [num_stores, 1]); % prefills with a bunch of empty stores
 
-    geom.weights.loaded = json_entry("Loaded Weight", 0, "N", geom, true);
+    geom.weights.loaded = json_entry("Loaded Weight", 0, "N", true);
+    geom.weights.ext_max_fuel_weight = json_entry("External Tank Max Fuel Weight", 0, "N", true);
 
     for i = 1:num_stores
         geom.stores(i) = readStoreFile(storeNames(i), storesFolder);
         
-        geom.stores(i).rack_ypos = json_entry("Rack Y-Position (normalized)", rack_positions(i), "", NaN, true);
-        geom.stores(i).rack_num = json_entry("Rack Number", rack_numbers(i), "", NaN, true);
+        geom.stores(i).rack_ypos = json_entry("Rack Y-Position (normalized)", rack_positions(i), "", true);
+        geom.stores(i).rack_num = json_entry("Rack Number", rack_numbers(i), "", true);
 
-        geom.weights.loaded.v = geom.weights.loaded.v + geom.stores(i).weight.v;
+        geom.weights.loaded.v = geom.weights.loaded.v + geom.stores(i).weight.v; % does not include fuel weight
+        geom.weights.ext_max_fuel_weight.v = geom.weights.ext_max_fuel_weight.v + geom.stores(i).fuel_vol.v * settings.jeta_density * settings.g_const; % fuel_vol in liters to fuel weight in N
     end
 
 end

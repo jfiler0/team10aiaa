@@ -1,4 +1,4 @@
-function struct = json_entry(name, value, units, geom, derived_override)
+function struct = json_entry(name, value, units, derived_override)
     % name = some string to call this entry. Can have spaces but avoid special characters. This is the selection for gui but not used
         % anywhere else in the actual analyisis
     % value = whatever the value is. Can be NaN or [] if it should not be assigned yet
@@ -28,12 +28,13 @@ function struct = json_entry(name, value, units, geom, derived_override)
         struct.eval = 0;
         struct.v = value;
     elseif isa(value, 'string')
-        if ~isstruct(geom)
-            error('json_entry was called with no defined geom (not enough arguments)')
-        end
-        struct.d = true;
-        struct.eval = value;
-        struct.v = eval(value);
+        % if ~isstruct(geom)
+        %     error('json_entry was called with no defined geom (not enough arguments)')
+        % end
+        % struct.d = true;
+        % struct.eval = value;
+        % struct.v = eval(value);
+        error("Midway through fixing this")
     else
         error("Invalid input variable type")
     end

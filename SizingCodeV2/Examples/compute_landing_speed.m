@@ -1,54 +1,40 @@
-function [v_land, glide_angle, throttle] = compute_landing_speed(perf, W)
-    % Landing info
+% claude added some stability modifications. Nvm. fuck claude ill do this myself
+function [v_land, glide_angle, throttle, landing_descent_rate] = compute_landing_speed(perf, W)
+    v0  = 50; % strting guess
 
-    % Define objective function
-    objective = @(v) obj(perf, v, W);
+    glide_angle = 3.5; % hard setting
+
+    landing_descent_rate = ft2m(20);
     
-    % Optimize
-    options = optimset('Display', 'off');
-    v_land = fminsearch(objective, 200, options);
+    flap_inc = 1.55;
+    aoa_limit = 8;
+
+    err = 1;
+    tol = 1E-5;
+    i_limit = 30; i = 0;
+
+    v = v0;
+
+    while err > tol
+        i = i + 1;
     
-    [~, glide_angle, throttle] = obj(perf, v_land, W);
-end
+        landing_descent_rate = v * sind(glide_angle);
 
-% function [out, glide_angle, throttle] = obj(perf, v, W)
-% 
-%     landing_descent_rate = ft2m(20); % 20ft/s descent rate max
-%     alpha = 8; % 8 degree AOA limit
-%     CL_max = 1.8; % once we have flaps
-% 
-%     perf.model.cond = P_Specified_Condition(perf, -landing_descent_rate, 0, v, W);
-% 
-%     glide_angle = asind(landing_descent_rate/v);
-% 
-%     n = 1 / cosd(alpha - glide_angle);
-% 
-%     Max_Lift = CL_max * perf.model.geom.ref_area.v * perf.model.cond.qinf.v;
-% 
-%     lift_const = 1 - Max_Lift * n / perf.model.cond.W.v
-% 
-%     throttle = perf.model.cond.throttle.v;
-% 
-%     R = 100;
-%     out = v / 100 + R * max( [ lift_const, throttle / 1 - 1, 0 ] );
-% end
+        cond = P_Specified_Condition(perf, -landing_descent_rate, 0, v, W, perf.model.settings.codes.MV_DEC_VEL);
+        perf.model.cond = cond;
 
-function [out, glide_angle, throttle] = obj(perf, v, W)
-    landing_descent_rate = ft2m(20); % 20ft/s descent rate max
-    aoa_limit = 8; % 8 degree AOA limit
+        CLa = perf.model.CLa * pi/180;
 
-    cond = P_Specified_Condition(perf, -landing_descent_rate, 0, v, W);
-    perf.model.cond = cond;
+        v_next = sqrt( ( cond.W.v / cosd(glide_angle) ) / ( flap_inc * aoa_limit * CLa * 0.5 * cond.rho.v * perf.model.geom.ref_area.v ) );
 
-    glide_angle = asind(landing_descent_rate/v);
+        err = abs(v_next - v)/v;
+        v = v_next;
+    end
 
-    flap_inc = 1.6;
+    if i == i_limit
+        warning("Landing speed search hit iteration limit.")
+    end
 
-    alpha = fzero(@(alpha) cond.W.v/cosd(alpha - glide_angle) - flap_inc * perf.model.CLa * alpha * cond.qinf.v * perf.model.geom.ref_area.v, aoa_limit );
-
-    n = 1 / cosd(alpha - glide_angle);
+    v_land = v;
     throttle = cond.throttle.v;
-
-    R = 100;
-    out = v / 100 + R * max([alpha/aoa_limit - 1, cond.throttle.v / 1 - 1, 0]);
 end

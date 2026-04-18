@@ -5,23 +5,27 @@ function codes = build_default_codes()
 
     codes.CD0_BASIC = 101; % uses an empty weight correllation to predict Swet and applys a fixed 
     codes.CD0_IGNORE = 102; % sets CD0 to 0
+    codes.CD0_FRICTION = 103; % Uses FRICTION fortran code
 
     codes.CDw_BASIC = 201;
     codes.CDw_AWAVE = 202;
     
     codes.PROP_BASIC = 301;
     codes.PROP_NPSS = 302;
+    codes.PROP_HOOK = 303;
+    codes.PROP_HYBRID = 304; % uses PROP_BASIC for thrust prediction and PROP_NPSS for TSFC
 
     codes.CDi_BASIC_SUBSONIC = 401;
     codes.CDi_IGNORE = 402;
     codes.CDi_IDRAG = 403; % using the fortran code
 
     codes.CLa_BASIC = 501;
+    codes.CLa_RAYMER = 502;
 
     codes.COST_BASIC = 601;
     codes.COST_XANDERSCRIPT = 602;
 
-    codes.PROP_BASIC = 701;
+    % 700 is still free
 
     codes.CDp_CONST = 801; % payload drag -> all payloads have the same CD0
     codes.CDp_IGNORE = 802;
@@ -41,4 +45,10 @@ function codes = build_default_codes()
 
     codes.WE_RAYMER = 51; % simple regression based on mtow
     codes.WE_COMPS = 52; % builds up all the component weights and adds
+    codes.WE_Nicolai = 53;
+    codes.WE_Roskam = 54;
+
+    codes.MV_DEC_UNKOWN = 2001; % for added stability in optimization, generateCondition now has an input that allows changing how the MV (mach or velocity) argument is handled
+    codes.MV_DEC_VEL = 2002;
+    codes.MV_DEC_MACH = 2003;
 end

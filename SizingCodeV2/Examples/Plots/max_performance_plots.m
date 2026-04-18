@@ -1,8 +1,9 @@
 function max_performance_plots(perf, N)
+
     settings = readSettings();
     perf.model.clear_mem(); perf.clear_data();
     W = 1;
-    h_vec = linspace(0, ft2m(50000), N);
+    h_vec = linspace(0, ft2m(90000), N);
     M_vec = linspace(0.3, 2, N);
     [M, H] = meshgrid(M_vec, h_vec);
     h_vec_long = H(:)';
@@ -10,7 +11,8 @@ function max_performance_plots(perf, N)
     one_vec = ones(size(h_vec_long));
     perf.model.cond = generateCondition(perf.model.geom, h_vec_long, M_vec_long,one_vec, W * one_vec, one_vec);
     % Create filter for excess power (cannot be less than 0)
-    filter = -perf.ExcessPower; % When a filter is less than 0, it is plotted
+    % filter = -perf.ExcessPower; % When a filter is less than 0, it is plotted
+    filter = -ones(size(M_vec_long)); % does not hide anything
     if settings.be_imperial
         ydata = m2ft(H);
         ylabel = "Altitude [ft]";

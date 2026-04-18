@@ -6,11 +6,11 @@ function M_opt = compute_max_mach_at_h(perf, W, h)
     
     % Optimize
     options = optimset('Display', 'off');
-    M_opt = fminsearch(objective, 0.5, options);
+    M_opt = fminsearch(objective, 1.2, options);
 end
 
 function out = obj(perf, h, M, W)
-    perf.model.cond = levelFlightCondition(perf, h, M, W);
+    perf.model.cond = levelFlightCondition(perf, h, M, W, perf.model.settings.codes.MV_DEC_MACH);
 
     R = 100;
     out = 1 / perf.model.cond.M.v + R * max( -perf.ExcessPower, 0) / 100;

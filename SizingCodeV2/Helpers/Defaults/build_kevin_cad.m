@@ -19,38 +19,57 @@ plane.fuselage.E_WD = json_entry("Fuselage Wave Drag Efficency", 2.2, "");
 
 plane.input.g_limit = json_entry("Structural G-Limit", 7.5, "");
 plane.input.kloc = json_entry("KLOC", 5000, "");
-% plane.input.fold_ratio = json_entry("Fold Ratio", 0.3, "");
+plane.input.fold_ratio = json_entry("Fold Ratio", 0, ""); % there is no fold right now
+plane.input.WF_ratio = json_entry("WF Ratio", 0.6119, "");  % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
 
 plane.weights.mtow = json_entry("Max Takeoff Weight", lb2N(79081), "N");
 plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
 
-plane.wing.span = json_entry("Wing Span", in2m(426.5), "m");
-plane.wing.le_sweep = json_entry("Wing Leading Edge Sweep", 25, "deg");
-plane.wing.root_chord = json_entry("Wing Root Chord", in2m(174.1), "m");
-plane.wing.tip_chord = json_entry("Wing Tip Chord", 0.14 * in2m(174.1), "m");
-plane.wing.fold_ratio = json_entry("Wing Fold Ratio", 0.333, "");
-plane.wing.dihedral = json_entry("Wing Dihedral", -1.8, "deg");
-plane.wing.le_x = json_entry("Wing Leading Edge X Position", 0.45 * plane.fuselage.length.v, "m");
+% MAIN WING DEFENITION - only the inboard side of the flap must be defined
+    
+    lerx_root = 7;
+    wing_root = in2m(174.1);
+    wing_le_x = 0.45 * plane.fuselage.length.v - lerx_root + wing_root;
 
-plane.wing.controls.flap_width = json_entry("Main Wing Flap Width (normalized to span)", 0.3, "");
-plane.wing.controls.flap_length = json_entry("Main Wing Flap Length (normalized to local chod)", 0.2, "");
-plane.wing.controls.aileron_width = json_entry("Main Wing Aileron Width (normalized to span)", 0.3, "");
-plane.wing.controls.aileron_length = json_entry("Main Wing Aileron Length (normalized to local chord)", 0.1, "");
+    sec0 = new_section(lerx_root, wing_le_x, 1, tc=0.06);
+    sec1 = new_section(in2m(174.1), wing_le_x + lerx_root - wing_root, 2, tc=0.04);
+    sec6 = new_section(0.14 * in2m(174.1), wing_le_x + lerx_root - wing_root + sind(25)*(in2m(426.5)/2 - 2), in2m(426.5)/2, tc=0.02);
+    
+    % MAIN FLAP
+    sec2 = btw_section(sec1, sec6, 0.1, flap_length=0.2, control_name="Main Flap");
+    sec3 = btw_section(sec1, sec6, 0.5);
+    
+    % AILERON
+    sec4 = btw_section(sec1, sec6, 0.6, flap_length=0.1, control_name="Aileron");
+    sec5 = btw_section(sec1, sec6, 0.9);
+    
+    plane.wing = assemble_surface([sec0, sec1, sec2, sec3, sec4, sec5, sec6]);
+    % plane.wing = assemble_surface([sec0, sec1, sec6]);
 
-plane.wing.strake.norm_length = json_entry("Strake Length (normalized to root chord)", 0.200 * plane.fuselage.length.v / in2m(174.1), "");
-plane.wing.strake.norm_span = json_entry("Strake Span (normalized to main wing span)", in2m(105) / plane.wing.span.v, "");
+% ELEVATOR DEFENITION
+    root_chord = 0.17 * plane.fuselage.length.v;
+    tip_chord = 0.17 * plane.fuselage.length.v * 0.5544;
+    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, 1, tc=0.04);
+    sec2 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 1+in2m(82.22), tc=0.03);
+    
+    % Flap
+    sec1 = btw_section(sec0, sec2, 0.1, flap_length=1, control_name="Elevator"); % Full Flying
+    
+    plane.elevator = assemble_surface([sec0, sec1, sec2]);
+    % plane.elevator = assemble_surface([sec0, sec2]);
 
-plane.elevator.root_chord = json_entry("Elevator Root Chord", 0.17 * plane.fuselage.length.v, "m");
-plane.elevator.tip_chord = json_entry("Elevator Tip Chord", 0.17 * plane.fuselage.length.v * 0.5544 , "m");
-plane.elevator.semi_span = json_entry("Elevator Semispan", in2m(82.22), "m");
-plane.elevator.dihedral = json_entry("Elevator Dihedral", 0, "deg");
-plane.elevator.elevator_length = json_entry("Elevator Control Surface Length (normalized to local chord)", 0.15, "");
-
-plane.vtail.root_chord = json_entry("V-Tail Root Chord", in2m(79.02), "m");
-plane.vtail.tip_chord = json_entry("V-Tail Tip Chord", in2m(98.62) * 0.4705, "m");
-plane.vtail.semi_span = json_entry("V-Tail Semispan", in2m(44.5), "m");
-plane.vtail.dihedral = json_entry("V-Tail Dihedral", 65, "deg");
-plane.vtail.rudder_length = json_entry("Rudder Length (normalized to local chord)", 0.15, "");
+% VTAIL DEFENITION
+    root_chord = in2m(79.02);
+    tip_chord = in2m(98.62) * 0.4705;
+    sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, 1, tc=0.04, dihedral=60);
+    sec3 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 1+in2m(44.5), tc=0.03, dihedral=60);
+    
+    % Flap
+    sec1 = btw_section(sec0, sec3, 0.1, flap_length=0.15, control_name="Rudder"); % vtail
+    sec2 = btw_section(sec0, sec3, 0.9);
+    
+    plane.rudder = assemble_surface([sec0, sec1, sec2, sec3]);
+    % plane.rudder = assemble_surface([sec0, sec3]);
 
 plane.type = json_entry("Raymer Aircraft Type", "Jet fighter", "s"); % for coefficent lookups
 plane.weights.raymer.A = json_entry("Raymer A Coeff", getRaymerCoefficents(plane.type.v, 1), "");
@@ -63,6 +82,8 @@ plane.racks = [-1 -0.7 -0.5 -0.2 0.2 0.5 0.7 1]; % spanwise position of the rack
 % plane.stores = []; % clean confiuration
 
 plane = setLoadout(plane, ["AIM-9X" "" "" "" "" "" "" "AIM-9X"]);
+% 
+% plane.airfoil = json_entry("Airfoil Code", "NACAXXX", "s")
 
 writeAircraftFile(plane);
     % Writes the actual file generally. This also means the location only needs to be changed in one place

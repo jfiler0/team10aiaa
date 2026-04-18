@@ -1,4 +1,12 @@
-function cond = P_Specified_Condition(perf, EP, h, MV, W)
+function cond = P_Specified_Condition(perf, EP, h, MV, W, MV_decleration)
+    arguments
+        perf 
+        EP 
+        h 
+        MV 
+        W 
+        MV_decleration = perf.model.settings.codes.MV_DEC_UNKOWN
+    end
 
     % EP -> array of target excess power for each flight condition
 
@@ -8,11 +16,12 @@ function cond = P_Specified_Condition(perf, EP, h, MV, W)
 
     perf.model.clear_mem(); perf.clear_data();
 
-    one_vec = ones(size(h));
+    one_vec = ones([1 , max([length(EP), length(h), length(MV), length(W)])]);
     if ~isstruct(perf.model.cond)
         perf.model.cond = buildDefaultCondStruct();
     end
-    perf.model.cond = generateCondition(perf.model.geom, h, MV, one_vec, W, one_vec, perf.model.cond);
+    perf.model.cond = generateCondition(perf.model.geom, h(:)', MV(:)', one_vec(:)', W(:)', one_vec(:)', perf.model.cond, MV_decleration); % make sure everything is forced to row vector with (:)'
+    EP = EP(:)'; % also needs to be a row vector
    
     drag = perf.Drag;
 
@@ -27,9 +36,9 @@ function cond = P_Specified_Condition(perf, EP, h, MV, W)
 
     cant_level = (ab_max_thrust - thrust_req) .* perf.model.cond.vel.v / perf.model.settings.g_const - EP < 0;
     mil_power = (mil_max_thrust - thrust_req) .* perf.model.cond.vel.v / perf.model.settings.g_const - EP > 0;
-    ab_on = ~cant_level & ~mil_power;
+    ab_on = ~cant_level & ~mil_power; % ab_on = ~cant_level & ~mil_power;
 
-    throttle = one_vec;
+    throttle = one_vec; % note this means all cant_level is set to 1
 
     throttle_mil_power = 0.9 * thrust_req ./ mil_max_thrust;
     throttle(mil_power) = throttle_mil_power(mil_power);
@@ -38,7 +47,7 @@ function cond = P_Specified_Condition(perf, EP, h, MV, W)
     throttle(ab_on) = throttle_ab_on(ab_on);
 
     cond = addCondThrottle(perf.model.cond, throttle);
-
     perf.model.cond = cond;
+
     perf.model.clear_mem(); perf.clear_data();
 end

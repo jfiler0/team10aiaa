@@ -5,6 +5,7 @@ classdef model_class < handle
         cond
         
         mem
+        prop_interp = NaN;
     end
     
     methods
@@ -148,6 +149,9 @@ classdef model_class < handle
                         
                     case obj.settings.codes.CD0_IGNORE
                         value = 0;
+
+                    case obj.settings.codes.CD0_FRICTION
+                        value = fortran_cd0(obj.geom, obj.cond.M.v, obj.cond.h.v);
                         
                     otherwise
                         error("Code '%i' has no recognized definition for the CD0 model.", code)
@@ -170,18 +174,14 @@ classdef model_class < handle
             function value = compute_CDi_value(obj, code)
                 switch code
                     case obj.settings.codes.CDi_BASIC_SUBSONIC
-                        e_osw = 0.85;
+
+                        e_osw = 4.61 * (1 - 0.045 * (obj.geom.wing.AR.v)^0.68 ) * cosd(obj.geom.wing.average_sweep.v)^0.15 - 3.1;
+                        e_osw = min(e_osw, 0.85); % Since at low aspect ratios it starts to make no sense
+
                         k1_sub = 1 / (pi * e_osw * obj.geom.wing.AR.v);
 
-                        % TODO: This is not right
-                        % Could take CL out but is example of safe_cond_call
-                        % sub_fun = @(M, I) M*0 + k1_sub * obj.safe_cond_call('CL', I) .^ 2;
-                        % sup_fun = @(M, I) obj.safe_cond_call('CL', I) .^ 2 .* obj.geom.wing.AR.v .* (M.^2 - 1) ./ (4*obj.geom.wing.AR.v * sqrt(M.^2 - 1) -2) * cosd(obj.geom.wing.le_sweep.v);
-                        % 
-                        % value = obj.transonicMerge(sub_fun, sup_fun);
-
                         sub_fun = @(M, I) M*0 + k1_sub;
-                        sup_fun = @(M, I) obj.geom.wing.AR.v .* (M.^2 - 1) ./ (4*obj.geom.wing.AR.v * sqrt(M.^2 - 1) -2) * cosd(obj.geom.wing.le_sweep.v);
+                        sup_fun = @(M, I) obj.geom.wing.AR.v .* (M.^2 - 1) ./ (4*obj.geom.wing.AR.v * sqrt(M.^2 - 1) -2) * cosd(obj.geom.wing.average_sweep.v);
     
                         k1 = obj.transonicMerge(sub_fun, sup_fun);
 
@@ -193,7 +193,7 @@ classdef model_class < handle
                     case obj.settings.codes.CDi_IDRAG
                         value = zeros([1 obj.cond.Nc.v]);
                         for i = 1:obj.cond.Nc.v
-                            value(i) = fortran_cdi(obj.geom, obj.cond.CL.v(i));
+                            value(i) = real( fortran_cdi(obj.geom, obj.cond.CL.v(i)) ); % real since we sometimes end up with imaginary values
                         end
                         
                     otherwise
@@ -221,9 +221,9 @@ classdef model_class < handle
                         sub_fun = @(M, I) M*0 + 0; % Adding M*0 to the front forces it to form a vector
 
                         E_WD = obj.geom.fuselage.E_WD.v;
-                        M_CD0_max = 1/(cosd(obj.geom.wing.le_sweep.v))^0.2;
+                        M_CD0_max = 1/(cosd(obj.geom.wing.average_sweep.v))^0.2;
                         sup_fun = @(M, I) (4.5 * pi / obj.geom.ref_area.v) * ( obj.geom.fuselage.max_area.v / obj.geom.fuselage.length.v ) ^ 2 * ...
-                                E_WD * ( 0.74 + 0.37 * cosd(obj.geom.wing.le_sweep.v) ) * ( 1 - 0.3 * sqrt( M - M_CD0_max ));
+                                E_WD * ( 0.74 + 0.37 * cosd(obj.geom.wing.average_sweep.v) ) * ( 1 - 0.3 * sqrt( M - M_CD0_max ));
 
                         value = obj.transonicMerge(sub_fun, sup_fun);
                                                     
@@ -252,8 +252,22 @@ classdef model_class < handle
                 switch code
                     case obj.settings.codes.CLa_BASIC
 
-                        sub_fun = @(M, I) deg2rad( 2*pi./sqrt(1-M.^2) );
-                        sup_fun = @(M, I) deg2rad( 4./sqrt(M.^2-1) );
+                        sub_fun = @(M, I) deg2rad( 2*pi./sqrt(1-M.^2) ); % flat plate with prandtl-gluaret
+                        sup_fun = @(M, I) deg2rad( 4./sqrt(M.^2-1) ); % ideal supersonic
+
+                        value = obj.transonicMerge(sub_fun, sup_fun);
+
+                    case obj.settings.codes.CLa_RAYMER % compensates for chaning wing sweep
+
+                        fuse_area_est = 0.5 * obj.geom.fuselage.length.v * obj.geom.fuselage.diameter.v;
+                        A_ratio = (2 * obj.geom.wing.area.v + fuse_area_est) / obj.geom.ref_area.v;
+                        A = obj.geom.wing.AR.v;
+
+                        beta = @(M) 1-M.*M;
+                        eta = @(M) 2*pi * beta(M) / (2*pi);
+
+                        sub_fun = @(M, I) A_ratio * 2 * pi * (2*A) ./ ( 2 + sqrt(4 + A^2 * beta(M).^2 .* ( 1 + tand(obj.geom.wing.average_qrtr_chd_sweep.v)^2 ./ beta(M).^2 ) ./ eta(M).^2) );
+                        sup_fun = @(M, I) deg2rad( 4./sqrt(M.^2-1) ); % ideal supersonic
 
                         value = obj.transonicMerge(sub_fun, sup_fun);
                         
@@ -308,61 +322,73 @@ classdef model_class < handle
             % Note that TA is scaled
             function PROP = compute_PROP_value(obj, code)
                 switch code
-                    case obj.settings.codes.PROP_BASIC
-                        T_SL  = 288.15; %deg K
-                        P_SL = 101330; % Pa
-                        gamma = 1.4; 
-                        TR = 1; % Note: Throttle Ratio ~1 for Fighter Aircraft (Sarojini + Mattingly)
-                        
-                        % Static and stagnation correction ratios
-                        theta = obj.cond.T.v/T_SL; delta = obj.cond.P.v/P_SL; 
-                        
-                        theta_0 = theta .* (1 + (gamma-1)/2 * obj.cond.M.v.^2);
-                        delta_0 = delta .* (1 + (gamma-1)/2 * obj.cond.M.v.^2).^(gamma/(gamma-1));
-                        
-                        % Lapse Ratios for Low-bypass Turbofans (See Mattingly, Aircraft Engine Design, 2e)
-                        % Vectorized version using logical indexing - Thanks Claude
-                        
-                        % This was needed as the best cruise appears to end up on this boundary and the kink is bad
-                        blend_width = 0.15;  % tune this — wider = smoother but less faithful to Mattingly
-                        t_blend = 1 ./ (1 + exp(-20/blend_width * (theta_0 - TR)));  % smooth 0->1 around TR
-                        
-                        alpha_dry_low  = delta_0 * 0.6;
-                        alpha_dry_high = 0.6 * delta_0 .* (1 - 3.8 * (theta_0 - TR) ./ theta_0);
-                        alpha_dry      = (1 - t_blend) .* alpha_dry_low + t_blend .* alpha_dry_high;
-                        
-                        alpha_AB_low   = delta_0 * 1.0;
-                        alpha_AB_high  = delta_0 .* (1 - 3.5 * (theta_0 - TR) ./ theta_0);
-                        alpha_AB       = (1 - t_blend) .* alpha_AB_low + t_blend .* alpha_AB_high;
-                        
-                        % Thrusts (by definition of lapse rate)
-                        F_th_mil = obj.geom.prop.T0_NoAB.v * alpha_dry; % (whatever unit thrust was passed with)
-                        F_th_AB = obj.geom.prop.T0_AB.v * alpha_AB; % (whatever unit thrust was passed with)
-                        
-                        TSFC_mil = (0.9 + 0.30 * obj.cond.M.v) .* sqrt(theta); %hour^-1; Mattingly Eq.3.55a (No, these are lbm/lbf*hr)
-                        TSFC_AB = (1.6 + 0.27 * obj.cond.M.v) .* sqrt(theta); %hour^-1; Mattingly Eq.3.55b (No, these are lbm/lbf*hr)
+                    case obj.settings.codes.PROP_BASIC % scaled throttle as linear on TSFC
+                        [TA, TSFC] = max_prop_info(obj.cond, obj.geom.prop.T0_NoAB.v, obj.geom.prop.T0_AB.v, obj.settings); % no longer tracking alpha
+                        % gives TA, TSFC, and alpha for military (first row) and max ab (second row)
                     
-                        TA = F_th_mil .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( F_th_AB - F_th_mil );
-                        TSFC = TSFC_mil .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TSFC_AB - TSFC_mil );
-                        TSFC = lbmlbfhr_2_kgNs(TSFC); % Since the regression was not in metric units
+                        TA = TA(1) .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TA(2) - TA(1) );
+                        TSFC = TSFC(1) .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TSFC(2) - TSFC(1) );
+
+                    case obj.settings.codes.PROP_HOOK % estimate of the power hook nonlinear tsfc/throttle: https://www.fzt.haw-hamburg.de/pers/Scholz/arbeiten/TextBensel.pdf
+                        [TA, TSFC] = max_prop_info(obj.cond, obj.geom.prop.T0_NoAB.v, obj.geom.prop.T0_AB.v, obj.settings); % no longer tracking alpha
+                        % gives TA, TSFC, and alpha for military (first row) and max ab (second row)
                     
-                        % Added in the max check and zeroing since it got weird for high mach at sea level
-                        alpha = max(alpha_dry + obj.cond.ab_throttle.v .* (alpha_AB - alpha_dry), 0);
+                        % thrust still scales linearly with throttle
+                        try
+                            TA = TA(1, :) .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TA(2, :) - TA(1, :) );
+                        catch
+                            disp("catch")
+                        end
 
-                        TA(alpha == 0) = 0; % if alpha was set to 0, TA should be 0 too
+                        % tsfc is a hook with there being a set min from 0 - 0.9. From 0.9-1 it is linear between max ab and military
+                        TSFC_min_throttle = 0.4; % min occurs at 40% throttle -> BIG INPUT TO HOW EFFICENT THE ENGINE IS
+                        throttle = obj.cond.throttle.v;
+                        ab_fil = throttle > 0.9; % obj.cond.mil_throttle.v  should be 1
+                        mil_fil = ~ab_fil;
+                        
+                        TSFC_mil = TSFC(1, :);
+                        TSFC_ab = TSFC(2, :);
+                        TSFC = zeros(size(TA)); % get the right size
+
+                        TSFC(ab_fil) = TSFC_mil(ab_fil) + obj.cond.ab_throttle.v(ab_fil) .* ( TSFC_ab(ab_fil) - TSFC_mil(ab_fil) );
+
+                        TSFC_scaler = 0.3722 * (throttle / TSFC_min_throttle).^2 - 0.742 * (throttle / TSFC_min_throttle) + 1.37; % this is right as TSFC reltive to the min throttle
+                        TSFC_scaler = TSFC_scaler / ( 0.3722 * (0.9 / TSFC_min_throttle).^2 - 0.742 * (0.9 / TSFC_min_throttle) + 1.37 ); % this converts to relative to the military throttle 0.9
+
+                        TSFC(mil_fil) = TSFC_mil(mil_fil) .* TSFC_scaler(mil_fil);
+
+                    case obj.settings.codes.PROP_NPSS
+                        if ~isstruct(obj.prop_interp)
+                            obj.prop_interp = load_engine_lookup(obj.geom.prop.engine.v);
+                        end
+
+                        TA = obj.prop_interp.TA(obj.cond.M_face.v, obj.cond.h.v, obj.cond.throttle.v) * obj.geom.prop.num_engine.v; % NUM ENGINE
+                        TSFC = obj.prop_interp.TSFC(obj.cond.M_face.v, obj.cond.h.v, obj.cond.throttle.v);
+
+                    case obj.settings.codes.PROP_HYBRID
+                        [TA, ~] = max_prop_info(obj.cond, obj.geom.prop.T0_NoAB.v, obj.geom.prop.T0_AB.v); % no longer tracking alpha
+                        % gives TA, TSFC, and alpha for military (first row) and max ab (second row)
                     
-                        TA = TA * obj.settings.TA_scaler;
-                        TSFC = TSFC * obj.settings.TSFC_scaler;
+                        TA = TA(1) .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TA(2) - TA(1) );
 
-                        less_than_0 = TA < 0;
-                        TA(less_than_0) = 0;
-                        alpha(less_than_0) = 0;
-
-                        PROP = [TA; TSFC; alpha];
+                        if ~isstruct(obj.prop_interp)
+                            obj.prop_interp = load_engine_lookup(obj.geom.prop.engine.v);
+                        end
+                        TSFC = obj.prop_interp.TSFC(obj.cond.M_face.v, obj.cond.h.v, obj.cond.throttle.v);
                         
                     otherwise
                         error("Code '%i' has no recognized definition for the COST model.", code)
                 end
+
+                % seperating out the checks since they are the same across models
+
+                TA = TA * obj.settings.TA_scaler;
+                TSFC = TSFC * obj.settings.TSFC_scaler;
+
+                less_than_0 = TA < 0;
+                TA(less_than_0) = 0;
+
+                PROP = [TA; TSFC];
             end
         
         function CDp = CDp(obj, override, code)
@@ -410,7 +436,8 @@ classdef model_class < handle
             function value = compute_SpotFactor_value(obj, code)
                 switch code
                     case obj.settings.codes.SpotFactor_BASIC
-                        value = obj.geom.wing.fold_area.v / obj.settings.spot_factor_reference;
+                        proj_area = obj.geom.wing.fold_area.v + obj.geom.fuselage.area.v;
+                        value = proj_area / obj.settings.spot_factor_reference;
 
                     otherwise
                         error("Code '%i' has no recognized definition for the SpotFactor model.", code)

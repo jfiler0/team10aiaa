@@ -35,7 +35,7 @@ function general_contour(xname, yname, zname, title_name, X, Y, z_long, filter_v
     figure("Name", title_name);
     surf(X_fine, Y_fine, Z_fine, 'EdgeColor', 'none');
     view(2);  % flatten to top-down 2D view
-    shading interp;
+    % shading interp; % can comment this out to not shade
     hold on;
     
     if do_0_line && min(Z_fine(:)) < 0 && max(Z_fine(:)) > 0

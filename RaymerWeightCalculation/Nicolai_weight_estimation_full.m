@@ -1,5 +1,81 @@
+<<<<<<< HEAD:RaymerWeightCalculation/Nicolai_Weights.m
+function output = Nicolai_Weights(console)
+%% Nicolai Chapter 20 Refined Weight Estimate
+
+
+%------------------ read from struct:---------------------------------
+W_TO = N2lb(console.geom.weights.mtow.v);          % takeoff weight [lb]
+M0   = compute_max_mach_at_h(console.perf,W_TO,0);            % max Mach number at sea level
+L = m2ft(console.geom.fuselage.length.v);                % fuselage length [ft]
+
+H = m2ft(console.geom.fuselage.diameter.v)/0.885; % maximum fuselage height [ft]. The 1/0.885 is a correction factor from diameter to max fuselage height
+W_TRON = 2500;   % avionics [lb]
+
+% Engine data
+N_E   = console.geom.prop.num_engine.v;             % number of engines
+W_ENG = N2lb(console.geom.prop.dry_weight.v);          % bare engine weight per engine [lb]
+% Wing (USN fighter Eq. 20.1b)
+t_c       = 0.05;          % max wing thickness ratio
+Lambda_LE = 20;            % leading edge sweep [deg]
+AR        = 4;           % wing aspect ratio
+lambda    = 0.3;       % wing taper ratio
+S_w       = 500;  % wing area [ft^2]
+
+% Horizontal tail
+% S_HT      = 6*2*m2ft(1)^2;  % horizontal tail planform area [ft^2]
+S_HT=100;
+t_R_HT    = 0.5;           % HT root thickness [ft]
+cbar_wing = 157.146/12;           % wing MAC [ft]
+L_t       = 15.0;          % tail moment arm [ft]
+b_HT      = 12;       % horizontal tail span [ft]
+
+% Vertical tail
+% S_VT      = 2*m2ft(console.geom.vtail.semi_span.v)*m2ft(0.5*(console.geom.vtail.root_chord.v+console.geom.vtail.tip_chord.v));  % vertical tail area [ft^2]
+S_VT=150;
+S_r       = 0.3*S_VT;      % rudder area [ft^2]. If unknown, use S_r=0.3*S_v
+AR_VT     = 1.5;           % VT aspect ratio
+lambda_V  = 0.4;           % VT taper ratio
+Lambda_VT = 35;            % VT quarter-chord sweep [deg]
+% Air induction
+N_i   = 2;         % number of inlets
+A_i   = 5.58;       % capture area per inlet [ft^2]
+L_d   = 8.0;       % subsonic duct length per inlet [ft]
+L_r   = 5.0;       % ramp length forward of throat per inlet [ft]
+P_2   = 40;        % max static pressure at compressor face [psia]
+M_D=1.62;
+% M_D   = compute_max_mach(console.perf,console.geom.weights.mtow.v);      % design Mach number = max Mach number
+
+% alt=linspace(0,ft2m(5e4),100);
+% [T_vec, a_vec, P_vec, rho_vec, mu_vec] = queryAtmosphere(alt, [0, 1, 0, 1, 0]);
+% W_TO_vec=W_TO*ones(length(alt),1);
+% max_mach_vec=compute_max_mach_at_h(console.perf, W_TO_vec, alt);
+% q_vec=1/2*rho_vec.*(max_mach_vec.*a_vec).^2
+q    = 2000;            % max dynamic pressure [lb/ft^2]
+
+% -----------------------------change if desired -------------------------
+F_GW = 246*2;       % total wing fuel [gal]
+F_GF = 391+354+394+568;       % total fuselage fuel [gal]
+N    = 7.5*1.5;        % ultimate load factor. Usually max designed g's with 1.5 FS
+W_landing_retardation = 250; % [lb] current estimate comes from Nicolai Figure 10.10
+composite_percentage=18; % F-18E is 20%, F-35 is 35%
+use_internal_ducts          = true;
+use_variable_ramps          = true; % Superhornet doesn't have these but we might
+display_results = false;
+K_PIV     = 1.0;           % variable-sweep structural factor. 1.0 fixed wing, 1.175 variable sweep
+hT_hV     = 0.0;           % h_T/h_V, 1 for T-tail, 0 fuselage mounted HT
+K_GEO = 1.33;       % duct shape factor. 1.33 if two or more flat sides, 1.0 if round or only 1 flat side
+
+
+
+
+% ------------------------- PLEASE -------------------------------------
+% -------------------DO NOT EDIT BELOW THIS-----------------------------
+% --------------- [CHECK WITH XANDER IF YOU DO] ------------------------
+% ----------------------------------------------------------------------
+=======
 %% Nicolai Chapter 20 Refined Weight Estimate
 % Combined from the equations/screenshots you provided
+>>>>>>> 235083e7a9c978098dd0c8d10967886361c01020:RaymerWeightCalculation/Nicolai_weight_estimation_full.m
 % Default setup is for a USN strike fighter / attack aircraft
 %
 % Included:
@@ -73,11 +149,6 @@ V_PR = 0;              % pressurized/occupied volume [ft^3]
 %  MILITARY / FIGHTER / TRANSPORT BLOCK
 %  =========================================================
 if run_military_block
-
-    fprintf('\n=========================================================\n');
-    fprintf(' MILITARY / FIGHTER / TRANSPORT BLOCK\n');
-    fprintf('=========================================================\n');
-
     %% ------------------------------------------------------
     %  INPUTS: STRUCTURE
     %  ------------------------------------------------------
@@ -240,8 +311,8 @@ if run_military_block
     %% ------------------------------------------------------
     %  ANGLE CONVERSIONS
     %  ------------------------------------------------------
-    Lambda_LE_rad = deg2rad_local(Lambda_LE);
-    Lambda_VT_rad = deg2rad_local(Lambda_VT);
+    Lambda_LE_rad = deg2rad(Lambda_LE);
+    Lambda_VT_rad = deg2rad(Lambda_VT);
 
     %% ------------------------------------------------------
     %  STRUCTURE
@@ -296,8 +367,7 @@ if run_military_block
         ( (N_i)*(L_d)*(A_i)^0.5*(P_2)*(K_GEO)*(K_M) )^0.7331;
 
     % Eq. (20.10)
-    W_variable_ramps = 4.079 * ...
-        ( (N_i)*(L_r)*(A_i)^0.5*(K_TE) )^1.201;
+    W_variable_ramps = 4.079 * ( (N_i)*(L_r)*(A_i)^0.5*(K_TE) )^1.201;
 
     % Eq. (20.11)
     W_HFS = 12.53 * (N_i) * (A_i);
@@ -684,11 +754,41 @@ if run_military_block
                        W_engine_controls + W_start_system + W_propellers + ...
                        W_prop_ctrl + W_surface_controls + W_instruments_total + ...
                        W_electrical + W_furnishings + W_air_conditioning + ...
+<<<<<<< HEAD:RaymerWeightCalculation/Nicolai_Weights.m
+                       W_avionics + W_landing_retardation+W_ENG*N_E
+    % writing components into the output struct
+    output.W_wing=W_wing;
+    output.W_HT=W_HT;
+    output.W_VT=W_VT;
+    output.W_fuselage=W_fuselage;
+    output.W_landing_gear=W_landing_gear;
+    output.W_air_induction=W_air_induction;
+    output.W_fuel_system=W_fuel_system;
+    output.W_engine_controls=W_engine_controls;
+    output.W_start_systems=W_start_system;
+    output.W_surface_controls=W_surface_controls;
+    output.W_instruments_total=W_instruments_total;
+    output.W_electrical=W_electrical;
+    output.W_furnishings=W_furnishings;
+    output.W_air_conditioning=W_air_conditioning;
+    output.W_avionics=W_avionics;
+    output.W_landing_retardation=W_landing_retardation;
+    output.W_engines=W_ENG*N_E;
+    output.W_total_empty_weight=W_total_military;
+=======
                        W_avionics + W_landing_retardation;
+>>>>>>> 235083e7a9c978098dd0c8d10967886361c01020:RaymerWeightCalculation/Nicolai_weight_estimation_full.m
 
+
+
+
+    if display_results
     %% ------------------------------------------------------
     %  DISPLAY MILITARY BLOCK
     %  ------------------------------------------------------
+    fprintf('\n=========================================================\n');
+    fprintf(' MILITARY / FIGHTER / TRANSPORT BLOCK\n');
+    fprintf('=========================================================\n');
     fprintf('\n--- Structure ---\n');
     fprintf('Wing Weight                  = %10.2f lb\n', W_wing);
     fprintf('Horizontal Tail Weight       = %10.2f lb\n', W_HT);
@@ -764,6 +864,7 @@ if run_military_block
 
     T_military = table(Component_military, Weight_military_lb);
     disp(T_military);
+    end
 end
 
 %% =========================================================

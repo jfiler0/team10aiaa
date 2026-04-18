@@ -6,8 +6,11 @@ build_f18_template
 settings = readSettings();
 
 geom = loadAircraft("f18_superhornet", settings);
+<<<<<<< HEAD
+=======
 geom = updateGeom(geom, settings, true);
 
+>>>>>>> fbd36938ebc874f1489480024bc7a27b62e46a83
 geom =  setLoadout(geom, ["AIM-9X" "" "" "" "" "" "" "AIM-9X"]);
 geom_strike =  setLoadout(geom, ["AIM-9X" "MK-83" "MK-83" "FPU-12" "FPU-12" "FPU-12" "MK-83" "MK-83" "AIM-9X"]);
 % geom =  setLoadout(geom, ["AIM-9X" "" "FPU-12" "" "" "FPU-12" "" "AIM-9X"]);

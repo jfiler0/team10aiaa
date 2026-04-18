@@ -15,6 +15,10 @@ geom_strike =  setLoadout(geom, ["AIM-9X" "MK-83" "MK-83" "FPU-12" "FPU-12" "FPU
 model = model_class(settings, geom);
 perf = performance_class(model);
 
+perf.model.geom = geom_strike;
+seroc_plot(perf, 50);
+perf.model.geom = geom;
+
 fprintf("F18 listed empty weight: 31855 lb. Code value: %.0f lb / %.0f lb (clean/basic)\n", N2lb(geom.weights.empty.v), N2lb(weightRatio(0, geom))) %
 fprintf("F18 listed mtow weight: 66000 lb. Code value: %.0f\n", N2lb(geom.weights.mtow.v))
 fprintf("F18 listed internal fuel weight: 14850 lb. Code value: %.0f\n", N2lb(geom.weights.max_fuel_weight.v))

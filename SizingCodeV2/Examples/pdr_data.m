@@ -14,17 +14,17 @@ perf = performance_class(model);
 %% LANDING
 
 [v_land, glide_angle, throttle, descent_rate] = compute_landing_speed(perf, geom.weights.mtow.v); perf.clear_data(); % landing at mtow
-fprintf("LANDING | MTOW (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.3f perc, descent rate = %.2f ft/s\n", N2lb(geom.weights.mtow.v), ms2kt(v_land), glide_angle, throttle, m2ft(descent_rate))
+fprintf("LANDING | MTOW (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.1f perc, descent rate = %.2f ft/s\n", N2lb(geom.weights.mtow.v), ms2kt(v_land), glide_angle, 100*throttle, m2ft(descent_rate))
 v_cmea_rfp = compute_cmea(perf, geom.weights.mtow.v);
 fprintf("       CMEA = %.2f kt\n", ms2kt(v_cmea_rfp));
 
 rfp_landing_weight = compute_rfp_landing_weight(perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "" "" ""]); % half stores dropped
 [v_land_rfp, glide_angle, throttle, descent_rate] = compute_landing_speed(perf, rfp_landing_weight); perf.clear_data(); % landing at rfp req
-fprintf("LANDING | RFP REQ WEIGHT (%.0f lb) | vel = %.3f kt < 145, glide_angle = %.3f deg , throttle setting = %.3f perc, descent rate = %.2f ft/s\n", N2lb(rfp_landing_weight), ms2kt(v_land_rfp), glide_angle, throttle, m2ft(descent_rate))
+fprintf("LANDING | RFP REQ WEIGHT (%.0f lb) | vel = %.3f kt < 145, glide_angle = %.3f deg , throttle setting = %.1f perc, descent rate = %.2f ft/s\n", N2lb(rfp_landing_weight), ms2kt(v_land_rfp), glide_angle, 100*throttle, m2ft(descent_rate))
 fprintf("       CMEA = %.2f kt\n", ms2kt(compute_cmea(perf, 1)) );
 
 [v_land, glide_angle, throttle, descent_rate] = compute_landing_speed(perf, 0); perf.clear_data(); % landing at empty weight
-fprintf("LANDING | EMPTY WEIGHT (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.3f perc, descent rate = %.2f ft/s\n", N2lb(weightRatio(0, perf.model.geom)), ms2kt(v_land), glide_angle, throttle, m2ft(descent_rate))
+fprintf("LANDING | EMPTY WEIGHT (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.1f perc, descent rate = %.2f ft/s\n", N2lb(weightRatio(0, perf.model.geom)), ms2kt(v_land), glide_angle, 100*throttle, m2ft(descent_rate))
 fprintf("       CMEA = %.2f kt\n", ms2kt(compute_cmea(perf, 1)) );
 
 fprintf("Estimate of external storage max weight: %.3f lb\n", N2lb(geom.weights.mtow.v - geom.weights.empty.v - geom.weights.max_fuel_weight.v))

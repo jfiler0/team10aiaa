@@ -16,6 +16,7 @@ set.transonic_M_eps = 0.005;
 
 set.g_const = 9.8051; % gravitational consts
 set.jeta_density = 0.82; % kg/L
+set.tropical_day_alt = ft2m(2000);
 
 set.be_imperial = true;
 
@@ -30,7 +31,7 @@ set.SpotFactor_scaler = 1;
 
 set.COST_scaler = 1;
 set.TA_scaler = 0.94;
-set.TSFC_scaler = 1.554; % 1.3
+set.TSFC_scaler = 1.554; % 1.3 1.554
 set.TSFC_AB_scaler = 1.5; % extra scaler applied to after burner (mainly for max prop condition)
 
 set.WE_scaler = 0.9786; % scales all components and the final empty weight 0.8752

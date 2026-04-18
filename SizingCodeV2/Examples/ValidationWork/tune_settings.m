@@ -18,7 +18,7 @@ n_sweep   = 15;
 delta     = 0.15;   % ±15% around X0
 
 figure('Position', [100 100 1400 300]);
-tiledlayout(1, n_vars, 'TileSpacing', 'compact');
+tiledlayout(n_vars, 1, 'TileSpacing', 'compact');
 
 for k = 1:n_vars
     x_sweep   = linspace(X0(k)*(1-delta), X0(k)*(1+delta), n_sweep);

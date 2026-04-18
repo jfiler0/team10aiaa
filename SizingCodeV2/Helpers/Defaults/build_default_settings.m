@@ -24,15 +24,15 @@ set.spot_factor_reference = 84.517; % Folded wing area of an f18e
 
 X0 = [1.2,      0.93,     1.8, 1.05,  1.3,    0.85,    1.6,    0.96,     0.42]; xs = X0;
 
-set.CD0_scaler = 1.12; % general scaler to parasite drag
-set.CDi_scaler = 0.93;
-set.CDw_scaler = 1.8; % general scaler to wave drag
+set.CD0_scaler = 1.1; % general scaler to parasite drag
+set.CDi_scaler = 0.91;
+set.CDw_scaler = 1.7; % general scaler to wave drag
 set.CLa_scaler = 1.05;
-set.CDp_scaler = 1.3;
+set.CDp_scaler = 1.25;
 set.SpotFactor_scaler = 1;
 
 set.COST_scaler = 1;
-set.TA_scaler = 0.85;
+set.TA_scaler = 0.98;
 set.TSFC_scaler = 1.6; % 1.3 1.554
 set.TSFC_AB_scaler = 1.5; % extra scaler applied to after burner (mainly for max prop condition)
 

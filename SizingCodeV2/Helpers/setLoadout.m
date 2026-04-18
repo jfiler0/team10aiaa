@@ -13,8 +13,15 @@ function geom = setLoadout(geom, storeNames)
     rack_positions = geom.racks; % array of normalized y positions for each rack
     num_racks = length(rack_positions);
 
-    if(length(storeNames) ~= num_racks)
-        error("Cannot set loadout. The number of provided store names does not match the number of defined racks.")
+    if(length(storeNames) > num_racks)
+        error("Cannot set loadout. The number of provided store names is greater thn number of defined racks.")
+    end
+
+    if(length(storeNames) < num_racks)
+        % need to append a couple of extra empty stores to fill remaining stores
+        temp = repmat("", [1, num_racks]);
+        temp(1:length(storeNames)) = storeNames;
+        storeNames = temp;
     end
 
     % Identify the empty stores

@@ -323,14 +323,14 @@ classdef model_class < handle
             function PROP = compute_PROP_value(obj, code)
                 switch code
                     case obj.settings.codes.PROP_BASIC % scaled throttle as linear on TSFC
-                        [TA, TSFC] = max_prop_info(obj.cond, obj.geom.prop.T0_NoAB.v, obj.geom.prop.T0_AB.v); % no longer tracking alpha
+                        [TA, TSFC] = max_prop_info(obj.cond, obj.geom.prop.T0_NoAB.v, obj.geom.prop.T0_AB.v, obj.settings); % no longer tracking alpha
                         % gives TA, TSFC, and alpha for military (first row) and max ab (second row)
                     
                         TA = TA(1) .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TA(2) - TA(1) );
                         TSFC = TSFC(1) .* obj.cond.mil_throttle.v + obj.cond.ab_throttle.v .* ( TSFC(2) - TSFC(1) );
 
                     case obj.settings.codes.PROP_HOOK % estimate of the power hook nonlinear tsfc/throttle: https://www.fzt.haw-hamburg.de/pers/Scholz/arbeiten/TextBensel.pdf
-                        [TA, TSFC] = max_prop_info(obj.cond, obj.geom.prop.T0_NoAB.v, obj.geom.prop.T0_AB.v); % no longer tracking alpha
+                        [TA, TSFC] = max_prop_info(obj.cond, obj.geom.prop.T0_NoAB.v, obj.geom.prop.T0_AB.v, obj.settings); % no longer tracking alpha
                         % gives TA, TSFC, and alpha for military (first row) and max ab (second row)
                     
                         % thrust still scales linearly with throttle

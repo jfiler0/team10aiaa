@@ -11,7 +11,7 @@ function seroc_plot(perf, N)
 
     for i = 1:length(v_vec)
         [v_land, ~, ~, ~] = compute_landing_speed(perf, W_vec(i));
-        v_vec(i) = v_land;
+        v_vec(i) = 1.05 * v_land; % 1.05 VPA?
     end
 
     perf.clear_data(); perf.model.cond = generateCondition(perf.model.geom, 0, v_vec, 1, W_vec, 1);

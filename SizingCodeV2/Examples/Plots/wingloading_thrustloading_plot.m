@@ -1,0 +1,1 @@
+% vary mtow and scale wing area. Get outputs for each. Plot constraint contours

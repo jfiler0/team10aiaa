@@ -24,62 +24,64 @@ seroc_plot(perf, 20);
 geom = setLoadout(geom, loadout_clean);
 perf.model.geom = geom;
 
-% N = 150;
-% M_vec = linspace(0.05, 2, N);
-% h_vec = linspace(0, ft2m(80000), N);
-% 
-% [M, H] = meshgrid(M_vec, h_vec);
-% 
-% 
-% figure(Name="Max Mach");
-% hold on
-% plot_mach_contour(perf, loadout_clean, 1, 0.5, M, H, 'r-'); % clean - ab
-% plot_mach_contour(perf, loadout_air2air, 1, 0.5, M, H, 'g-'); % air2air - ab
-% plot_mach_contour(perf, loadout_air2gnd, 1, 0.5, M, H, 'b-'); % air2gnd - ab
-% plot_mach_contour(perf, loadout_clean, 0.9, 0.5, M, H, 'r--'); % clean - mil
-% plot_mach_contour(perf, loadout_air2air, 0.9, 0.5, M, H, 'g--'); % air2air - mil
-% plot_mach_contour(perf, loadout_air2gnd, 0.9, 0.5, M, H, 'b--'); % air2gnd - mil
-% 
-% h1 = plot(NaN, NaN, 'r-',  'LineWidth', 1.5);
-% h2 = plot(NaN, NaN, 'g-',  'LineWidth', 1.5);
-% h3 = plot(NaN, NaN, 'b-',  'LineWidth', 1.5);
-% 
-% h4 = plot(NaN, NaN, 'k-',  'LineWidth', 1.5);   % solid meaning
-% h5 = plot(NaN, NaN, 'k--', 'LineWidth', 1.5);   % dashed meaning
-% 
-% legend([h1 h2 h3 h4 h5], ...
-%     {'Clean', 'Air-to-Air', 'Air-to-Ground', ...
-%      'Afterburner', 'Military Power'}, ...
-%     'Location','northwest', 'FontSize',13);
-% 
-% xlabel('Mach Number'); xlim([0 max(M_vec)])
-% ylabel('Altitude (kft)'); ylim([0 90])
-% title('Max Mach Contours')
-% grid on;
-% 
-% function plot_mach_contour(perf, loadout, T, W, M, H, line_spec)
-%     % T -> throttle
-%     % W -> weight
-% 
-%     % M -> input mach sweep using mesh grid
-%     % H -> input mach sweep using mesh grid
-% 
-%     h_vec_long = H(:)';
-%     M_vec_long = M(:)';
-%     one_vec = ones(size(h_vec_long));
-%     cond = generateCondition(perf.model.geom, h_vec_long, M_vec_long, one_vec, W * one_vec, T * one_vec); % h, M, N, W, T
-% 
-%     perf.model.geom = setLoadout(perf.model.geom, loadout);
-%     perf.model.cond = cond;
-%     perf.clear_data();
-%     EP = perf.ExcessPower;
-%     EP_grid = reshape(EP, size(M));
-% 
-%     % EP = 0 contour
-%     contour(M, m2ft(H)/1000, EP_grid, [0 0], line_spec, 'LineWidth', 1.5, 'HandleVisibility','off');
-% end
+N = 150;
+M_vec = linspace(0.05, 2, N);
+h_vec = linspace(0, ft2m(80000), N);
 
-% %% RANGE VS COMBAT TIME
+[M, H] = meshgrid(M_vec, h_vec);
+
+
+figure(Name="Max Mach");
+hold on
+plot_mach_contour(perf, loadout_clean, 1, 0.5, M, H, 'r-'); % clean - ab
+plot_mach_contour(perf, loadout_air2air, 1, 0.5, M, H, 'g-'); % air2air - ab
+plot_mach_contour(perf, loadout_air2gnd, 1, 0.5, M, H, 'b-'); % air2gnd - ab
+plot_mach_contour(perf, loadout_clean, 0.9, 0.5, M, H, 'r--'); % clean - mil
+plot_mach_contour(perf, loadout_air2air, 0.9, 0.5, M, H, 'g--'); % air2air - mil
+plot_mach_contour(perf, loadout_air2gnd, 0.9, 0.5, M, H, 'b--'); % air2gnd - mil
+plot_mach_contour(perf_f18, loadout_clean, 1, 0.5, M, H, 'k:'); % air2gnd - mil
+
+h1 = plot(NaN, NaN, 'r-',  'LineWidth', 1.5);
+h2 = plot(NaN, NaN, 'g-',  'LineWidth', 1.5);
+h3 = plot(NaN, NaN, 'b-',  'LineWidth', 1.5);
+
+h4 = plot(NaN, NaN, 'k-',  'LineWidth', 1.5);   % solid meaning
+h5 = plot(NaN, NaN, 'k--', 'LineWidth', 1.5);   % dashed meaning
+h6 = plot(NaN, NaN, 'k:', 'LineWidth', 1.5);   % dashed meaning
+
+legend([h1 h2 h3 h4 h5 h6], ...
+    {'Clean', 'Air-to-Air', 'Air-to-Ground', ...
+     'Afterburner', 'Military Power', 'F18/Clean/AB'}, ...
+    'Location','northwest', 'FontSize',13);
+
+xlabel('Mach Number'); xlim([0 max(M_vec)])
+ylabel('Altitude (kft)'); ylim([0 90])
+title('Max Mach Contours')
+grid on;
+
+function plot_mach_contour(perf, loadout, T, W, M, H, line_spec)
+    % T -> throttle
+    % W -> weight
+
+    % M -> input mach sweep using mesh grid
+    % H -> input mach sweep using mesh grid
+
+    h_vec_long = H(:)';
+    M_vec_long = M(:)';
+    one_vec = ones(size(h_vec_long));
+    cond = generateCondition(perf.model.geom, h_vec_long, M_vec_long, one_vec, W * one_vec, T * one_vec); % h, M, N, W, T
+
+    perf.model.geom = setLoadout(perf.model.geom, loadout);
+    perf.model.cond = cond;
+    perf.clear_data();
+    EP = perf.ExcessPower;
+    EP_grid = reshape(EP, size(M));
+
+    % EP = 0 contour
+    contour(M, m2ft(H)/1000, EP_grid, [0 0], line_spec, 'LineWidth', 1.5, 'HandleVisibility','off');
+end
+
+%% RANGE VS COMBAT TIME
 % N = 3;
 % time_vec = linspace(0, 8, N); % minutes
 % 
@@ -123,7 +125,7 @@ perf.model.geom = geom;
 %% RANGE VS DASH DISTANCE
 perf.clear_data();
 N = 3;
-dash_radius_nm = linspace(0, 200, N); % nm
+dash_radius_nm = linspace(0, 100, N); % nm
 
 range_air2gnd = zeros([length(dash_radius_nm), 2]);
 range_air2gnd_notank = range_air2gnd;
@@ -134,11 +136,11 @@ perf.clear_data();
 for i = 1:length(dash_radius_nm)
     range_air2gnd(1, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
     range_air2gnd_notank(1, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf, ["AIM-9X" "Mk-83" "Mk-83" "" "" "Mk-83" "Mk-83" "AIM-9x"]);
-    range_air2gnd_clean(1, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf, ["" "" "" "" "" "" "" ""]);
+    % range_air2gnd_clean(1, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf, ["" "" "" "" "" "" "" ""]);
 
     range_air2gnd(2, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf_f18, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
     range_air2gnd_notank(2, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf_f18, ["AIM-9X" "Mk-83" "Mk-83" "" "" "Mk-83" "Mk-83" "AIM-9x"]);
-    range_air2gnd_clean(2, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf_f18, ["" "" "" "" "" "" "" ""]);
+    % range_air2gnd_clean(2, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf_f18, ["" "" "" "" "" "" "" ""]);
 end
 
 figure();
@@ -146,16 +148,16 @@ hold on
 
 plot(dash_radius_nm, range_air2gnd(1, :), 'k-', DisplayName="Full Strike Loadout")
 plot(dash_radius_nm, range_air2gnd_notank(1, :), 'r-', DisplayName="Strike Loadout - No Tanks")
-plot(dash_radius_nm, range_air2gnd_clean(1, :), 'b-', DisplayName="Clean")
+% plot(dash_radius_nm, range_air2gnd_clean(1, :), 'b-', DisplayName="Clean")
 
 plot(dash_radius_nm, range_air2gnd(2, :), 'k--', DisplayName="Full Strike Loadout (F18)")
 plot(dash_radius_nm, range_air2gnd_notank(2, :), 'r--', DisplayName="Strike Loadout - No Tanks (F18)")
-plot(dash_radius_nm, range_air2gnd_clean(2, :), 'b--', DisplayName="Clean (F18)")
+% plot(dash_radius_nm, range_air2gnd_clean(2, :), 'b--', DisplayName="Clean (F18)")
 
 plot(50, 700, 'gx', MarkerSize=15, DisplayName="RFP Requirement")
 grid on
 axis tight
-ylim([0 800])
+ylim([200 900])
 title("Strike Mission (Air2Gnd)")
 xlabel("Dash Radius [nm]")
 ylabel("Combat Radius [nm]")

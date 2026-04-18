@@ -9,13 +9,13 @@ function plane = sizeAircraft2D(plane_in, missionList, constrainFun)
 
     options = optimset( ...
         'Display', 'iter', ...      % Display iteration info
-        'TolX', 1e-5, ...           % Tolerance on x
-        'TolFun', 1e-5, ...         % Tolerance on function value
-        'MaxIter', 50, ...         % Maximum iterations
-        'MaxFunEvals', 1000 ...     % Maximum function evaluations
+        'TolX', 1e-4, ...           % Tolerance on x
+        'TolFun', 1e-4, ...         % Tolerance on function value
+        'MaxIter', 40, ...         % Maximum iterations
+        'MaxFunEvals', 100 ...     % Maximum function evaluations
     );
     
-    [x_opt, fval_opt, exitflag, output] = fminsearch(f, x0, options);
+    [x_opt, ~, ~, ~] = fminsearch(f, x0, options);
 
     MTOW_opt    = x_opt(1);
     scale_opt = x_opt(2);

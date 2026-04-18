@@ -1,0 +1,14 @@
+function s = assignNestedField(s, fields, val)
+    % s: The original structure
+    % fields: A string array of field names, e.g., ["a", "b", "c"]
+    % val: The value to assign at the end of the chain
+
+    % GOAL: Return the struct using a set of field names with the value changed
+
+    fields = [fields "v"];
+    verifyNestedStruct(s, fields); % throws an error in function if it can't find the field  
+
+    % With things processed, we run a recrusive call to run through the struct
+
+    s = assignNestedFieldRecrusive(s, fields, val);
+end

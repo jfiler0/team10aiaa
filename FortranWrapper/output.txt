@@ -1,0 +1,64 @@
+DESCRIPTION OF THE OUTPUT FILE FROM D2500
+
+The main output from D2500 is the file wavedrag.out that 
+may be scrolled to your screen or printed for examination.
+Some additional files that are destined for printing are described
+later.
+
+
+
+
+FUSELAGE AREA DIDTRIBUTION
+
+Regardless of how many points are used to define the fuselage, the program 
+generates an enriched set of data that is actually used for the
+calculations.
+
+
+CONFIGURATION AREA BUILDUP BY COMPONENTS
+
+The essence of the supersonic area rule is the calculation of the 
+longitudinal distribution of area of the complete configuration at
+different values of the oblique cutting angle theta. Tables are
+provided for theta=-90,-45,0,45, and 90 degrees, although many other
+angles are also used. Tables are provided with headers S(B),S(BW),
+S(BWP),S(BWPF),S(BWPFC) showing the way different components of the
+configuration contribute to the overall area distribution.
+For some angles, the overall length may be greater than the difference
+between the max and min values of x for the configuration.
+This is a consequence of the oblique cutting planes.
+
+
+OPTIMUM FUSELAGE AREA
+
+If this is a design case, then the optimum fuselage distribution
+subject to the constraints is printed next.
+
+
+D/Q ASSOCIATED WITH VARIOUS ANGLES OF THETA
+
+The area distribution at each theta is converted to an equivalent source
+distribution and its drag is computed by Eminton's algorithm. The 
+result for each theta is presented in the table.
+
+
+ENTIRE AIRCRAFT D/Q AND CDW
+
+These numbers are the real bottom line result of the program, namely
+the zero-lift wave drag of the entire configuration.
+
+
+BODY AREAS FOR NEXT CYCLE
+
+If this is a design case, the next table shows the fuselage shape 
+that will be used in the next cycle.
+
+
+AREA DISTRIBUTION PLOTS
+
+Several plot files are produced with names of s001.gnu, s002.gnu,...
+that show the buildup of area for each cutting angle. These may be 
+displayed with gnuplot as in  plot "s001.gnu" with lines. The order 
+of the buildup is fuselage, wing, pod, fin, canard, same as in the
+printed output.
+

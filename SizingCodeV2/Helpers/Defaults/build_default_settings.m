@@ -43,7 +43,7 @@ set.codes = build_default_codes();
 
 set.WE_model = set.codes.WE_Roskam; % go back to set.codes.WE_Nicolai
 
-set.CD0_model = set.codes.CD0_BASIC; % CD0_BASIC CD0_FRICTION
+set.CD0_model = set.codes.CD0_FRICTION; % CD0_BASIC CD0_FRICTION
 set.CDi_model = set.codes.CDi_BASIC_SUBSONIC; % CDi_BASIC_SUBSONIC CDi_IDRAG
 set.CDw_model = set.codes.CDw_BASIC;
 set.CLa_model = set.codes.CLa_RAYMER;

@@ -1,4 +1,4 @@
-geom = loadAircraft("0412_Optimization", settings)
+geom = loadAircraft("HellstingerV3", settings)
 
 caseDef.title = "Hellstinger_V3";
 caseDef.Sref = m2ft(m2ft(geom.ref_area.v))

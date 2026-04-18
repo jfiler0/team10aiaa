@@ -99,8 +99,8 @@ try
     data_falcon = eval_falcon_error(settings);
     res_falcon_tot = norm(rmmissing(data_falcon.res));
 
-    data_tomact = eval_tomcat_error(settings);
-    res_tomcat_tot = norm(rmmissing(data_tomact.res));
+    data_tomcat = eval_tomcat_error(settings);
+    res_tomcat_tot = norm(rmmissing(data_tomcat.res));
 
     data_corsair = eval_corsair_error(settings);
     res_corsair_tot = norm(rmmissing(data_corsair.res));
@@ -111,45 +111,53 @@ catch Exception
 end
 
 if print
-    T = table();
-    T.("Error Name") = data_hornet.des';
-    T.("Percent Error") = 100 *data_hornet.res';
-    T.("Computed") = data_hornet.val';
-    T.("Target") = data_hornet.tar';
-    
-    disp(T)
-    fprintf("Total error for the hornet: %.2f percent \n", 100*res_hornet_tot )
 
-    T = table();
-    T.("Error Name") = data_falcon.des';
-    T.("Percent Error") = 100 *data_falcon.res';
-    T.("Computed") = data_falcon.val';
-    T.("Target") = data_falcon.tar';
+    % --- Build all four tables ---
+    datasets = {data_hornet, data_falcon, data_tomcat, data_corsair};
+    labels   = {'Hornet', 'Falcon', 'Tomcat', 'Corsair'};
+    totals   = [res_hornet_tot, res_falcon_tot, res_tomcat_tot, res_corsair_tot];
 
-    disp(T)
-    fprintf("Total error for the falcon: %.2f percent \n", 100*res_falcon_tot )
+    % Resolve output path to same folder as this script
+    script_dir = fileparts(mfilename('fullpath'));
+    xlsx_path  = fullfile(script_dir, 'settings_tuning_results.xlsx');
 
-    T = table();
-    T.("Error Name") = data_tomact.des';
-    T.("Percent Error") = 100 *data_tomact.res';
-    T.("Computed") = data_tomact.val';
-    T.("Target") = data_tomact.tar';
+    % Delete stale file so old sheets don't persist
+    if isfile(xlsx_path)
+        delete(xlsx_path);
+    end
 
-    disp(T)
-    fprintf("Total error for the tomcat: %.2f percent \n", 100*res_tomcat_tot )
+    for k = 1:4
 
-    T = table();
-    T.("Error Name") = data_corsair.des';
-    T.("Percent Error") = 100 *data_corsair.res';
-    T.("Computed") = data_corsair.val';
-    T.("Target") = data_corsair.tar';
+        d = datasets{k};
 
-    disp(T)
-    fprintf("Total error for the corsair: %.2f percent \n", 100*res_corsair_tot )
+        T = table();
+        T.("Error Name")    = d.des';
+        T.("Percent Error") = 100 * d.res';
+        T.("Computed")      = d.val';
+        T.("Target")        = d.tar';
+
+        % Console display
+        disp(T)
+        fprintf("Total error for the %s: %.2f percent\n", lower(labels{k}), 100 * totals(k));
+
+        % Write sheet — writetable appends a new sheet each call
+        writetable(T, xlsx_path, 'Sheet', labels{k});
+
+    end
+
+    % --- Summary sheet ---
+    S = table(labels', 100 * totals', ...
+        'VariableNames', {'Aircraft', 'Total_Error_Pct'});
+    writetable(S, xlsx_path, 'Sheet', 'Summary');
+
+    fprintf("\nResults written to: %s\n", xlsx_path);
+
 end
 
 weighting = [3, 1, 0.5, 1]; % F18, F16, F14, A-7E
 
 res = norm( weighting.*[res_hornet_tot, res_falcon_tot, res_tomcat_tot, res_corsair_tot]/norm(weighting) );
+
+fprintf("Average error: %.3f perc\n",100*mean(abs([data_hornet.res, data_falcon.res, data_tomcat.res, data_corsair.res])))
 
 end

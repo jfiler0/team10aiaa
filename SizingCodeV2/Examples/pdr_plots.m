@@ -16,7 +16,7 @@ perf = performance_class(model);
 %% PLOT OF MAX MACH VS ALTITUDE. MIL & AB for CLEAN/STRIKE/COMBAT
 loadout_clean = ["" "" "" "" "" "" "" ""];
 loadout_air2air = ["AIM-9X" "AIM-120" "AIM-120" "" "" "AIM-120" "AIM-120" "AIM-9X"];
-loadout_air2gnd = ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"];
+loadout_air2gnd = ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"];
 
 N = 150;
 M_vec = linspace(0.05, 2, N);
@@ -84,11 +84,11 @@ end
 % perf.clear_data();
 % 
 % for i = 1:length(time_vec)
-%     range_air2air(1, i) = get_mission_range(@eval_air2air, time_vec(i), perf, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+%     range_air2air(1, i) = get_mission_range(@eval_air2air, time_vec(i), perf, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
 %     range_air2air_notank(1, i) = get_mission_range(@eval_air2air, time_vec(i), perf, ["AIM-9X" "AIM-120" "AIM-120" "" "" "AIM-120" "AIM-120" "AIM-9x"]);
 %     range_air2air_clean(1, i) = get_mission_range(@eval_air2air, time_vec(i), perf, ["" "" "" "" "" "" "" ""]);
 % 
-%     range_air2air(2, i) = get_mission_range(@eval_air2air, time_vec(i), perf_f18, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+%     range_air2air(2, i) = get_mission_range(@eval_air2air, time_vec(i), perf_f18, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
 %     range_air2air_notank(2, i) = get_mission_range(@eval_air2air, time_vec(i), perf_f18, ["AIM-9X" "AIM-120" "AIM-120" "" "" "AIM-120" "AIM-120" "AIM-9x"]);
 %     range_air2air_clean(2, i) = get_mission_range(@eval_air2air, time_vec(i), perf_f18, ["" "" "" "" "" "" "" ""]);
 % end
@@ -126,11 +126,11 @@ range_air2gnd_clean = range_air2gnd;
 perf.clear_data();
 
 for i = 1:length(dash_radius_nm)
-    range_air2gnd(1, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
+    range_air2gnd(1, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
     range_air2gnd_notank(1, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf, ["AIM-9X" "Mk-83" "Mk-83" "" "" "Mk-83" "Mk-83" "AIM-9x"]);
     range_air2gnd_clean(1, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf, ["" "" "" "" "" "" "" ""]);
 
-    range_air2gnd(2, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf_f18, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
+    range_air2gnd(2, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf_f18, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
     range_air2gnd_notank(2, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf_f18, ["AIM-9X" "Mk-83" "Mk-83" "" "" "Mk-83" "Mk-83" "AIM-9x"]);
     range_air2gnd_clean(2, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf_f18, ["" "" "" "" "" "" "" ""]);
 end

@@ -18,7 +18,7 @@ fprintf("LANDING | MTOW (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , thr
 v_cmea_rfp = compute_cmea(perf, geom.weights.mtow.v);
 fprintf("       CMEA = %.2f kt\n", ms2kt(v_cmea_rfp));
 
-rfp_landing_weight = compute_rfp_landing_weight(perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "" "" ""]); % half stores dropped
+rfp_landing_weight = compute_rfp_landing_weight(perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "" "" ""]); % half stores dropped
 [v_land_rfp, glide_angle, throttle, descent_rate] = compute_landing_speed(perf, rfp_landing_weight); perf.clear_data(); % landing at rfp req
 fprintf("LANDING | RFP REQ WEIGHT (%.0f lb) | vel = %.3f kt < 145, glide_angle = %.3f deg , throttle setting = %.3f perc, descent rate = %.2f ft/s\n", N2lb(rfp_landing_weight), ms2kt(v_land_rfp), glide_angle, throttle, m2ft(descent_rate))
 fprintf("       CMEA = %.2f kt\n", ms2kt(compute_cmea(perf, 1)) );
@@ -35,20 +35,20 @@ fprintf("Total Cost: %.3f mil\n", model.COST);
 
 %% MISSIONS
 
-geom = setLoadout(geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
+geom = setLoadout(geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
 
 fprintf("STRIKE TAKEOFF WEIGHT = %.0f lb\n", N2lb(weightRatio(1, geom)))
 
-[W_final, empty_weight] = eval_air2gnd(perf, 700, 50, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
+[W_final, empty_weight] = eval_air2gnd(perf, 700, 50, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
 fprintf("Fuel remaing for RFP required 700nm, 50nm dash strike mission: %.0f lb\n", W_final-empty_weight)
 
-[W_final, empty_weight] = eval_air2air(perf, 700, 2, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+[W_final, empty_weight] = eval_air2air(perf, 700, 2, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
 fprintf("Fuel remaing for RFP required 700nm, 2min combat mission: %.0f lb\n", W_final-empty_weight)
 
-range_nm = get_mission_range(@eval_air2gnd, 50, perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
+range_nm = get_mission_range(@eval_air2gnd, 50, perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
 fprintf("Max range for 50nm dash strike mission: %.1f nm > 700\n", range_nm)
 
-range_nm = get_mission_range(@eval_air2air, 2, perf, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+range_nm = get_mission_range(@eval_air2air, 2, perf, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
 fprintf("Max range for 2min combat mission: %.1f nm > 700\n", range_nm)
 
 range_nm = get_mission_range(@eval_ferry, 0, perf, ["AIM-9X" "" "" "FPU-12" "FPU-12" "" "" "AIM-9x"]);
@@ -70,7 +70,7 @@ end
 %% MAX MACH - SEA LEVEL
 
 perf.clear_data();
-perf.model.geom = setLoadout(geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
+perf.model.geom = setLoadout(geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
 max_mach = compute_max_mach_at_h(perf, 1, 0);
 
 fprintf("Sealevel dash mach at full fuel weight + all strike stores: %.2f\n", max_mach)
@@ -98,7 +98,7 @@ fprintf("30kft max mach at empty weight + no stores: %.2f\n", max_mach)
 %% MAX MACH - TOTAL
 
 perf.clear_data();
-perf.model.geom = setLoadout(geom, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+perf.model.geom = setLoadout(geom, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
 [~, max_mach] = compute_max_mach(perf, 1);
 
 fprintf("Max mach at full fuel weight + all combat stores: %.2f\n", max_mach)
@@ -123,7 +123,7 @@ fprintf("Max sustained turn rate at 20000ft, mid-mission weight: %.3f deg/s > 8 
 %% MAX COMBAT ALT
 
 perf.clear_data();
-perf.model.geom = setLoadout(geom, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+perf.model.geom = setLoadout(geom, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
 [h_max, ~] = compute_combat_ceiling(perf, 1);
 
 fprintf("Max combat alt (500ft/min) at full fuel weight + all combat stores: %.2f kft\n", m2ft(h_max)/1000)
@@ -138,7 +138,7 @@ fprintf("Max combat alt (500ft/min) at empty weight + no stores: %.2f kft\n", m2
 
 perf.clear_data();
 geom.prop.num_engine.v = 1;
-perf.model.geom = setLoadout(geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
+perf.model.geom = setLoadout(geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
 geom = updateGeom(geom, settings);
 model.geom = geom;
 model.cond = generateCondition(geom, 0, v_land_rfp, 1, 0.5, 1);

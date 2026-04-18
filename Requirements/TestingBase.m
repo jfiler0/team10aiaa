@@ -9,7 +9,7 @@ classdef TestingBase < matlab.unittest.TestCase
 
     methods (TestClassSetup)
         function initializeAircraft(testCase)
-            file_name = "HellstingerV3";
+            file_name = "HellstingerV3"; % HellstingerV3
 
             testCase.settings = readSettings();
             testCase.geom = readAircraftFile(file_name);

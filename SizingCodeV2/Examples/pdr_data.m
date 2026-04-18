@@ -109,6 +109,17 @@ perf.model.geom = setLoadout(geom, ["" "" "" "" "" "" "" ""]);
 
 fprintf("Max mach at empty weight + no stores: %.2f\n", max_mach)
 
+%% MAX TURNS
+
+perf.clear_data();
+[M_opt, turn_rate] = compute_max_sustained_turn_at_h(perf, 0.5, 0);
+fprintf("Max sustained turn rate at sealevel (max), mid-mission weight: %.3f deg/s (M = %.3f)\n", turn_rate, M_opt)
+
+perf.clear_data();
+[M_opt, turn_rate] = compute_max_sustained_turn_at_h(perf, 0.5, ft2m(20000));
+fprintf("Max sustained turn rate at 20000ft, mid-mission weight: %.3f deg/s > 8 (M = %.3f)\n", turn_rate, M_opt)
+
+
 %% MAX COMBAT ALT
 
 perf.clear_data();

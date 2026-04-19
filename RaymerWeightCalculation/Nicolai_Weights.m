@@ -63,6 +63,8 @@ display_results = false;
 K_PIV     = 1.0;           % variable-sweep structural factor. 1.0 fixed wing, 1.175 variable sweep
 hT_hV     = 0.0;           % h_T/h_V, 1 for T-tail, 0 fuselage mounted HT
 K_GEO = 1.33;       % duct shape factor. 1.33
+
+
 % %------------------ read from struct:---------------------------------
 % W_TO = N2lb(console.geom.weights.mtow.v);          % takeoff weight [lb]
 % M0   = compute_max_mach_at_h(console.perf,W_TO,0);            % max Mach number at sea level

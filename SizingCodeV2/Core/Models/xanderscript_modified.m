@@ -1,6 +1,8 @@
+
 function cost_struct = xanderscript_modified(geom, do_tables, do_figures)
 
     cost_struct = struct();
+
     %% Detailed Cost
     % Walks through Roskam Book VIII Chapters 3,4,6,7
     % For questions, ask Xander

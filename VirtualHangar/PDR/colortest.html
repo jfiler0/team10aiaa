@@ -129,8 +129,7 @@
       const initialText =
             "hi we are Roy and Sons and we da best";
 
-      // hover -> blue ; select -> red (visually distinct)
-      const Colors = { hover: '0 0 1', select: '1 0 0' };
+      const Colors = { hover: '1 0 1', select: '0  1  0' };
 
       // Stores the currently selected Transform (if any)
       let currentSelection = null;
@@ -569,6 +568,7 @@
         <Transform DEF="PlaneRotation" translation="0 0 0" rotation="0 1 0 0" scale='1 1 1'>
         <Transform DEF="PlaneGroup" translation="0 0 0" rotation="1 0 0 0" scale='1 1 1'>
         
+          <!--
         <Transform DEF="PlaneGroup" translation="35 0 -40" rotation="1 0 0 -1.57" scale='1 1 1'>
 
           <Transform DEF="Fuselage" id="Fuselage" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Fuselage')">
@@ -590,23 +590,29 @@
             <Inline DEF="InletInline" url="GLB_Output/TestAssm - Param_Inlet_V5-1.glb" mapDEFToID="true" nameSpaceName="Inlet"></Inline>
           </Transform>
         </Transform>
-      
+      -->
+        <Transform DEF="PlaneGroup" translation="35 0 -40" rotation="1 0 0 -1.57" scale='1 1 1'>
 
-        <!--
-        <Transform DEF="PlanePitch" translation="0 0 0" rotation="1 0 0 0" scale='1 1 1'>
-        <Transform DEF="Boeing737Part" id="Boeing737Part" translation="38 -10 -50" rotation="0 1 0 3.14" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Boeing737Part')">
-          <Inline DEF="Boeing737Inline" url="./boeing737.glb" mapDEFToID="true" nameSpaceName="Boeing737"></Inline>
-        </Transform>
+          <Transform DEF="Fuselage" id="Fuselage" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Fuselage')">
+            <Inline DEF="FuselageInline" url="X3D_Output/TestAssm - Param_Fuselage_Cut_V2.5-1.x3d" mapDEFToID="true" nameSpaceName="Fuselage" ></Inline>
+          </Transform>
+          <Transform DEF="Wing" id="Wing" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Wing')">
+            <Inline DEF="WingInline" url="X3D_Output/TestAssm - Param_Wing_V3.01-1.x3d" mapDEFToID="true" nameSpaceName="Wing"></Inline>
+          </Transform>
+          <Transform DEF="Canopy" id="Canopy" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Canopy')">
+            <Inline DEF="CanopyInline" url="X3D_Output/TestAssm - Param_Canopy-1.x3d" mapDEFToID="true" nameSpaceName="Canopy"></Inline>
+          </Transform>
+          <Transform DEF="HorStab" id="HorStab" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('HorStab')">
+            <Inline DEF="HorStabInline" url="X3D_Output/TestAssm - Param_Horstab_V2-1.x3d" mapDEFToID="true" nameSpaceName="HorStab"></Inline>
+          </Transform>
+          <Transform DEF="VTail" id="VTail" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('VTail')">
+            <Inline DEF="VTailInline" url="X3D_Output/TestAssm - Param_VTail_V2-1.x3d" mapDEFToID="true" nameSpaceName="VTail"></Inline>
+          </Transform>
+          <Transform DEF="Inlet" id="Inlet" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Inlet')">
+            <Inline DEF="InletInline" url="X3D_Output/TestAssm - Param_Inlet_V5-1.x3d" mapDEFToID="true" nameSpaceName="Inlet"></Inline>
+          </Transform>
         </Transform>
 
-        <Transform DEF="Cessna172Part" id="Cessna172Part" translation="20 7 -20" rotation="0 1 0 -1.5708" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Boeing737Part')">
-          <Inline DEF="Cessna172Inline" url="./cessna172.glb" mapDEFToID="true" nameSpaceName="Cessna172"></Inline>
-        </Transform>
-
-        <Transform DEF="X57Part" id="X57Part" translation="20 5 -5" rotation="0 1 0" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0">
-          <Inline DEF="X57Inline" url="./x57.glb" mapDEFToID="true" nameSpaceName="X57"></Inline>
-        </Transform>
-        -->
       </Scene>
     </x3d>
     

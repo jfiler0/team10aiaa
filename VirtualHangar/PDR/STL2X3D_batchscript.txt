@@ -1,0 +1,49 @@
+import addon_utils
+import bpy
+import os
+
+INPUT_DIR  = r"C:\Users\xande\Documents\MATLAB\team10aiaa\VirtualHangar\PDR"
+OUTPUT_DIR = os.path.join(INPUT_DIR, "X3D_Output")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# Enable X3D exporter
+addon_utils.enable("io_scene_x3d", default_set=True, persistent=True)
+
+stl_files = [f for f in os.listdir(INPUT_DIR) if f.lower().endswith(".stl")]
+if not stl_files:
+    print("No STL files found in:", INPUT_DIR)
+else:
+    print(f"Found {len(stl_files)} STL file(s). Starting conversion...\n")
+
+for filename in stl_files:
+    stl_path = os.path.join(INPUT_DIR, filename)
+    x3d_name = os.path.splitext(filename)[0] + ".x3d"
+    x3d_path = os.path.join(OUTPUT_DIR, x3d_name)
+
+    # Clear the scene
+    bpy.ops.object.select_all(action='SELECT')
+    bpy.ops.object.delete(use_global=True)
+
+    # Import STL — try both operator names for compatibility
+    try:
+        bpy.ops.wm.stl_import(filepath=stl_path)        # Blender 3.6+
+    except AttributeError:
+        bpy.ops.import_mesh.stl(filepath=stl_path)      # Blender < 3.6
+
+    # Select all and set active object
+    bpy.ops.object.select_all(action='SELECT')
+    if bpy.context.selected_objects:
+        bpy.context.view_layer.objects.active = bpy.context.selected_objects[0]
+    else:
+        print(f"  ✗  {filename}: no objects imported, skipping.")
+        continue
+
+    # Export to X3D — no viewport context needed for export
+    bpy.ops.export_scene.x3d(
+        filepath=x3d_path,
+        use_selection=True,
+        use_mesh_modifiers=True,
+    )
+    print(f"  ✓  {filename}  →  {x3d_name}")
+
+print(f"\nDone! X3D files saved to:\n  {OUTPUT_DIR}")

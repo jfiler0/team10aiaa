@@ -159,5 +159,10 @@ weighting = [3, 1, 0.5, 1]; % F18, F16, F14, A-7E
 res = norm( weighting.*[res_hornet_tot, res_falcon_tot, res_tomcat_tot, res_corsair_tot]/norm(weighting) );
 
 fprintf("Average error: %.3f perc\n",100*mean(abs([data_hornet.res, data_falcon.res, data_tomcat.res, data_corsair.res])))
+fprintf("Average error (f18): %.3f perc\n",100*mean(abs(data_hornet.res)))
+fprintf("Average error (f16): %.3f perc\n",100*mean(abs(data_falcon.res)))
+fprintf("Average error (f14): %.3f perc\n",100*mean(abs(data_tomcat.res)))
+fprintf("Average error (f7e): %.3f perc\n",100*mean(abs(data_corsair.res)))
+
 
 end

@@ -40,11 +40,18 @@ data = res_cal(data, max_mach, 1.65, "Max Mach");
 % perf.model.cond = generateCondition(geom, 0, 0.5, 1, 0.5, 1); 
 % data = res_cal(data, m2ft(perf.ExcessPower)*60/1000, 44, "Afterburning Sealevel ROC");
 
+range_nm_strike = get_mission_range(@eval_air2gnd, 50, perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
+range_nm_combat = get_mission_range(@eval_air2air, 2, perf, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+range_nm_ferry = get_mission_range(@eval_ferry, 0, perf, ["AIM-9X" "" "" "FPU-12" "FPU-12" "FPU-12" "" "" "AIM-9x"]);
+
+data = res_cal(data, range_nm_strike, 480, "Strike Range, 50nm");
+data = res_cal(data, range_nm_combat, 610, "Combat Range, 2min");
+data = res_cal(data, range_nm_ferry, 800, "Ferry Max Range (3 tanks)");
+
 perf.model.clear_mem(); perf.clear_data();
 perf.model.geom = setLoadout(perf.model.geom, ["AIM-9X" "" "" "FPU-12" "FPU-12" "FPU-12" "" "AIM-9X"]);
 [max_range_est, h_opt, ~, v_opt] = estimate_max_range(perf, 1);
-
-data = res_cal(data, m2nm(max_range_est), 1654, "Ferry Max Range");
+% data = res_cal(data, m2nm(max_range_est), 1654, "Ferry Max Range");
 % data = res_cal(data, m2ft(h_opt)/1000, 42, "Ferry Cruise Best Alt");
 data = res_cal(data, ms2kt(v_opt), 484, "Ferry Cruise Best Speed");
 
@@ -80,4 +87,17 @@ function data = compute_missions_res(data, mission, perf, settings, des)
     data = res_cal(data, W_final, weightRatio(0, temp_perf.model.geom), des);
 
     % temp_calc.plot_hist
+end
+
+function range_nm = get_mission_range(fun, input, perf, loadout)
+    try
+        range_nm = fzero(@(R) eval_res(perf, fun, R, input, loadout), 100);
+    catch exception
+        range_nm = NaN;
+    end
+
+    function res = eval_res(perf, fun, range_nm, input, loadout)
+        [W_final, empty_weight] = fun(perf, range_nm, input, loadout);
+        res = W_final-empty_weight;
+    end
 end

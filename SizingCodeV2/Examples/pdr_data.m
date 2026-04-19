@@ -14,17 +14,17 @@ perf = performance_class(model);
 %% LANDING
 
 [v_land, glide_angle, throttle, descent_rate] = compute_landing_speed(perf, geom.weights.mtow.v); perf.clear_data(); % landing at mtow
-fprintf("LANDING | MTOW (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.3f perc, descent rate = %.2f ft/s\n", N2lb(geom.weights.mtow.v), ms2kt(v_land), glide_angle, throttle, m2ft(descent_rate))
+fprintf("LANDING | MTOW (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.1f perc, descent rate = %.2f ft/s\n", N2lb(geom.weights.mtow.v), ms2kt(v_land), glide_angle, 100*throttle, m2ft(descent_rate))
 v_cmea_rfp = compute_cmea(perf, geom.weights.mtow.v);
 fprintf("       CMEA = %.2f kt\n", ms2kt(v_cmea_rfp));
 
 rfp_landing_weight = compute_rfp_landing_weight(perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "" "" ""]); % half stores dropped
 [v_land_rfp, glide_angle, throttle, descent_rate] = compute_landing_speed(perf, rfp_landing_weight); perf.clear_data(); % landing at rfp req
-fprintf("LANDING | RFP REQ WEIGHT (%.0f lb) | vel = %.3f kt < 145, glide_angle = %.3f deg , throttle setting = %.3f perc, descent rate = %.2f ft/s\n", N2lb(rfp_landing_weight), ms2kt(v_land_rfp), glide_angle, throttle, m2ft(descent_rate))
+fprintf("LANDING | RFP REQ WEIGHT (%.0f lb) | vel = %.3f kt < 145, glide_angle = %.3f deg , throttle setting = %.1f perc, descent rate = %.2f ft/s\n", N2lb(rfp_landing_weight), ms2kt(v_land_rfp), glide_angle, 100*throttle, m2ft(descent_rate))
 fprintf("       CMEA = %.2f kt\n", ms2kt(compute_cmea(perf, 1)) );
 
 [v_land, glide_angle, throttle, descent_rate] = compute_landing_speed(perf, 0); perf.clear_data(); % landing at empty weight
-fprintf("LANDING | EMPTY WEIGHT (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.3f perc, descent rate = %.2f ft/s\n", N2lb(weightRatio(0, perf.model.geom)), ms2kt(v_land), glide_angle, throttle, m2ft(descent_rate))
+fprintf("LANDING | EMPTY WEIGHT (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.1f perc, descent rate = %.2f ft/s\n", N2lb(weightRatio(0, perf.model.geom)), ms2kt(v_land), glide_angle, 100*throttle, m2ft(descent_rate))
 fprintf("       CMEA = %.2f kt\n", ms2kt(compute_cmea(perf, 1)) );
 
 fprintf("Estimate of external storage max weight: %.3f lb\n", N2lb(geom.weights.mtow.v - geom.weights.empty.v - geom.weights.max_fuel_weight.v))
@@ -51,7 +51,7 @@ fprintf("Max range for 50nm dash strike mission: %.1f nm > 700\n", range_nm)
 range_nm = get_mission_range(@eval_air2air, 2, perf, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
 fprintf("Max range for 2min combat mission: %.1f nm > 700\n", range_nm)
 
-range_nm = get_mission_range(@eval_ferry, 0, perf, ["AIM-9X" "" "" "FPU-12" "FPU-12" "" "" "AIM-9x"]);
+range_nm = get_mission_range(@eval_ferry, 0, perf, ["AIM-9X" "" "" "FPU-12" "FPU-12" "FPU-12" "" "" "AIM-9x"]);
 fprintf("Max range for 2 tank ferry with no loiter: %.1f nm\n", range_nm)
 
 function range_nm = get_mission_range(fun, input, perf, loadout)
@@ -84,7 +84,7 @@ fprintf("Sealevel dash mach at empty weight + no stores: %.2f\n", max_mach)
 %% MAX MACH - 30kf
 
 perf.clear_data();
-perf.model.geom = setLoadout(geom, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+perf.model.geom = setLoadout(geom, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
 max_mach = compute_max_mach_at_h(perf, 1, ft2m(30000));
 
 fprintf("30kft max mach at full fuel weight + all combat stores: %.2f\n", max_mach)
@@ -155,3 +155,10 @@ perf.clear_data();
 %% Folding
 fprintf("Folded span = %.2f ft\n", m2ft(geom.wing.fold_span.v));
 fprintf("Spot Factor = %.2f ft (folded wing area = %.2f ft2)\n", model.SpotFactor, m2ft(m2ft(geom.wing.fold_area.v)));
+
+%% LOITER
+perf.model.geom = setLoadout(geom, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+perf.clear_data();
+
+time_hr = esimtate_max_loiter(perf);
+fprintf("Starting at full fuel a combat loadout (+3 tanks), lotier time is %.3f hr\n", time_hr)

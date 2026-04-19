@@ -32,27 +32,27 @@ classdef TestingScript < TestingBase
 
         function verifyA2ACombatRadius(testCase)
             testCase.perf.clear_data();
-            [W_final, empty_weight] = eval_air2air(testCase.perf, 700, 2, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+            [W_final, empty_weight] = eval_air2air(testCase.perf, 700, 2, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
             testCase.verifyGreaterThanOrEqual(W_final, empty_weight);
         end
 
         function verifyA2GCombatRadius(testCase)
             testCase.perf.clear_data();
-            [W_final, empty_weight] = eval_air2gnd(testCase.perf, 700, 50, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
+            [W_final, empty_weight] = eval_air2gnd(testCase.perf, 700, 50, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
             testCase.verifyGreaterThanOrEqual(W_final, empty_weight);
         end
 
         function verifyCMEA(testCase)
             % There isn't really a constraint on CMEA...
             testCase.perf.clear_data();
-            rfp_landing_weight = compute_rfp_landing_weight(testCase.perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "" "" ""]); % half stores dropped
+            rfp_landing_weight = compute_rfp_landing_weight(testCase.perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "" "" ""]); % half stores dropped
             testCase.verifyLessThanOrEqual(ms2kt(compute_cmea(testCase.perf, rfp_landing_weight)), 145);
             testCase.geom = setLoadout(testCase.geom, ["" "" "" "" "" "" "" ""]); % just to be safe
         end
 
         function verifyLandingSpeed(testCase)
             testCase.perf.clear_data();
-            rfp_landing_weight = compute_rfp_landing_weight(testCase.perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "" "" ""]); % half stores dropped
+            rfp_landing_weight = compute_rfp_landing_weight(testCase.perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "" "" ""]); % half stores dropped
             [v_land, ~, ~, ~] = compute_landing_speed(testCase.perf, rfp_landing_weight); testCase.perf.clear_data(); % landing at rfp req
             testCase.verifyLessThanOrEqual(ms2kt(v_land), 145);
         end
@@ -67,10 +67,10 @@ classdef TestingScript < TestingBase
 
         function verifyLandingSEROC(testCase)
             testCase.perf.clear_data();
-            rfp_landing_weight = compute_rfp_landing_weight(testCase.perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "" "" ""]); % half stores dropped
+            rfp_landing_weight = compute_rfp_landing_weight(testCase.perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "" "" ""]); % half stores dropped
             [v_land, ~, ~, ~] = compute_landing_speed(testCase.perf, rfp_landing_weight); testCase.perf.clear_data(); % landing at rfp req
             testCase.geom.prop.num_engine.v = 1;
-            testCase.geom = setLoadout(testCase.geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
+            testCase.geom = setLoadout(testCase.geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
             testCase.geom = updateGeom(testCase.geom, testCase.settings);
             testCase.model.cond = generateCondition(testCase.geom, 0, v_land, 1, rfp_landing_weight, 1);
 
@@ -86,7 +86,7 @@ classdef TestingScript < TestingBase
             testCase.perf.clear_data();
             v_cmea_rfp = compute_cmea(testCase.perf, testCase.geom.weights.mtow.v);
             testCase.geom.prop.num_engine.v = 1;
-            testCase.geom = setLoadout(testCase.geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
+            testCase.geom = setLoadout(testCase.geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
             testCase.geom = updateGeom(testCase.geom, testCase.settings);
             testCase.model.cond = generateCondition(testCase.geom, 0, v_cmea_rfp, 1, testCase.geom.weights.mtow.v, 1);
 
@@ -104,7 +104,7 @@ classdef TestingScript < TestingBase
 
         function verifySeaLevelDash(testCase)
             testCase.perf.clear_data();
-            testCase.geom = setLoadout(testCase.geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
+            testCase.geom = setLoadout(testCase.geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
             max_mach = compute_max_mach_at_h(testCase.perf, 0.5, 0);
             testCase.verifyGreaterThan(max_mach, 0.8);
         end

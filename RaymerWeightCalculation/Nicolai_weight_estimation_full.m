@@ -1,4 +1,3 @@
-<<<<<<< HEAD:RaymerWeightCalculation/Nicolai_Weights.m
 function output = Nicolai_Weights(console)
 %% Nicolai Chapter 20 Refined Weight Estimate
 

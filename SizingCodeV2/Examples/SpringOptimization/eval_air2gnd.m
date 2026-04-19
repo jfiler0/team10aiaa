@@ -1,6 +1,6 @@
 function [W_final, empty_weight] = eval_air2gnd(perf, radius_nm, dash_radius_nm, loadout)
     if nargin < 4
-        loadout = ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"];
+        loadout = ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"];
     end
 
     geom = perf.model.geom;

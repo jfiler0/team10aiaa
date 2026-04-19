@@ -1,6 +1,6 @@
 function [W_final, empty_weight] = eval_air2air(perf, radius_nm, time_min, loadout)
     if nargin < 4
-        loadout = ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"];
+        loadout = ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"];
     end
     
     geom = perf.model.geom;

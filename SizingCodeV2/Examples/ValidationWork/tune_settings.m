@@ -3,22 +3,26 @@ matlabSetup();
 fun = @(X) settings_tuning(X, false);
 
 %     CD0,       CDi,   CDw, CLa,   CDp, TA_scale, TSFC_Scale, WE_scale, WF_scale
-X0 = [1.1743,  0.8929,  1.7,  1.0,  1.244,    0.9,    1.554,    0.9786,      0.44]; xs = X0;
+X0 = [1.1743,  0.8929,  1.7,  1.0,  1.244,    0.9,    1.554,    0.9786,  0.44]; xs = X0;
+X0 = [1.26,      1,     1.85, 1.05,  1.35,    0.82,    1.7,    1.03,     0.41]; xs = X0;
+X0 = [1.1,      0.85,     1.75, 1.08,  1.2,    0.93,    1.5,    0.93,     0.43]; xs = X0;
+X0 = [1.2,      0.93,     1.8, 1.05,  1.3,    0.85,    1.6,    0.96,     0.42]; xs = X0;
+
 var_names = {'CD0', 'CDi', 'CDw', 'CLa','CDp','TA','TSFC','WE','WF'};
 
-lb = 0.5* ones(size(X0));
-ub = 2* ones(size(X0));
+% lb = 0.5* ones(size(X0));
+% ub = 2* ones(size(X0));
+
+lb = X0*1.2;
+up = X0*0.8;
 
 % ------------------------------------------------------------------ %
 %  Step 1 — 1D sweep along each variable from X0 to see sensitivity  %
 %  This tells you which variables actually matter and by how much     %
 % ------------------------------------------------------------------ %
 n_vars    = length(X0);
-n_sweep   = 15;
-delta     = 0.15;   % ±15% around X0
-
-figure('Position', [100 100 1400 300]);
-tiledlayout(1, n_vars, 'TileSpacing', 'compact');
+n_sweep   = 10;
+delta     = 0.10;   % ±15% around X0
 
 for k = 1:n_vars
     x_sweep   = linspace(X0(k)*(1-delta), X0(k)*(1+delta), n_sweep);
@@ -29,7 +33,7 @@ for k = 1:n_vars
         obj_sweep(j) = fun(X_test);
         fprintf('var %d (%s): %.4f -> obj = %.6f\n', k, var_names{k}, x_sweep(j), obj_sweep(j));
     end
-    nexttile;
+    figure;
     plot(x_sweep, obj_sweep, 'o-', LineWidth=1.5);
     xline(X0(k), '--r');
     xlabel(var_names{k}); ylabel('obj'); grid on;

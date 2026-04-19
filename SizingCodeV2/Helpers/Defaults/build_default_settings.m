@@ -37,13 +37,14 @@ set.TSFC_scaler = 1.6; % 1.3 1.554
 set.TSFC_AB_scaler = 1.5; % extra scaler applied to after burner (mainly for max prop condition)
 
 set.WE_scaler = 0.96; % scales all components and the final empty weight 0.8752
-set.WF_ratio =  0.42; % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
+set.WF_ratio =  0.46; % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
+    % RESET TO 0.42 to normal comparisons. Hard increase to 0.46 for hellstinger
 
 set.codes = build_default_codes();
 
 set.WE_model = set.codes.WE_Roskam; % go back to set.codes.WE_Nicolai
 
-set.CD0_model = set.codes.CD0_FRICTION; % CD0_BASIC CD0_FRICTION
+set.CD0_model = set.codes.CD0_BASIC; % CD0_BASIC CD0_FRICTION
 set.CDi_model = set.codes.CDi_BASIC_SUBSONIC; % CDi_BASIC_SUBSONIC CDi_IDRAG
 set.CDw_model = set.codes.CDw_BASIC;
 set.CLa_model = set.codes.CLa_RAYMER;

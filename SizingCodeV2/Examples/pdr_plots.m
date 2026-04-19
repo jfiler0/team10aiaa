@@ -13,6 +13,26 @@ geom = updateGeom(geom, settings, true); % true -> update prop
 model = model_class(settings, geom);
 perf = performance_class(model);
 
+%% TSFC MAX AB
+
+settings = readSettings();
+perf.model.clear_mem(); perf.clear_data();
+W = 1;
+N = 50;
+h_vec = linspace(0, ft2m(90000), N);
+M_vec = linspace(0.3, 2, N);
+[M, H] = meshgrid(M_vec, h_vec);
+h_vec_long = H(:)';
+M_vec_long = M(:)';
+one_vec = ones(size(h_vec_long));
+perf.model.cond = generateCondition(perf.model.geom, h_vec_long, M_vec_long,one_vec, W * one_vec, one_vec);
+filter = -perf.ExcessPower; % When a filter is less than 0, it is plotted
+ydata = m2ft(H);
+general_contour("Mach Number", "Altitude [ft]", "TSFC [lbm/lbfhr]", "TSFC (Max Afterburner)", M, ydata, kgNs_2_lbmlbfhr(perf.TSFC), filter)
+xline(1.6, 'k:', LineWidth=2, DisplayName="M1.6 Req")
+legend(Location="northwest")
+perf.model.clear_mem(); perf.clear_data();
+
 %% PLOT OF MAX MACH VS ALTITUDE. MIL & AB for CLEAN/STRIKE/COMBAT
 loadout_clean = ["" "" "" "" "" "" "" ""];
 loadout_air2air = ["AIM-9X" "AIM-120" "AIM-120" "" "" "AIM-120" "AIM-120" "AIM-9X"];
@@ -31,7 +51,7 @@ h_vec = linspace(0, ft2m(80000), N);
 [M, H] = meshgrid(M_vec, h_vec);
 
 
-figure(Name="Max Mach");
+figure(Name="Max Mach", Position=[100, 100, 4000, 900]);
 hold on
 plot_mach_contour(perf, loadout_clean, 1, 0.5, M, H, 'r-'); % clean - ab
 plot_mach_contour(perf, loadout_air2air, 1, 0.5, M, H, 'g-'); % air2air - ab
@@ -55,7 +75,7 @@ legend([h1 h2 h3 h4 h5 h6], ...
     'Location','northwest', 'FontSize',13);
 
 xlabel('Mach Number'); xlim([0 max(M_vec)])
-ylabel('Altitude (kft)'); ylim([0 90])
+ylabel('Altitude [kft]'); ylim([0 90])
 title('Max Mach Contours')
 grid on;
 
@@ -81,46 +101,49 @@ function plot_mach_contour(perf, loadout, T, W, M, H, line_spec)
     contour(M, m2ft(H)/1000, EP_grid, [0 0], line_spec, 'LineWidth', 1.5, 'HandleVisibility','off');
 end
 
+%% PAYLOAD RANG
+full_payload_range(perf)
+
 %% RANGE VS COMBAT TIME
-% N = 3;
-% time_vec = linspace(0, 8, N); % minutes
-% 
-% range_air2air = zeros([length(time_vec), 2]);
-% range_air2air_notank = range_air2air;
-% range_air2air_clean = range_air2air;
-% 
-% perf.clear_data();
-% 
-% for i = 1:length(time_vec)
-%     range_air2air(1, i) = get_mission_range(@eval_air2air, time_vec(i), perf, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
-%     range_air2air_notank(1, i) = get_mission_range(@eval_air2air, time_vec(i), perf, ["AIM-9X" "AIM-120" "AIM-120" "" "" "AIM-120" "AIM-120" "AIM-9x"]);
-%     range_air2air_clean(1, i) = get_mission_range(@eval_air2air, time_vec(i), perf, ["" "" "" "" "" "" "" ""]);
-% 
-%     range_air2air(2, i) = get_mission_range(@eval_air2air, time_vec(i), perf_f18, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
-%     range_air2air_notank(2, i) = get_mission_range(@eval_air2air, time_vec(i), perf_f18, ["AIM-9X" "AIM-120" "AIM-120" "" "" "AIM-120" "AIM-120" "AIM-9x"]);
-%     range_air2air_clean(2, i) = get_mission_range(@eval_air2air, time_vec(i), perf_f18, ["" "" "" "" "" "" "" ""]);
-% end
-% 
-% figure();
-% hold on
-% 
-% plot(time_vec, range_air2air(1, :), 'k-', DisplayName="Full Combat Loadout")
-% plot(time_vec, range_air2air_notank(1, :), 'r-', DisplayName="Combat Loadout - No Tanks")
-% plot(time_vec, range_air2air_clean(1, :), 'b-', DisplayName="Clean")
-% 
-% plot(time_vec, range_air2air(2, :), 'k--', DisplayName="Full Combat Loadout (F18)")
+N = 3;
+time_vec = linspace(0, 8, N); % minutes
+
+range_air2air = zeros([length(time_vec), 2]);
+range_air2air_notank = range_air2air;
+range_air2air_clean = range_air2air;
+
+perf.clear_data();
+
+for i = 1:length(time_vec)
+    range_air2air(1, i) = get_mission_range(@eval_air2air, time_vec(i), perf, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+    range_air2air_notank(1, i) = get_mission_range(@eval_air2air, time_vec(i), perf, ["AIM-9X" "AIM-120" "AIM-120" "" "" "AIM-120" "AIM-120" "AIM-9x"]);
+    range_air2air_clean(1, i) = get_mission_range(@eval_air2air, time_vec(i), perf, ["" "" "" "" "" "" "" ""]);
+
+    range_air2air(2, i) = get_mission_range(@eval_air2air, time_vec(i), perf_f18, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+    % range_air2air_notank(2, i) = get_mission_range(@eval_air2air, time_vec(i), perf_f18, ["AIM-9X" "AIM-120" "AIM-120" "" "" "AIM-120" "AIM-120" "AIM-9x"]);
+    % range_air2air_clean(2, i) = get_mission_range(@eval_air2air, time_vec(i), perf_f18, ["" "" "" "" "" "" "" ""]);
+end
+
+figure(Name="Combat Time");
+hold on
+
+plot(time_vec, range_air2air(1, :), 'k-', DisplayName="Full Combat Loadout")
+plot(time_vec, range_air2air_notank(1, :), 'r-', DisplayName="Combat Loadout - No Tanks")
+plot(time_vec, range_air2air_clean(1, :), 'b-', DisplayName="Clean")
+
+plot(time_vec, range_air2air(2, :), 'k--', DisplayName="Full Combat Loadout (3 Tanks) (F18)")
 % plot(time_vec, range_air2air_notank(2, :), 'r--', DisplayName="Combat Loadout - No Tanks (F18)")
 % plot(time_vec, range_air2air_clean(2, :), 'b--', DisplayName="Clean (F18)")
-% 
-% plot(2, 700, 'gx', MarkerSize=15, DisplayName="RFP Requirement")
-% 
-% grid on
-% axis tight
-% ylim([100 800])
-% title("Combat Mission (Air2Air)")
-% xlabel("Combat Time [min]")
-% ylabel("Combat Radius [nm]")
-% legend("Location","southwest", FontSize=13)
+
+plot(2, 700, 'gx', MarkerSize=15, DisplayName="RFP Requirement")
+
+grid on
+axis tight
+ylim([100 800])
+title("Combat Mission (Air2Air)")
+xlabel("Combat Time [min]")
+ylabel("Combat Radius [nm]")
+legend("Location","southwest", FontSize=13)
 
 %% RANGE VS DASH DISTANCE
 perf.clear_data();
@@ -143,7 +166,7 @@ for i = 1:length(dash_radius_nm)
     % range_air2gnd_clean(2, i) = get_mission_range(@eval_air2gnd, dash_radius_nm(i), perf_f18, ["" "" "" "" "" "" "" ""]);
 end
 
-figure();
+figure(Name="Dash Radius");
 hold on
 
 plot(dash_radius_nm, range_air2gnd(1, :), 'k-', DisplayName="Full Strike Loadout")

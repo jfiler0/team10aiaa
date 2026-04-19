@@ -1,4 +1,4 @@
-matlabSetup
+matlabSetup;
 settings = readSettings();
 
 % TODO
@@ -51,7 +51,7 @@ fprintf("Max range for 50nm dash strike mission: %.1f nm > 700\n", range_nm)
 range_nm = get_mission_range(@eval_air2air, 2, perf, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
 fprintf("Max range for 2min combat mission: %.1f nm > 700\n", range_nm)
 
-range_nm = get_mission_range(@eval_ferry, 0, perf, ["AIM-9X" "" "" "FPU-12" "FPU-12" "" "" "AIM-9x"]);
+range_nm = get_mission_range(@eval_ferry, 0, perf, ["AIM-9X" "" "" "FPU-12" "FPU-12" "FPU-12" "" "" "AIM-9x"]);
 fprintf("Max range for 2 tank ferry with no loiter: %.1f nm\n", range_nm)
 
 function range_nm = get_mission_range(fun, input, perf, loadout)
@@ -84,7 +84,7 @@ fprintf("Sealevel dash mach at empty weight + no stores: %.2f\n", max_mach)
 %% MAX MACH - 30kf
 
 perf.clear_data();
-perf.model.geom = setLoadout(geom, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+perf.model.geom = setLoadout(geom, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
 max_mach = compute_max_mach_at_h(perf, 1, ft2m(30000));
 
 fprintf("30kft max mach at full fuel weight + all combat stores: %.2f\n", max_mach)

@@ -16,7 +16,7 @@ function wingloading_thrustloading_plot()
 
     mtow0 = geom.weights.mtow.v;
 
-    delta = 0.15;
+    delta = 0.1;
     N = 35;
 
     MTOW_vec  = linspace(mtow0*(1-delta), mtow0*(1+delta), N);
@@ -64,7 +64,7 @@ function wingloading_thrustloading_plot()
             T = perf_i.TA;
             TW(i,j) = T / mtow;
 
-            obj_grid(i,j) = obj;
+            obj_grid(i,j) = output.cost;
 
             % --- Constraints ---
             if isempty(G)

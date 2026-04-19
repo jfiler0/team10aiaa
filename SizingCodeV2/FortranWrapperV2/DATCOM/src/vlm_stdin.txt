@@ -1,4 +1,4 @@
-o120.txt
+o050.txt
 y
-vlm120.dat
+vlm050.dat
 

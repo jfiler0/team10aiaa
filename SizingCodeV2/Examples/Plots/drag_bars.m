@@ -37,12 +37,13 @@ Y = [Cdp_vec(:), Cd0_vec(:), Cdi_vec(:), Cdw_vec(:)];        CD_total = sum(Y, 2
         text(M_vec, CD_total, arrayfun(@(v) sprintf('%.4f', v), CD_total, ...
              'UniformOutput', false), ...
              'HorizontalAlignment','center', 'VerticalAlignment','bottom', ...
-             'FontSize', 8);
+             'FontSize', 14);
 
         xticks(M_vec);
         xlabel("Mach Number");
         ylabel("Drag Coefficient");
-        title(sprintf("h = %.0f ft", m2ft(h0)));
+        title(sprintf("h = %.0f ft", m2ft(h0)), 'FontSize', 24);
+        theme(gcf, 'light');
         grid on;
 
         if i == 1

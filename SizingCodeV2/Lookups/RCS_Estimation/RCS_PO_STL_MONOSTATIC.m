@@ -378,7 +378,7 @@ globalMin_dB = min(allDbsm(:));
 globalMax_dB = max(allDbsm(:));
 dRange = globalMax_dB - globalMin_dB;
 
-figure('Name','Polar RCS - Flower Plot','Position',[100 100 700 700]);
+figure('Name','Polar RCS - Flower Plot','Position',[100 100 700 700], 'color', 'w');
 pax = polaraxes;
 hold(pax, 'on');
 
@@ -406,8 +406,9 @@ pax.RTickLabel   = arrayfun(@(v) sprintf('%+.0f dBsm', v + globalMin_dB), ...
 pax.ThetaTick      = [0 90 180 270];
 pax.ThetaTickLabel = {'Nose', 'Beam', 'Tail', 'Beam'};
 
-title(sprintf('Calibrated RCS Polar (%s PO), theta = %g deg, f = %.1f GHz', ...
-    poMode, thetaDeg, f/1e9), 'FontSize', 11);
+title(sprintf('Calibrated RCS Polar, theta = %g deg, f = %.1f GHz', ...
+   thetaDeg, f/1e9), 'FontSize', 11);
+theme(gcf, 'light') 
 legend('Location', 'southoutside', 'NumColumns', nComp);
 
 % Comparator bar chart (F-16 excluded)
@@ -426,6 +427,7 @@ hb = bar(X, barData, 'grouped');
 ylabel('RCS (dBsm)');
 legend({'Frontal','Beam avg','Tail','Median'}, 'Location', 'best');
 grid on;
+theme(gcf, 'light') 
 title('Comparator RCS Metrics (dBsm)');
 
 % Y-axis: pad 2 dB below min and above max so bars near 0 are visible
@@ -458,6 +460,7 @@ grid on;
 xlabel('Azimuth phi (deg)  [phi=90: nose-on | phi=0,180: beam | phi=270: tail]');
 ylabel('sigma - sigma_{max} (dB)', 'Interpreter', 'none');
 title('Normalized Aspect Signature Comparison');
+theme(gcf, 'light') 
 legend('Location', 'best');
 
 %% ================================================================
@@ -486,6 +489,7 @@ if ~isempty(hIdx)
     grid on;
     xlabel('Azimuth phi (deg)  [phi=90: nose-on | phi=0,180: beam | phi=270: tail]');
     ylabel('sigma (dBsm)');
+    theme(gcf, 'light') 
     title(sprintf('Hellstinger RCS vs Azimuth (specular_area), f = %.1f GHz', f/1e9));
     legend('Location', 'best');
 
@@ -499,6 +503,7 @@ if ~isempty(hIdx)
     gMin2 = min(allDb2); gMax2 = max(allDb2); dR2 = gMax2 - gMin2;
 
     figure('Name','Hellstinger Polar', 'Position', [150 150 700 700]);
+    theme(gcf, 'light') 
     pax3 = polaraxes;
     hold(pax3, 'on');
 

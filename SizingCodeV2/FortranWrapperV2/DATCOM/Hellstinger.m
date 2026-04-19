@@ -608,7 +608,6 @@ text(0.009, 0.3, ...
     'Color','b');
 
 %% CN_beta vs. alpha generation
-<<<<<<< HEAD
 CN_beta = 180/pi *-1*[-0.0007911 -0.0007198 -0.0006842 -0.0007198 -0.0007882 -0.000919];
 Alpha_vec = [-4 -2 0 2 4 8, 10, 20, 40, 60, 80];
 figure; 
@@ -650,7 +649,6 @@ function s = ternary(cond, a, b)
 if cond, s = a; else, s = b; end
 end
 
-=======
 % CN_beta = 180/pi *-1*[-0.0007911 -0.0007198 -0.0006842 -0.0007198 -0.0007882 -0.000919];
 % %Alpha_vec = [-4 -2 0 2 4 8];
 % 
@@ -680,4 +678,3 @@ end
 % function s = ternary(cond, a, b)
 % if cond, s = a; else, s = b; end
 % end
->>>>>>> bb3c1e8a2080cd8aaf3b17a2c1c8aa01f15628ec

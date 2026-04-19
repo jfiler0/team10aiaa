@@ -1,4 +1,4 @@
-matlabSetup
+matlabSetup;
 settings = readSettings();
 
 % TODO

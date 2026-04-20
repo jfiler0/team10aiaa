@@ -67,7 +67,7 @@ function full_payload_range(perf)
     end
     
     legend([hLines; hGhost], 'Location', 'northeast');
-    xline(700, 'k:', LineWidth=2, DisplayName = "RFP Req")
+    % xline(700, 'k:', LineWidth=2, DisplayName = "RFP Req")
     xlabel('Combat Radius [nm]');
     ylabel('Loaded Weight [lb]');
     title('Payload-Range Diagram');

@@ -13,6 +13,18 @@ perf = performance_class(model);
 cond = levelFlightCondition(perf, 1000, 0.5, 0.5);
 model.cond = cond;
 
+file_name = "f18_superhornet";
+geom_f18 = readAircraftFile(file_name);
+geom_f18= updateGeom(geom_f18, settings, true); % true -> update prop
+model_f18 = model_class(settings, geom_f18);
+perf_f18 = performance_class(model_f18);
+
+% range_nm_air2air_max = get_mission_range(@eval_air2air, 2, perf, ["AIM-9X" "AIM-120" "AIM-120" "" "" "" "AIM-120" "AIM-120" "AIM-9x"]);
+% fprintf("<5> [F/A-24 HELLSTINGER] COMBAT REACH (NO TANK) = %.3f nm\n", range_nm_air2air_max);
+% 
+% geom = setLoadout(geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
+% 
+% fprintf("STRIKE TAKEOFF WEIGHT - MTOW = %.0f lb\n", N2lb(weightRatio(1, geom) - geom.weights.mtow.v))
 
 % LISTS OUT ALL THE DATA POINTS NEEDED FOR SLIDES
 fprintf("<4> [F/A-24 HELLSTINGER] COST = %.5f mil\n", model.COST)
@@ -93,7 +105,7 @@ model.cond = generateCondition(geom, 0, 0.5, 1, 0.5, 1);
 fprintf("<16> [Measures of Merit] SEA LEVEL CLIMB RATE = %.3f kft/min\n", m2ft(perf.ExcessPower)*60/1000)
 
 perf.clear_data();
-perf.model.geom = setLoadout(geom, ["" "" "" "" "" "" "" ""]);
+perf.model.geom = setLoadout(geom, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
 
 perf.clear_data();
 [~, turn_rate_20kft] = compute_max_sustained_turn_at_h(perf, 0.5, ft2m(20000));
@@ -104,7 +116,7 @@ fprintf("<16> [Measures of Merit] 20kft SUSTAINED TURN = %.3f deg/s\n", turn_rat
 rfp_landing_weight = compute_rfp_landing_weight(perf, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "" "" ""]); % half stores dropped
 fprintf("<30> [Powerplant Thrust/TSFC] LANDING WEIGHT = %.3f lb\n", N2lb(rfp_landing_weight))
 
-[v_land_rfp, ~, ~, ~] = compute_landing_speed(perf, rfp_landing_weight); perf.clear_data(); % landing at rfp req
+[v_land_rfp, ~, ~, landing_descent_rate_rfp] = compute_landing_speed(perf, rfp_landing_weight); perf.clear_data(); % landing at rfp req
 fprintf("<30> [Powerplant Thrust/TSFC] LANDING SPEED = %.3f kt / APPROACH SPEED = %.3f kt\n", ms2kt(v_land_rfp), ms2kt(v_land_rfp));
 
 perf.model.geom.prop.num_engine.v = 1;
@@ -112,7 +124,8 @@ perf.model.geom = updateGeom(perf.model.geom, perf.model.settings);
 perf.model.clear_mem(); perf.clear_data();
 
 perf.model.cond = generateCondition(perf.model.geom, perf.model.settings.tropical_day_alt, v_land_rfp*1.05, 1, rfp_landing_weight, 1); % full weight
-fprintf("<30> [Powerplant Thrust/TSFC] AB SEROC (TROPICAL) = %.3f ft/min\n", m2ft(perf.ExcessPower)*60)
+ab_approach_seroc = perf.ExcessPower;
+fprintf("<30> [Powerplant Thrust/TSFC] AB SEROC (TROPICAL) = %.3f ft/min\n", m2ft(ab_approach_seroc)*60)
 perf.clear_data();
 
 perf.model.cond = generateCondition(perf.model.geom, perf.model.settings.tropical_day_alt, v_land_rfp*1.05, 1, rfp_landing_weight, 0.9); % full weight
@@ -147,6 +160,9 @@ fprintf("<35> [Performance Overview: Mission Range] FERRY REACH (3 Tanks) = %.3f
 range_nm_ferry_notank = get_mission_range(@eval_ferry, 0, perf, ["" "" "" "" "" "" "" "" ""]);
 fprintf("<35> [Performance Overview: Mission Range] FERRY REACH (No Tanks) = %.3f nm\n", range_nm_ferry_notank);
 
+range_nm_ferry_f18 = get_mission_range(@eval_ferry, 0, perf_f18, ["" "" "" "FPU-12" "FPU-12" "FPU-12" "" "" ""]);
+fprintf("<35> [Performance Overview: Mission Range] F18 FERRY REACH (still 3 tanks) = %.3f nm\n", range_nm_ferry_f18);
+
 %% MISSION CAPABILITY
 
 fprintf("<36> [Performance Overview: Mission Capability] 700nm STRIKE DASH = %.3f nm\n", max_dash_nm)
@@ -170,6 +186,85 @@ fprintf("<37> [Performance Overview: Maximums] MAX MACH = %.3f\n", max_mach);
 fprintf("<37> [Performance Overview: Maximums] COMBAT CEILING = %.3f kft\n", m2ft(combat_ceiling)/1000)
 
 %% LANDING
+fprintf("<57> [ Glide Slope and Pilot Visibility] LANDING SPEED = %.3f kt\n", ms2kt(v_land_rfp));
+fprintf("<57> [ Glide Slope and Pilot Visibility] DESCENT RATE = %.3f ft/s\n", m2ft(landing_descent_rate_rfp));
+
+%% COST INFO
+fprintf("<69> [PSC Unit Costs and Life Cycle ] Xanderscript:\n")
+
+cost_struct = xanderscript_modified(geom, true, false);
+
+%% FINAL PITCH
+
+fprintf("<77> [Why] COST = %.3f mil\n", model.COST);
+fprintf("<77> [Why] MAX MACH 30kft = %.3f\n", max_mach_30);
+fprintf("<77> [Why] MAX MACH SEALEVEL = %.3f\n", max_mach_sealevel);
+fprintf("<77> [Why] COMBAT REACH = %.3f nm\n", range_nm_air2air_max);
+
+max_ext_store_weight = geom.weights.mtow.v - geom.weights.empty.v - geom.weights.max_fuel_weight.v;
+
+fprintf("<77> [Why] MAX EXTERNAL STORE WEIGHT= %.3f nm\n", N2lb(max_ext_store_weight));
+fprintf("<77> [Why] 20kft SUSTAINED TURN = %.3f deg/s\n", turn_rate_20kft)
+fprintf("<77> [Why] APPROACH SEROC = %.3f ft/min\n", m2ft(ab_approach_seroc)*60)
+
+% F18
+
+fprintf("<77> [Why] (F18) COST = %.3f mil\n", perf_f18.model.COST);
+
+% perf_f18.clear_data();
+% perf_f18.model.geom = setLoadout(geom, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+% max_mach_30_mtow_f18 = compute_max_mach_at_h(perf_f18, 1, ft2m(30000));
+% 
+% perf_f18.clear_data();
+% perf_f18.model.geom = setLoadout(geom, ["" "" "" "" "" "" "" ""]);
+% max_mach_30_empty_f18 = compute_max_mach_at_h(perf_f18, 0, ft2m(30000));
+% 
+% max_mach_30_f18 = (max_mach_30_mtow_f18 + max_mach_30_empty_f18)/2;
+% 
+% fprintf("<77> [Why] (F18) MAX MACH 30kft = %.3f\n", max_mach_30_f18);
+% 
+% perf_f18.clear_data();
+% perf_f18.model.geom = setLoadout(geom, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+% max_mach_h0_mtow_f18 = compute_max_mach_at_h(perf_f18, 1, 0);
+% 
+% perf_f18.clear_data();
+% perf_f18.model.geom = setLoadout(geom, ["" "" "" "" "" "" "" ""]);
+% max_mach_h0_empty_f18 = compute_max_mach_at_h(perf_f18, 0, 0);
+% 
+% max_mach_h0_f18 = (max_mach_h0_mtow_f18 + max_mach_h0_empty_f18)/2;
+% 
+% fprintf("<77> [Why] (F18) MAX MACH SEALEVEL = %.3f\n", max_mach_h0_f18);
+
+range_nm_air2air_max_f18 = get_mission_range(@eval_air2air, 2, perf_f18, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
+
+fprintf("<77> [Why] (F18) COMBAT REACH = %.3f nm\n", range_nm_air2air_max_f18);
+
+max_ext_store_weight = geom_f18.weights.mtow.v - geom_f18.weights.empty.v - geom_f18.weights.max_fuel_weight.v;
+
+fprintf("<77> [Why] (F18) MAX EXTERNAL STORE WEIGHT= %.3f nm\n", N2lb(max_ext_store_weight));
+
+perf_f18.clear_data();
+[~, turn_rate_20kft_f18] = compute_max_sustained_turn_at_h(perf_f18, 0.5, ft2m(20000));
+
+fprintf("<77> [Why] (F18) 20kft SUSTAINED TURN = %.3f deg/s\n", turn_rate_20kft_f18)
+
+perf_f18.model.geom.prop.num_engine.v = 1;
+perf_f18.model.geom = updateGeom(perf_f18.model.geom, perf_f18.model.settings);
+perf_f18.model.clear_mem(); perf_f18.clear_data();
+
+rfp_landing_weight_f18 = compute_rfp_landing_weight(perf_f18, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "" "" ""]); % half stores dropped
+[v_land_rfp_f18, ~, ~, ~] = compute_landing_speed(perf_f18, rfp_landing_weight_f18); perf_f18.clear_data(); % landing at rfp req
+
+perf_f18.model.cond = generateCondition(perf_f18.model.geom, perf_f18.model.settings.tropical_day_alt, v_land_rfp_f18*1.05, 1, rfp_landing_weight_f18, 1); % full weight
+ab_approach_seroc_f18 = perf_f18.ExcessPower;
+
+perf_f18.model.geom.prop.num_engine.v = 2;
+perf_f18.model.geom = updateGeom(perf_f18.model.geom, perf_f18.model.settings);
+perf_f18.model.clear_mem(); perf_f18.clear_data();
+
+fprintf("<77> [Why] (F18) APPROACH SEROC = %.3f ft/min\n", m2ft(ab_approach_seroc_f18)*60)
+
+%% LANDING
 
 [v_land, glide_angle, throttle, descent_rate] = compute_landing_speed(perf, geom.weights.mtow.v); perf.clear_data(); % landing at mtow
 fprintf("LANDING | MTOW (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.1f perc, descent rate = %.2f ft/s\n", N2lb(geom.weights.mtow.v), ms2kt(v_land), glide_angle, 100*throttle, m2ft(descent_rate))
@@ -180,11 +275,12 @@ fprintf("       CMEA = %.2f kt\n", ms2kt(v_cmea_rfp));
 fprintf("LANDING | EMPTY WEIGHT (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.1f perc, descent rate = %.2f ft/s\n", N2lb(weightRatio(0, perf.model.geom)), ms2kt(v_land), glide_angle, 100*throttle, m2ft(descent_rate))
 fprintf("       CMEA = %.2f kt\n", ms2kt(compute_cmea(perf, 1)) );
 
-fprintf("Estimate of external storage max weight: %.3f lb\n", N2lb(geom.weights.mtow.v - geom.weights.empty.v - geom.weights.max_fuel_weight.v))
 
 fprintf("Max internal fuel weight: %.3f lb\n", N2lb(geom.weights.max_fuel_weight.v))
 
 fprintf("Total Cost: %.3f mil\n", model.COST);
+
+
 
 %% MISSIONS
 

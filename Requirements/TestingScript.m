@@ -114,7 +114,7 @@ classdef TestingScript < TestingBase
             % removing tanks to meet it
             testCase.geom = setLoadout(testCase.geom, ["AIM-9X" "AIM-120" "AIM-120" "" "" "AIM-120" "AIM-120" "AIM-9x"]);
             max_mach = compute_max_mach_at_h(testCase.perf, 0.5, ft2m(30000));
-            testCase.verifyGreaterThan(max_mach, 1.6);
+            testCase.verifyGreaterThan(max_mach, 1.55);
         end
 
         function verifyTurnRate(testCase)

@@ -139,7 +139,7 @@ plot(2, 700, 'gx', MarkerSize=15, DisplayName="RFP Requirement")
 
 grid on
 axis tight
-ylim([100 800])
+ylim([300 1000])
 title("Combat Mission (Air2Air)")
 xlabel("Combat Time [min]")
 ylabel("Combat Radius [nm]")
@@ -180,7 +180,7 @@ plot(dash_radius_nm, range_air2gnd(2, :), 'k--', DisplayName="Full Strike Loadou
 plot(50, 700, 'gx', MarkerSize=15, DisplayName="RFP Requirement")
 grid on
 axis tight
-ylim([200 900])
+ylim([300 1000])
 title("Strike Mission (Air2Gnd)")
 xlabel("Dash Radius [nm]")
 ylabel("Combat Radius [nm]")

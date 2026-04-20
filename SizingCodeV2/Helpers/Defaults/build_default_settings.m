@@ -25,10 +25,10 @@ set.spot_factor_reference = 84.517; % Folded wing area of an f18e
 X0 = [1.2,      0.93,     1.8, 1.05,  1.3,    0.85,    1.6,    0.96,     0.42]; xs = X0;
 
 set.CD0_scaler = 1.1; % general scaler to parasite drag
-set.CDi_scaler = 0.91;
+set.CDi_scaler = 0.907;
 set.CDw_scaler = 1.7; % general scaler to wave drag
 set.CLa_scaler = 1.05;
-set.CDp_scaler = 1.25;
+set.CDp_scaler = 1.23;
 set.SpotFactor_scaler = 1;
 
 set.COST_scaler = 1;
@@ -37,8 +37,8 @@ set.TSFC_scaler = 1.6; % 1.3 1.554
 set.TSFC_AB_scaler = 1.5; % extra scaler applied to after burner (mainly for max prop condition)
 
 set.WE_scaler = 0.96; % scales all components and the final empty weight 0.8752
-set.WF_ratio =  0.46; % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
-    % RESET TO 0.42 to normal comparisons. Hard increase to 0.46 for hellstinger
+set.WF_ratio =  0.52; % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
+    % RESET TO 0.42 to normal comparisons. Hard increase to 0.52 for hellstinger
 
 set.codes = build_default_codes();
 

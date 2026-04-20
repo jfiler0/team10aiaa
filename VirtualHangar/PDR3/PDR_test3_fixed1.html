@@ -265,7 +265,24 @@
       // To add a new group, copy the FuelTanks block and fill in your values.
       // -----------------------------------------------------------------------
       const GROUPS = {
-        FuelTanks: {
+        Wings: {
+          parts: [
+            'bleh', // placeholder for future wing parts
+          ],
+          title: 'Wings',
+          text:  'The',},
+        Fuselage: {},
+        VTail: {},
+        HTail: {},
+        Engines:{
+          parts: [
+            'GEF110_1',
+            'GEF110_2',
+          ],
+          title: 'Engines',
+          text:  'The two General Electric F110 engines that power the Super Hornet.',
+        },
+        FuelSystems: {
           parts: [
             'FuselageTank1_1',
             'FuselageTank2_1',
@@ -273,10 +290,87 @@
             'InletTank_1',
             'WingTank_1',
             'WingTank_2',
+            'Refuler_1_Bar_1',
+            'Refuler_1_Bar_2',
+            'Refuler_1_Probe_1',
+            'Refuler_1_Refueler_Probe_1',
+            'Refuler_1_Slider_1',
           ],
           title: 'Fuel Tanks',
-          text:  'All fuel tank assemblies across the fuselage, inlets, and wings.',
+          text:  'All fuel tank assemblies across the fuselage, inlets, and wings.',},
+        Hydraulics:{
+          parts:[
+            'Hydraulic_Actuator_1',
+            'Hydraulic_Actuator_2',
+            'Hydraulic_Actuator_3',
+            'Hydraulic_Actuator_4',
+            'Hydraulic_Actuator_5',
+            'Hydraulic_Actuator_6',
+            'Hydraulic_Actuator_7',
+            'Hydraulic_Actuator_8',
+            'Hydraulic_Actuator_9',
+            'Hydraulic_Actuator_10',
+            'Hydraulic_Actuator_11',
+            'Hydraulic_Actuator_12',
+            'Hydraulic_Pump_1',
+            'Hydraulic_Pump_2',
+          ],
+          title: 'Hydraulics',
+          text: 'hydraulic pumps and actuators',
         },
+        Electrical:{}, // electrical and cooling
+        Avionics:{},
+        RadarTargeting:{
+          parts:[
+            'ANAPG_82_1',
+          ],
+          title:'',
+          text:'',
+        }, // radar, sensing, and targeting systems
+        PilotSystems:{
+          parts:[
+            'Martin_Baker_Ejection_Seat_Final_1',
+
+          ],
+          title: '',
+          text: '',
+        }, // environmental control, pilot systems
+        Landing:{
+          parts:[
+            'ArrestorHook_1',
+            'Main_Landing_Gear_1', 
+            'Main_Landing_Gear_2',
+            'Nose_Landing_Gear_1',
+          ],
+          title: 'Landing Systems',
+          text: 'landing systems',
+        }, // landing systems (and arresting hook?)
+        Armaments:{
+          parts:[
+            'AIM_9X_Pylon_Assy_1_AIM_9X_Advanced_1',
+            'AIM_9X_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1',
+            'AIM_9X_Pylon_Assy_2_AIM_9X_Advanced_1',
+            'AIM_9X_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1',
+            'AIM_120_LAU176_Pylon_Assy_1_AIM_120D_AMRAAM_1',
+            'AIM_120_LAU176_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1',
+            'AIM_120_LAU176_Pylon_Assy_2_AIM_120D_AMRAAM_1',
+            'AIM_120_LAU176_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1',
+            'AIM_120_LAU176_Pylon_Assy_3_AIM_120D_AMRAAM_1',
+            'AIM_120_LAU176_Pylon_Assy_3_LAU179_Pylon_LinkBroken_1',
+            'AIM_120_LAU176_Pylon_Assy_4_AIM_120D_AMRAAM_1',
+            'AIM_120_LAU176_Pylon_Assy_4_LAU179_Pylon_LinkBroken_1',
+            'AIM_120_LAU176_Pylon_Assy_5_AIM_120D_AMRAAM_1',
+            'AIM_120_LAU176_Pylon_Assy_5_LAU179_Pylon_LinkBroken_1',
+            'AIM_120_LAU176_Pylon_Assy_6_AIM_120D_AMRAAM_1',
+            'AIM_120_LAU176_Pylon_Assy_6_LAU179_Pylon_LinkBroken_1',
+          ],
+          title:'',
+          text:'',
+        }, // weapons and launchers
+
+
+
+
         // Add future groups here, e.g.:
         // Missiles: { parts: [...], title: '...', text: '...' },
       };

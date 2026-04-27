@@ -36,13 +36,13 @@ phiSweep = 0:2:358;       % azimuth sweep [deg]
 %   'mean'    = mean over full sweep
 calMetric = 'frontal';
 
-% PO summation mode:
-%   'coherent'   - phase-accurate sum; captures interference lobing but
-%                  produces unrealistic specular spikes at beam from flat
-%                  surfaces. Good for aspect shape, not absolute magnitude.
-%   'incoherent' - sums |facet contribution|^2; equivalent to random surface
-%                  phase (rough surface). Smooth, stable, recommended for
-%                  trade study bar charts and absolute RCS comparison.
+% PO summation mode (applied to all models unless overridden by poModeOverride):
+%   'coherent'       phase-accurate sum; realistic lobing but specular spikes.
+%   'incoherent'     sum of (A_n cosθ_n)^2; rough-surface assumption.
+%                    Used for fighter comparators.
+%   'projected_area' σ = Σ A_n cosθ_n; blind to surface shaping.
+%   'specular_area'  σ = Σ A_n cos^2(θ_n); captures LE/TE shaping.
+%                    Used for Hellstinger via poModeOverride.
 poMode = 'incoherent';
 
 % ---- MODEL LIST ----
@@ -71,7 +71,7 @@ models(1).rotDeg          = 0;
 models(1).knownRCS_m2     = 4.0;
 models(1).color           = [0.85 0.33 0.10];
 models(1).poModeOverride  = '';
-models(1).isComparator    = false;   % excluded from comparator plots (beam artifact)
+models(1).isComparator    = true;
 
 models(2).name            = 'F/A-18E/F Super Hornet';
 models(2).file            = 'F_A-18E_v3.stl';
@@ -93,52 +93,60 @@ models(3).color           = [0.47 0.67 0.19];
 models(3).poModeOverride  = '';
 models(3).isComparator    = true;
 
-% ---- Hellstinger (NGSP Commercial Satellite Transport Vehicle) ----
-% STL units: mm -> unitScale = 0.001.  Fuselage along STL-X, +90 deg
-% about Z brings it to +Y.  Post-rotation: 2.95 x 15.35 x 10.83 m.
+% ---- Hellstinger ----
+% STL: TestAssm_PDR_V2.STL  (PDR revision)
+% Units: mm -> unitScale = 0.001.  Fuselage along STL-X, +90 deg
+% about Z brings it to +Y.
+%
+% Post-rotation bounding box (verified from mesh):
+%   Lx =  3.63 m  (body width)
+%   Ly = 15.44 m  (body length / fuselage)
+%   Lz = 18.20 m  (solar array / vertical extent — grew from 10.83 m in prior rev)
+%
+% Mesh quality: 3,702 triangles, 0 open edges, 0 non-manifold (watertight).
+% Surface area: ~276.9 m^2 (consistent with prior revision).
 %
 % Uses 'projected_area' mode (geometric optics diffuse limit):
 %   sigma(phi) = A_proj(phi)  [m^2]
+% Mesh-independent and correct for large bodies with non-uniform facet sizes.
 %
-% Incoherent PO is NOT used because large flat side panels (big facets)
-% vs small curved nose facets gives a 214x beam/frontal ratio in PO vs
-% the physically correct 12x from projected area.  Projected area is
-% mesh-independent and correct for bodies >> lambda at X-band.
-%
-% Seed: knownRCS_m2 = 8.04 m^2 = frontal projected area (GO estimate).
-% Beam will calibrate to ~98 m^2 naturally from geometry.
+% Seed: frontal specular_area = 1.646 m^2 (computed from PDR_V2 mesh at phi=90).
+% Beam naturally calibrates to ~95.9 m^2. Beam/frontal ~58x (17.7 dB).
+% This is physically between projected_area (10.9 dB, blind to shaping) and
+% incoherent PO (24.9 dB, facet-size biased). The cos^2 weighting suppresses
+% swept LE/TE surfaces (cos^2 << 1) relative to flat broadside panels (cos^2 ~ 1),
+% correctly giving shaping credit that projected_area mode misses entirely.
 models(4).name            = 'Hellstinger';
-models(4).file            = 'TestAssm_Clean.STL';
+models(4).file            = 'TestAssm_PDR_V2.STL';
 models(4).unitScale       = 0.001;
 models(4).rotAxis         = [0 0 1];
 models(4).rotDeg          = 90;
-models(4).knownRCS_m2     = 8.04;   % frontal projected area, GO estimate [m^2]
+models(4).knownRCS_m2     = 1.646;   % frontal specular_area, PDR_V2 mesh [m^2]
 models(4).color           = [0.75 0.2 0.9];
-models(4).poModeOverride  = 'projected_area';
+models(4).poModeOverride  = 'specular_area';
 models(4).isComparator    = true;
 
-% ---- RAM surface impedance presets (Leontovich boundary condition) ----
-% Z_s = normalised surface impedance (relative to free space eta_0 = 377 ohm)
+% ---- RAM: uniform dB reduction per model ----
+% Applied as a flat scalar after geometry computation, preserving polar shape.
+% This is appropriate for a trade study where coating angle-response is unknown.
 %
-% Reflection coefficient per facet at incidence angle theta_i:
-%   Gamma(theta_i) = (cos(theta_i) - Z_s) / (cos(theta_i) + Z_s)
-%   PEC:  Z_s = 0        -> |Gamma|^2 = 1.0  (full reflection)
-%   RAM typical values (X-band, single-layer Salisbury screen / Jaumann):
-%     Good RAM (stealth-grade) : Z_s ~ 1+1j   -> |Gamma|^2 ~ 0.01-0.05 at normal
-%     Moderate RAM             : Z_s ~ 0.3+0.3j-> |Gamma|^2 ~ 0.1-0.3
-%     Light treatment          : Z_s ~ 0.1+0.1j-> |Gamma|^2 ~ 0.6-0.8
-%     No RAM (PEC)             : Z_s = 0       -> |Gamma|^2 = 1.0
+% ram_dB = broadband attenuation target in dB (positive = reduction).
+%   0 dB  -> no RAM, full PEC reflection (default)
+%   3 dB  -> light surface treatment (~50% power reduction)
+%   6 dB  -> moderate RAM
+%  10 dB  -> good RAM (broadband absorber, Salisbury screen / Jaumann)
+%  20 dB  -> stealth-grade RAM (multilayer, optimised for X-band)
 %
-% Note: |Gamma|^2 is angle-dependent; normal incidence (theta_i=0) gives
-% the minimum reflection, grazing incidence approaches 1 regardless of Z_s.
-%
-% For the fighters, RAM is a secondary correction (both are non-stealth).
-% For Hellstinger (spacecraft), PEC is the correct assumption — no coating.
 
-models(1).Z_s = 0;            % F-16: PEC (non-stealth, RAM secondary)
-models(2).Z_s = 0;            % F/A-18E: PEC
-models(3).Z_s = 0;            % Rafale: PEC
-models(4).Z_s = 0;            % Hellstinger: PEC (spacecraft, no RAM)
+% Note: the Leontovich angle-dependent model (Z_s) was removed because it
+% changes the SHAPE of the polar pattern by differentially absorbing normal-
+% vs grazing-incidence facets, producing a physically misleading butterfly
+% shape. A uniform dB reduction correctly models a broadband coating spec.
+
+models(1).ram_dB = 0;    % F-16: no RAM
+models(2).ram_dB = 20;    % F/A-18E: no RAM
+models(3).ram_dB = 20;    % Rafale: no RAM
+models(4).ram_dB = 20;    % Hellstinger: no RAM
 
 nModels = numel(models);
 
@@ -171,21 +179,24 @@ for m = 1:nModels
 
     geom = preprocessMesh(F, V);
 
-    % Per-model PO mode override (e.g. Hellstinger uses projected_area)
+    % Per-model PO mode override
     if isfield(models(m), 'poModeOverride') && ~isempty(models(m).poModeOverride)
         modelPoMode = models(m).poModeOverride;
     else
         modelPoMode = poMode;
     end
-    if models(m).Z_s == 0
-        ramStr = 'none (PEC)';
-    else
-        ramStr = sprintf('|Gamma|^2_normal=%.3f', abs((1-models(m).Z_s)/(1+models(m).Z_s))^2);
-    end
-    fprintf('  PO mode: %s  |  Z_s=%s  RAM: %s\n', modelPoMode, num2str(models(m).Z_s), ramStr);
 
-    rawSigma = computeRawRCSAzimuth(geom, k, lambda, thetaDeg, phiSweep, modelPoMode, models(m).Z_s);
-    rawSigma = max(rawSigma, 1e-30);
+    % RAM: uniform dB reduction applied as flat scalar after geometry (preserves shape)
+    ramLin = 10^(-models(m).ram_dB / 10);
+    if models(m).ram_dB == 0
+        ramStr = 'none';
+    else
+        ramStr = sprintf('%.1f dB reduction (x%.4f linear)', models(m).ram_dB, ramLin);
+    end
+    fprintf('  PO mode: %s  |  RAM: %s\n', modelPoMode, ramStr);
+
+    rawSigma = computeRawRCSAzimuth(geom, k, lambda, thetaDeg, phiSweep, modelPoMode);
+    rawSigma = max(rawSigma * ramLin, 1e-30);   % uniform RAM scaling
     rawDb    = 10*log10(rawSigma);
 
     models(m).geom        = geom;
@@ -367,7 +378,7 @@ globalMin_dB = min(allDbsm(:));
 globalMax_dB = max(allDbsm(:));
 dRange = globalMax_dB - globalMin_dB;
 
-figure('Name','Polar RCS - Flower Plot','Position',[100 100 700 700]);
+figure('Name','Polar RCS - Flower Plot','Position',[100 100 700 700], 'color', 'w');
 pax = polaraxes;
 hold(pax, 'on');
 
@@ -395,8 +406,9 @@ pax.RTickLabel   = arrayfun(@(v) sprintf('%+.0f dBsm', v + globalMin_dB), ...
 pax.ThetaTick      = [0 90 180 270];
 pax.ThetaTickLabel = {'Nose', 'Beam', 'Tail', 'Beam'};
 
-title(sprintf('Calibrated RCS Polar (%s PO), theta = %g deg, f = %.1f GHz', ...
-    poMode, thetaDeg, f/1e9), 'FontSize', 11);
+title(sprintf('Calibrated RCS Polar, theta = %g deg, f = %.1f GHz', ...
+   thetaDeg, f/1e9), 'FontSize', 11);
+theme(gcf, 'light') 
 legend('Location', 'southoutside', 'NumColumns', nComp);
 
 % Comparator bar chart (F-16 excluded)
@@ -406,14 +418,34 @@ tails    = arrayfun(@(x) x.calTail_m2,    compModelsPlot);
 medians  = arrayfun(@(x) x.calMedian_m2,  compModelsPlot);
 safeDb   = @(v) 10*log10(max(v, 1e-30));
 
+barData = [safeDb(frontals(:)), safeDb(beams(:)), safeDb(tails(:)), safeDb(medians(:))];
+
 figure('Name','Comparator Metrics');
 X = categorical({compModelsPlot.name});
 X = reordercats(X, {compModelsPlot.name});
-bar(X, [safeDb(frontals(:)), safeDb(beams(:)), safeDb(tails(:)), safeDb(medians(:))], 'grouped');
+hb = bar(X, barData, 'grouped');
 ylabel('RCS (dBsm)');
 legend({'Frontal','Beam avg','Tail','Median'}, 'Location', 'best');
 grid on;
+theme(gcf, 'light') 
 title('Comparator RCS Metrics (dBsm)');
+
+% Y-axis: pad 2 dB below min and above max so bars near 0 are visible
+ylo = min(barData(:)) - 2;
+yhi = max(barData(:)) + 3;
+ylim([ylo yhi]);
+
+% Data labels on each bar
+for bi = 1:numel(hb)
+    xpos = hb(bi).XEndPoints;
+    ypos = hb(bi).YEndPoints;
+    vals = hb(bi).YData;
+    for xi = 1:numel(xpos)
+        text(xpos(xi), ypos(xi) + 0.3, sprintf('%.1f', vals(xi)), ...
+            'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom', ...
+            'FontSize', 7, 'Color', 'w');
+    end
+end
 
 % Normalized shape comparison
 figure('Name','Normalized Shape Comparison');
@@ -428,6 +460,7 @@ grid on;
 xlabel('Azimuth phi (deg)  [phi=90: nose-on | phi=0,180: beam | phi=270: tail]');
 ylabel('sigma - sigma_{max} (dB)', 'Interpreter', 'none');
 title('Normalized Aspect Signature Comparison');
+theme(gcf, 'light') 
 legend('Location', 'best');
 
 %% ================================================================
@@ -456,7 +489,8 @@ if ~isempty(hIdx)
     grid on;
     xlabel('Azimuth phi (deg)  [phi=90: nose-on | phi=0,180: beam | phi=270: tail]');
     ylabel('sigma (dBsm)');
-    title(sprintf('Hellstinger RCS vs Azimuth (projected area GO), f = %.1f GHz', f/1e9));
+    theme(gcf, 'light') 
+    title(sprintf('Hellstinger RCS vs Azimuth (specular_area), f = %.1f GHz', f/1e9));
     legend('Location', 'best');
 
     % --- Polar: Hellstinger vs comparators ---
@@ -469,6 +503,7 @@ if ~isempty(hIdx)
     gMin2 = min(allDb2); gMax2 = max(allDb2); dR2 = gMax2 - gMin2;
 
     figure('Name','Hellstinger Polar', 'Position', [150 150 700 700]);
+    theme(gcf, 'light') 
     pax3 = polaraxes;
     hold(pax3, 'on');
 
@@ -495,23 +530,185 @@ if ~isempty(hIdx)
     pax3.ThetaTick      = [0 90 180 270];
     pax3.ThetaTickLabel = {'Nose', 'Beam', 'Tail', 'Beam'};
 
-    title(sprintf('Hellstinger Polar RCS (projected area GO), f = %.1f GHz', f/1e9), ...
+    title(sprintf('Hellstinger Polar RCS (specular_area), f = %.1f GHz', f/1e9), ...
         'FontSize', 11);
     legend('Location', 'southoutside', 'NumColumns', nModels);
 
     % --- Summary printout ---
     sdb = @(v) 10*log10(max(v, 1e-30));
     fprintf('\n======= Hellstinger Standalone Summary =======\n');
-    fprintf('  Method        : Projected area (geometric optics diffuse limit)\n');
+    fprintf('  Method        : Specular-weighted area (sigma = sum A_n * cos^2(theta_n))\n');
     fprintf('  Frontal       : %8.3f m^2  (%+6.2f dBsm)\n', hm.calFrontal_m2, sdb(hm.calFrontal_m2));
     fprintf('  Beam avg      : %8.3f m^2  (%+6.2f dBsm)\n', hm.calBeam_m2,    sdb(hm.calBeam_m2));
     fprintf('  Tail          : %8.3f m^2  (%+6.2f dBsm)\n', hm.calTail_m2,    sdb(hm.calTail_m2));
     fprintf('  Median        : %8.3f m^2  (%+6.2f dBsm)\n', hm.calMedian_m2,  sdb(hm.calMedian_m2));
     fprintf('  Beam/frontal  : %.1fx  (%.1f dB)\n', ...
         hm.calBeam_m2/hm.calFrontal_m2, sdb(hm.calBeam_m2)-sdb(hm.calFrontal_m2));
-    fprintf('  Note: absolute values are GO estimates (sigma = A_proj).\n');
-    fprintf('        Uncertainty easily +/-10 dB without measured reference.\n');
+    fprintf('  Note: specular_area mode accounts for LE/TE sweep angle alignment.\n');
+    fprintf('        Swept surfaces suppressed by cos^2(theta). Uncertainty +/-10 dB.\n');
 end
+
+%% ================================================================
+%%  HELLSTINGER REVISION COMPARISON
+%%  TestAssm_Clean (v1) vs TestAssm_PDR_V2 (v2)
+%% ================================================================
+% Both run with identical settings: specular_area mode, same rotation,
+% same unit scale. Differences in the output are purely geometric.
+%
+% Pre-computed key values (specular_area mode):
+%   v1 Clean:  frontal 1.575 m^2, beam avg 88.2 m^2, beam/frontal 55.5x (17.4 dB)
+%   v2 PDR_V2: frontal 1.646 m^2, beam avg 96.5 m^2, beam/frontal 58.3x (17.7 dB)
+%
+% Beam increase v1->v2: +0.4 dB
+%   Cause: body widened 2.94->3.63 m, Lz grew 10.83->18.20 m
+%   Both increase broadside projected area.
+
+fprintf('\n======= Hellstinger Revision Comparison =======\n');
+
+revs = struct([]);
+
+revs(1).name      = 'Clean (v1)';
+revs(1).file      = 'TestAssm_Clean.STL';
+revs(1).unitScale = 0.001;
+revs(1).rotAxis   = [0 0 1];
+revs(1).rotDeg    = 90;
+revs(1).color     = [0.5 0.0 0.8];    % dark purple
+revs(1).knownRCS  = 1.5748;           % specular_area frontal [m^2]
+
+revs(2).name      = 'PDR V2';
+revs(2).file      = 'TestAssm_PDR_V2.STL';
+revs(2).unitScale = 0.001;
+revs(2).rotAxis   = [0 0 1];
+revs(2).rotDeg    = 90;
+revs(2).color     = [0.75 0.2 0.9];   % bright magenta (same as main)
+revs(2).knownRCS  = 1.646;            % specular_area frontal [m^2]
+
+nRevs = numel(revs);
+
+for r = 1:nRevs
+    fprintf('  Loading %s ...\n', revs(r).name);
+    [Frev, Vrev] = stlReadSimple(revs(r).file);
+    Vrev = Vrev * revs(r).unitScale;
+
+    ax  = revs(r).rotAxis / norm(revs(r).rotAxis);
+    ang = deg2rad(revs(r).rotDeg);
+    cs = cos(ang); sn = sin(ang); t = 1-cs;
+    Rx=ax(1); Ry=ax(2); Rz=ax(3);
+    Rmat = [t*Rx*Rx+cs,    t*Rx*Ry-sn*Rz, t*Rx*Rz+sn*Ry;
+            t*Rx*Ry+sn*Rz, t*Ry*Ry+cs,    t*Ry*Rz-sn*Rx;
+            t*Rx*Rz-sn*Ry, t*Ry*Rz+sn*Rx, t*Rz*Rz+cs   ];
+    Vrev = (Rmat * Vrev').';
+
+    bbr = max(Vrev)-min(Vrev);
+    fprintf('    Bbox: %.2f x %.2f x %.2f m\n', bbr(1), bbr(2), bbr(3));
+
+    grev = preprocessMesh(Frev, Vrev);
+    rawR = computeRawRCSAzimuth(grev, k, lambda, thetaDeg, phiSweep, 'specular_area');
+    rawR = max(rawR, 1e-30);
+
+    % Calibrate so frontal = knownRCS (scale factor ≈ 1 since seed = computed frontal)
+    frontalRaw = interp1(phiSweep, rawR, 90, 'linear', 'extrap');
+    scaleR = revs(r).knownRCS / max(frontalRaw, 1e-40);
+    calR   = rawR * scaleR;
+
+    revs(r).calSigma = calR;
+    revs(r).calDbsm  = 10*log10(max(calR, 1e-30));
+    revs(r).frontal  = interp1(phiSweep, calR,  90, 'linear', 'extrap');
+    revs(r).beam     = 0.5*(interp1(phiSweep, calR,   0, 'linear', 'extrap') + ...
+                            interp1(phiSweep, calR, 180, 'linear', 'extrap'));
+    revs(r).tail     = interp1(phiSweep, calR, 270, 'linear', 'extrap');
+    revs(r).med      = median(calR);
+end
+
+sdbr = @(v) 10*log10(max(v,1e-30));
+fprintf('\n  %-14s  %10s  %10s  %10s  %10s  %12s\n', ...
+    'Revision','Frontal','Beam avg','Tail','Median','Beam/Frontal');
+for r = 1:nRevs
+    fprintf('  %-14s  %7.3f m^2  %7.3f m^2  %7.3f m^2  %7.3f m^2  %6.1fx (%+.1f dB)\n', ...
+        revs(r).name, revs(r).frontal, revs(r).beam, revs(r).tail, revs(r).med, ...
+        revs(r).beam/revs(r).frontal, sdbr(revs(r).beam)-sdbr(revs(r).frontal));
+end
+
+% --- Cartesian comparison ---
+figure('Name','Hellstinger Revision Comparison');
+hold on;
+for r = 1:nRevs
+    plot(phiSweep, revs(r).calDbsm, 'LineWidth', 2.0, 'Color', revs(r).color, ...
+        'DisplayName', revs(r).name);
+end
+% Difference curve
+diffDb = revs(2).calDbsm - revs(1).calDbsm;
+yyaxis right;
+plot(phiSweep, diffDb, ':', 'LineWidth', 1.2, 'Color', [0.9 0.7 0.1], ...
+    'DisplayName', 'Delta V2-V1 (dB)');
+ylabel('Delta RCS (dB)');
+yline(0, '--', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.8, 'HandleVisibility','off');
+yyaxis left;
+grid on;
+xlabel('Azimuth phi (deg)  [phi=90: nose-on | phi=0,180: beam | phi=270: tail]');
+ylabel('sigma (dBsm)');
+title(sprintf('Hellstinger Revision Comparison (specular\\_area), f = %.1f GHz', f/1e9));
+legend('Location', 'best');
+
+% --- Polar comparison ---
+allDbRev = cell2mat(arrayfun(@(x) x.calDbsm(:)', revs, 'UniformOutput', false));
+gMinR = min(allDbRev(:)); gMaxR = max(allDbRev(:)); dRR = gMaxR - gMinR;
+phiPlotR = deg2rad([phiSweep - 90, phiSweep(1) - 90]);
+
+figure('Name','Hellstinger Revision Polar', 'Position', [200 100 700 700]);
+paxR = polaraxes;
+hold(paxR, 'on');
+
+for r = 1:nRevs
+    rhoR = [revs(r).calDbsm - gMinR, revs(r).calDbsm(1) - gMinR];
+    lsR  = '-';
+    if r == 1; lsR = '--'; end
+    polarplot(paxR, phiPlotR, rhoR, lsR, 'LineWidth', 2.0, ...
+        'Color', revs(r).color, 'DisplayName', revs(r).name);
+end
+
+paxR.ThetaZeroLocation = 'top';
+paxR.ThetaDir          = 'clockwise';
+paxR.GridColor         = [0.5 0.5 0.5];
+paxR.GridAlpha         = 0.4;
+nTR = 5; rTR = linspace(0, dRR, nTR);
+paxR.RAxis.Limits = [0, dRR * 1.05];
+paxR.RTick        = rTR;
+paxR.RTickLabel   = arrayfun(@(v) sprintf('%+.0f dBsm', v + gMinR), ...
+    rTR, 'UniformOutput', false);
+paxR.ThetaTick      = [0 90 180 270];
+paxR.ThetaTickLabel = {'Nose', 'Beam', 'Tail', 'Beam'};
+title(sprintf('Hellstinger Revision Polar (specular\\_area), f = %.1f GHz', f/1e9), ...
+    'FontSize', 11);
+legend('Location', 'southoutside', 'NumColumns', nRevs);
+
+% --- Bar chart comparison ---
+figure('Name','Hellstinger Revision Metrics');
+revNames = {revs.name};
+metrics  = [[revs.frontal]; [revs.beam]; [revs.tail]; [revs.med]]';
+metricDb = 10*log10(max(metrics, 1e-30));
+X = categorical(revNames);
+X = reordercats(X, revNames);
+hbr = bar(X, metricDb, 'grouped');
+for r = 1:nRevs
+    hbr(r).FaceColor = revs(r).color;
+end
+ylabel('RCS (dBsm)');
+legend({'Frontal','Beam avg','Tail','Median'}, 'Location', 'best');
+grid on;
+title('Hellstinger Revision Metrics (specular\_area)');
+ylim([min(metricDb(:)) - 2, max(metricDb(:)) + 3]);
+for bi = 1:numel(hbr)
+    xpos = hbr(bi).XEndPoints;
+    ypos = hbr(bi).YEndPoints;
+    vals = hbr(bi).YData;
+    for xi = 1:numel(xpos)
+        text(xpos(xi), ypos(xi) + 0.3, sprintf('%.1f', vals(xi)), ...
+            'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom', ...
+            'FontSize', 8, 'Color', 'w');
+    end
+end
+
 
 %% ================================================================
 %%  LOCAL FUNCTIONS
@@ -538,25 +735,23 @@ function geom = preprocessMesh(F, V)
     geom.C    = C;
 end
 
-function sigma = computeRawRCSAzimuth(geom, k, lambda, thetaDeg, phiSweep, poMode, Z_s)
+function sigma = computeRawRCSAzimuth(geom, k, lambda, thetaDeg, phiSweep, poMode)
 % Physical Optics monostatic RCS, horizontal cut.
 %
 % Modes:
-%   'coherent'       phase-accurate PO sum
-%   'incoherent'     sum of A_n^2; rough-surface assumption
-%   'projected_area' sigma = A_proj(phi); GO diffuse limit
+%   'coherent'       Phase-accurate PO sum.
+%   'incoherent'     Sum of (A_n*cosθ_n)^2; rough-surface assumption.
+%   'projected_area' sigma = sum A_n*cosθ_n; GO diffuse limit.
+%   'specular_area'  sigma = sum A_n*cos^2(θ_n); captures shaping.
 %
-% RAM model (Leontovich impedance boundary):
-%   Gamma(theta_i) = (cos(theta_i) - Z_s) / (cos(theta_i) + Z_s)
-%   Each facet contribution is multiplied by |Gamma(theta_i)|^2.
-%   Z_s = 0 -> PEC (full reflection, no RAM).
-%   Z_s = 1+1j -> good RAM (~1-5% reflection at normal incidence).
-%   Angle-dependent: grazing incidence always approaches full reflection
-%   regardless of Z_s, which is physically correct.
+% RAM is applied externally as a uniform dB scaling per model (ram_dB field),
+% which preserves polar shape. The Leontovich Z_s model was removed because
+% angle-dependent absorption changes the polar shape, which is misleading
+% for a uniform broadband coating specification.
 
-    useCoherent = strcmpi(poMode, 'coherent');
-    useProjArea = strcmpi(poMode, 'projected_area');
-    usePEC      = (Z_s == 0);
+    useCoherent  = strcmpi(poMode, 'coherent');
+    useProjArea  = strcmpi(poMode, 'projected_area');
+    useSpecArea  = strcmpi(poMode, 'specular_area');
 
     nPhi  = numel(phiSweep);
     sigma = zeros(1, nPhi);
@@ -574,27 +769,20 @@ function sigma = computeRawRCSAzimuth(geom, k, lambda, thetaDeg, phiSweep, poMod
         cosTheta = -ndotS(lit);
         weights  = geom.A(lit) .* cosTheta;
 
-        % RAM reflection coefficient (angle-dependent)
-        if usePEC
-            ramFactor = ones(size(cosTheta));
-        else
-            Gamma     = (cosTheta - Z_s) ./ (cosTheta + Z_s);
-            ramFactor = abs(Gamma).^2;
-        end
-
-        if useProjArea
-            % GO diffuse limit: sigma = projected area weighted by RAM
-            sigma(i) = sum(weights .* ramFactor);
+        if useSpecArea
+            sigma(i) = sum(weights .* cosTheta);
+        elseif useProjArea
+            sigma(i) = sum(weights);
         elseif useCoherent
             phase    = exp(-1j * 2 * k * (geom.C(lit,:) * sHat.'));
-            S        = sum(weights .* sqrt(ramFactor) .* phase);
+            S        = sum(weights .* phase);
             sigma(i) = prefactor * abs(S)^2;
         else
-            % Incoherent
-            sigma(i) = prefactor * sum((weights .* sqrt(ramFactor)).^2);
+            sigma(i) = prefactor * sum(weights.^2);
         end
     end
 end
+
 
 function [F, V] = stlReadSimple(filename)
     fid = fopen(filename, 'r');

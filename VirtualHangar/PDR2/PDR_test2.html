@@ -1,0 +1,1038 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html;charset=utf-8'></meta>
+    <link rel='stylesheet' type='text/css' href='https://www.x3dom.org/download/x3dom.css'></link>
+    <script type='text/javascript' src='https://www.x3dom.org/download/x3dom.js'></script>
+    <title>SuperDuperHornet</title>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      html, body {
+         height: 100%;
+      }
+      #HUDs_Div {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+        background-color: rgba(255, 255, 255, 0.7);
+        padding: 10px;
+        border-radius: 5px;
+        font-family: sans-serif;
+      }
+      /* Container for text and graph, allowing side-by-side layout */
+      #output-container {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+        color: white; /* White text */
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 80%;
+        max-width: 1000px; /* Increased max-width for graph space */
+        font-family: sans-serif;
+        font-size: 1.1em;
+        line-height: 1.4;
+        display: flex; /* Enable flexbox for side-by-side content */
+        justify-content: center;
+        align-items: flex-start; 
+        gap: 20px; /* Space between text and graph */
+      }
+      #output-text {
+        flex: 1; /* Allows text to take available space */
+        text-align: left; 
+      }
+      #output-text h3 {
+        margin-top: 0;
+      }
+      #output-text p {
+        margin-bottom: 0;
+      }
+      #graph-container {
+        flex: 0 0 350px; /* Fixed width for the graph (adjust as needed) */
+        display: none; /* Hidden by default */
+        text-align: center;
+      }
+      #graph-container img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 5px;
+      }
+    </style>
+
+        <script>
+      // ------------------------------
+      // Color-based highlighting system
+      // Hover -> magenta ; Click/select -> green
+      // Supports X3D Inline async loading
+      // ------------------------------
+
+      const PART_DEFS = [
+        'Box',
+        'AIM_9X_Pylon_Assy_1_AIM_9X_Advanced_1',
+        'AIM_9X_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1',
+        'AIM_9X_Pylon_Assy_2_AIM_9X_Advanced_1',
+        'AIM_9X_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1',
+        'AIM_120_LAU176_Pylon_Assy_1_AIM_120D_AMRAAM_1',
+        'AIM_120_LAU176_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1',
+        'AIM_120_LAU176_Pylon_Assy_2_AIM_120D_AMRAAM_1',
+        'AIM_120_LAU176_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1',
+        'AIM_120_LAU176_Pylon_Assy_3_AIM_120D_AMRAAM_1',
+        'AIM_120_LAU176_Pylon_Assy_3_LAU179_Pylon_LinkBroken_1',
+        'AIM_120_LAU176_Pylon_Assy_4_AIM_120D_AMRAAM_1',
+        'AIM_120_LAU176_Pylon_Assy_4_LAU179_Pylon_LinkBroken_1',
+        'AIM_120_LAU176_Pylon_Assy_5_AIM_120D_AMRAAM_1',
+        'AIM_120_LAU176_Pylon_Assy_5_LAU179_Pylon_LinkBroken_1',
+        'AIM_120_LAU176_Pylon_Assy_6_AIM_120D_AMRAAM_1',
+        'AIM_120_LAU176_Pylon_Assy_6_LAU179_Pylon_LinkBroken_1',
+        'AMAD_Gearbox_1',
+        'AN_ALE_70_Decoy_Set_1',
+        'AN_ALE_70_Decoy_Set_2',
+        'AN_ALE47_Countermeasures_Dispensing_Set_1',
+        'AN_ALE47_Countermeasures_Dispensing_Set_2',
+        'AN_ALQ216_Jammer_1',
+        'ANAPG_82_1',
+        'ANASN_139_INS_Set_1',
+        'ANASN_163_SATNAV_Set_1',
+        'Antennas_Data_Bus_1',
+        'Antennas_Data_Bus_2',
+        'Antennas_Data_Bus_4',
+        'Armament_Data_Bus_1',
+        'ArrestorHook_1',
+        'Cockpit_Data_Bus_1',
+        'Control_Surfaces_Data_Bus_1',
+        'Control_Surfaces_Data_Bus_3',
+        'Control_Surfaces_Data_Bus_4',
+        'DFIRS_1',
+        'EPACS_Cooling_Unit_1',
+        'Fuel_Refuel_Data_Bus_1',
+        'Fuel_Refuel_Data_Bus_2',
+        'FuselageTank1_1',
+        'FuselageTank2_1',
+        'FuselageTank3_1',
+        'GEF110_1',
+        'GEF110_2',
+        'Hydraulic_Actuator_1',
+        'Hydraulic_Actuator_2',
+        'Hydraulic_Actuator_3',
+        'Hydraulic_Actuator_4',
+        'Hydraulic_Actuator_5',
+        'Hydraulic_Actuator_6',
+        'Hydraulic_Actuator_7',
+        'Hydraulic_Actuator_8',
+        'Hydraulic_Actuator_9',
+        'Hydraulic_Actuator_10',
+        'Hydraulic_Actuator_11',
+        'Hydraulic_Actuator_12',
+        'Hydraulic_Pump_1',
+        'Hydraulic_Pump_2',
+        'InletTank_1',
+        'INS_CG_FCS_Data_Bus_1',
+        'INS_CG_FCS_Data_Bus_2',
+        'INS_CG_FCS_Data_Bus_5',
+        'INS_CG_FCS_Data_Bus_6',
+        'IRST_21_Independent_1',
+        'Landing_Gear_Data_Bus_1',
+        'Main_Landing_Gear_1',
+        'Main_Landing_Gear_2',
+        'Martin_Baker_Ejection_Seat_Final_1',
+        'Nose_Landing_Gear_1',
+        'Nose_UHF_RWR_Data_Bus_1',
+        'Nose_UHF_RWR_Data_Bus_2',
+        'OBOGS_1',
+        'Pilot_Interface_FCS_1',
+        'Powerplant_Data_Bus_1',
+        'Powerplant_Data_Bus_3',
+        'RAPTOR_Fiber_Optic_Recorder_1',
+        'Refuler_1_Bar_1',
+        'Refuler_1_Bar_2',
+        'Refuler_1_Probe_1',
+        'Refuler_1_Refueler_Probe_1',
+        'Refuler_1_Slider_1',
+        'TestAssm_PDR_V3_FINALFINALFINAL_OMLShell_1',
+        'WingTank_1',
+        'WingTank_2'
+      ];
+
+      // Default color for X3D parts with no material (prevents white rendering)
+      const DEFAULT_PART_COLOR = '0.6 0.6 0.7';
+
+      const INFO = {
+        Box:      { title: 'box',           text: 'box box box' },
+        AIM_9X_Pylon_Assy_1_AIM_9X_Advanced_1: {title: 'AIM-9X Pylon Assembly 1', text: 'AIM-9X Pylon Assembly 1 text'},
+        AIM_9X_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1: {title: 'AIM-9X Pylon Assembly 1 (Link Broken)', text: 'AIM-9X Pylon Assembly 1 (Link Broken) text'},
+        AIM_9X_Pylon_Assy_2_AIM_9X_Advanced_1: {title: 'AIM-9X Pylon Assembly 2', text: 'AIM-9X Pylon Assembly 2 text'},
+        AIM_9X_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1: {title: 'AIM-9X Pylon Assembly 2 (Link Broken)', text: 'AIM-9X Pylon Assembly 2 (Link Broken) text'},
+        AIM_120_LAU176_Pylon_Assy_1_AIM_120D_AMRAAM_1: {title: 'AIM-120 LAU176 Pylon Assembly 1', text: 'AIM-120 LAU176 Pylon Assembly 1 text'},
+        AIM_120_LAU176_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1: {title: 'AIM-120 LAU176 Pylon Assembly 1 (Link Broken)', text: 'AIM-120 LAU176 Pylon Assembly 1 (Link Broken) text'},
+        AIM_120_LAU176_Pylon_Assy_2_AIM_120D_AMRAAM_1: {title: 'AIM-120 LAU176 Pylon Assembly 2', text: 'AIM-120 LAU176 Pylon Assembly 2 text'},
+        AIM_120_LAU176_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1: {title: 'AIM-120 LAU176 Pylon Assembly 2 (Link Broken)', text: 'AIM-120 LAU176 Pylon Assembly 2 (Link Broken) text'},
+        AIM_120_LAU176_Pylon_Assy_3_AIM_120D_AMRAAM_1: {title: 'AIM-120 LAU176 Pylon Assembly 3', text: 'AIM-120 LAU176 Pylon Assembly 3 text'},
+        AIM_120_LAU176_PYLON_ASSY_3_LAU179_PYLON_LINKBROKEN_1: {title: 'AIM-120 LAU176 Pylon Assembly 3 (Link Broken)', text: 'AIM-120 LAU176 Pylon Assembly 3 (Link Broken) text'},
+        AIM_120_LAU176_PYLON_ASSY_4_LAU179_PYLON_LINKBROKEN_1: {title: 'AIM-120 LAU176 Pylon Assembly 4 (Link Broken)', text: 'AIM-120 LAU176 Pylon Assembly 4 (Link Broken) text'},
+        AIM_120_LAU176_Pylon_Assy_5_AIM_120D_AMRAAM_1: {title: 'AIM-120 LAU176 Pylon Assembly 5', text: 'AIM-120 LAU176 Pylon Assembly 5 text'},
+        AIM_120_LAU176_Pylon_Assy_5_LAU179_Pylon_LinkBroken_1: {title: 'AIM-120 LAU176 Pylon Assembly 5 (Link Broken)', text: 'AIM-120 LAU176 Pylon Assembly 5 (Link Broken) text'},
+        AIM_120_LAU176_Pylon_Assy_6_AIM_120D_AMRAAM_1: {title: 'AIM-120 LAU176 Pylon Assembly 6', text: 'AIM-120 LAU176 Pylon Assembly 6 text'},
+        AIM_120_LAU176_PYLON_ASSY_6_LAU179_PYLON_LINKBROKEN_1: {title: 'AIM-120 LAU176 Pylon Assembly 6 (Link Broken)', text: 'AIM-120 LAU176 Pylon Assembly 6 (Link Broken) text'},
+        AMAD_Gearbox_1: {title: 'AMAD Gearbox 1', text: 'AMAD Gearbox 1 text'},
+        AN_ALE_70_Decoy_Set_1: {title: 'AN-ALE-70 Decoy Set 1', text: 'AN-ALE-70 Decoy Set 1 text'},
+        AN_ALE_70_Decoy_Set_2: {title: 'AN-ALE-70 Decoy Set 2', text: 'AN-ALE-70 Decoy Set 2 text'},
+        AN_ALE47_Countermeasures_Dispensing_Set_1: {title: 'AN-ALE47 Countermeasures Dispensing Set 1', text: 'AN-ALE47 Countermeasures Dispensing Set 1 text'},
+        AN_ALE47_Countermeasures_Dispensing_Set_2: {title: 'AN-ALE47 Countermeasures Dispensing Set 2', text: 'AN-ALE47 Countermeasures Dispensing Set 2 text'},
+        AN_ALQ216_Jammer_1: {title: 'AN-ALQ216 Jammer 1', text: 'AN-ALQ216 Jammer 1 text'},
+        ANAPG_82_1: {title: 'ANAPG-82 1', text: 'ANAPG-82 1 text'},
+        ANASN_139_INS_Set_1: {title: 'ANASN-139 INS Set 1', text: 'ANASN-139 INS Set 1 text'},
+        ANASN_163_SATNAV_Set_1: {title: 'ANASN-163 SATNAV Set 1', text: 'ANASN-163 SATNAV Set 1 text'},
+        Antennas_Data_Bus_1: {title: 'Antennas Data Bus 1', text: 'Antennas Data Bus 1 text'},
+        Antennas_Data_Bus_2: {title: 'Antennas Data Bus 2', text: 'Antennas Data Bus 2 text'},
+        Antennas_Data_Bus_4: {title: 'Antennas Data Bus 4', text: 'Antennas Data Bus 4 text'},
+        Armament_Data_Bus_1: {title: 'Armament Data Bus 1', text: 'Armament Data Bus 1 text'},
+        ArrestorHook_1: {title: 'Arrestor Hook 1', text: 'Arrestor Hook 1 text'},
+        Cockpit_Data_Bus_1: {title: 'Cockpit Data Bus 1', text: 'Cockpit Data Bus 1 text'},
+        Control_Surfaces_Data_Bus_1: {title: 'Control Surfaces Data Bus 1', text: 'Control Surfaces Data Bus 1 text'},
+        Control_Surfaces_Data_Bus_3: {title: 'Control Surfaces Data Bus 3', text: 'Control Surfaces Data Bus 3 text'},
+        Control_Surfaces_Data_Bus_4: {title: 'Control Surfaces Data Bus 4', text: 'Control Surfaces Data Bus 4 text'},
+        DFIRS_1: {title: 'DFIRS 1', text: 'DFIRS 1 text'},
+        EPACS_Cooling_Unit_1: {title: 'EPACS Cooling Unit 1', text: 'EPACS Cooling Unit 1 text'},
+        Fuel_Refuel_Data_Bus_1: {title: 'Fuel Refuel Data Bus 1', text: 'Fuel Refuel Data Bus 1 text'},
+        Fuel_Refuel_Data_Bus_2: {title: 'Fuel Refuel Data Bus 2', text: 'Fuel Refuel Data Bus 2 text'},
+        FuselageTank1_1: {title: 'Fuselage Tank 1-1', text: 'Fuselage Tank 1-1 text'},
+        FuselageTank2_1: {title: 'Fuselage Tank 2-1', text: 'Fuselage Tank 2-1 text'},
+        FuselageTank3_1: {title: 'Fuselage Tank 3-1', text: 'Fuselage Tank 3-1 text'},
+        GEF110_1: {title: 'GEF110 1', text: 'GEF110 1 text'},
+        GEF110_2: {title: 'GEF110 2', text: 'GEF110 2 text'},
+        Hydraulic_Actuator_1: {title: 'Hydraulic Actuator 1', text: 'Hydraulic Actuator 1 text'},
+        Hydraulic_Actuator_2: {title: 'Hydraulic Actuator 2', text: 'Hydraulic Actuator 2 text'},
+        Hydraulic_Actuator_3: {title: 'Hydraulic Actuator 3', text: 'Hydraulic Actuator 3 text'},
+        Hydraulic_Actuator_4: {title: 'Hydraulic Actuator 4', text: 'Hydraulic Actuator 4 text'},
+        Hydraulic_Actuator_5: {title: 'Hydraulic Actuator 5', text: 'Hydraulic Actuator 5 text'},
+        Hydraulic_Actuator_6: {title: 'Hydraulic Actuator 6', text: 'Hydraulic Actuator 6 text'},
+        Hydraulic_Actuator_7: {title: 'Hydraulic Actuator 7', text: 'Hydraulic Actuator 7 text'},
+        Hydraulic_Actuator_8: {title: 'Hydraulic Actuator 8', text: 'Hydraulic Actuator 8 text'},
+        Hydraulic_Actuator_9: {title: 'Hydraulic Actuator 9', text: 'Hydraulic Actuator 9 text'},
+        Hydraulic_Actuator_10: {title: 'Hydraulic Actuator 10', text: 'Hydraulic Actuator 10 text'},
+        Hydraulic_Actuator_11: {title: 'Hydraulic Actuator 11', text: 'Hydraulic Actuator 11 text'},
+        Hydraulic_Actuator_12: {title: 'Hydraulic Actuator 12', text: 'Hydraulic Actuator 12 text'},
+        Hydraulic_Pump_1: {title: 'Hydraulic Pump 1', text: 'Hydraulic Pump 1 text'},
+        Hydraulic_Pump_2: {title: 'Hydraulic Pump 2', text: 'Hydraulic Pump 2 text'},
+        InletTank_1: {title: 'Inlet Tank 1', text: 'Inlet Tank 1 text'},
+        INS_CG_FCS_Data_Bus_1: {title: 'INS CG FCS Data Bus 1', text: 'INS CG FCS Data Bus 1 text'},
+        INS_CG_FCS_Data_Bus_2: {title: 'INS CG FCS Data Bus 2', text: 'INS CG FCS Data Bus 2 text'},
+        INS_CG_FCS_Data_Bus_5: {title: 'INS CG FCS Data Bus 5', text: 'INS CG FCS Data Bus 5 text'},
+        INS_CG_FCS_Data_Bus_6: {title: 'INS CG FCS Data Bus 6', text: 'INS CG FCS Data Bus 6 text'},
+        IRST_21_Independent_1: {title: 'IRST 21 Independent 1', text: 'IRST 21 Independent 1 text'},
+        Landing_Gear_Data_Bus_1: {title: 'Landing Gear Data Bus 1', text: 'Landing Gear Data Bus 1 text'},
+        Main_Landing_Gear_1: {title: 'Main Landing Gear 1', text: 'Main Landing Gear 1 text'},
+        Main_Landing_Gear_2: {title: 'Main Landing Gear 2', text: 'Main Landing Gear 2 text'},
+        Martin_Baker_Ejection_Seat_Final_1: {title: 'Martin Bakers Ejection Seat Final 1', text: 'Martin Bakers Ejection Seat Final 1 text'},
+        Nose_Landing_Gear_1: {title: 'Nose Landing Gear 1', text: 'Nose Landing Gear 1 text'},
+        Nose_UHF_RWR_Data_Bus_1: {title: 'Nose UHF RWR Data Bus 1', text: 'Nose UHF RWR Data Bus 1 text'},
+        Nose_UHF_RWR_Data_Bus_2: {title: 'Nose UHF RWR Data Bus 2', text: 'Nose UHF RWR Data Bus 2 text'},
+        OBOGS_1: {title: 'OBOGS 1', text: 'OBOGS 1 text'},
+        Pilot_Interface_FCS_1: {title: 'Pilot Interface FCS 1', text: 'Pilot Interface FCS 1 text'},
+        Powerplant_Data_Bus_1: {title: 'Powerplant Data Bus 1', text: 'Powerplant Data Bus 1 text'},
+        Powerplant_Data_Bus_3: {title: 'Powerplant Data Bus 3', text: 'Powerplant Data Bus 3 text'},
+        RAPTOR_Fiber_Optic_Recorder_1: {title: 'RAPTOR Fiber Optic Recorder 1', text: 'RAPTOR Fiber Optic Recorder 1 text'},
+        Refuler_1_Bar_1: {title: 'Refuler 1 Bar 1', text: 'Refuler 1 Bar 1 text'},
+        Refuler_1_Bar_2: {title: 'Refuler 1 Bar 2', text: 'Refuler 1 Bar 2 text'},
+        Refuler_1_Probe_1: {title: 'Refuler 1 Probe 1', text: 'Refuler 1 Probe 1 text'},
+        Refuler_1_Refueler_Probe_1: {title: 'Refuler 1 Refueler Probe 1', text: 'Refuler 1 Refueler Probe 1 text'},
+        Refuler_1_Slider_1: {title: 'Refuler 1 Slider 1', text: 'Refuler 1 Slider 1 text'},
+        TestAssm_PDR_V3_FINALFINALFINAL_OMLShell_1: {title: 'TestAssm PDR V3 FINALFINALFINAL OMLShell 1', text: 'TestAssm PDR V3 FINALFINALFINAL OMLShell 1 text'},
+        WingTank_1: {title: 'Wing Tank 1', text: 'Wing Tank 1 text'},
+        WingTank_2: {title: 'Wing Tank 2', text: 'Wing Tank 2 text'},
+      };
+
+      const initialText = "hi we are Roy and Sons and we da best";
+      const Colors = { hover: '1 0 1', select: '0 1 0' };
+
+      let currentSelection = null;
+      const baselineByPart = new Map();
+      const elementBaseline = new WeakMap();
+      const hiddenParts = new Set();
+
+      // ---------- x3dom runtime color helpers ----------
+      // x3dom parses X3D/GLB into an internal scene graph on load. After that,
+      // setAttribute on DOM Material nodes does NOT update the rendered color —
+      // you must set values on the _x3domNode runtime object directly.
+      //
+      // Strategy:
+      //  1. Walk all Shape nodes under a part.
+      //  2. For each Shape, get the Appearance -> Material _x3domNode.
+      //     If none exists (Blender X3D exports empty <Appearance>), create a
+      //     real DOM <Material> node so x3dom registers one, then grab its runtime.
+      //  3. Directly set diffuseColor / emissiveColor on the runtime node and
+      //     call x3dom's invalidate so the change renders.
+
+      const DEFAULT_DIFFUSE = { r: 0.6, g: 0.6, b: 0.7 };
+
+      // Parse "r g b" string → {r,g,b}
+      function parseColor(str) {
+        if (!str) return null;
+        const p = str.trim().split(/[\s,]+/).map(Number);
+        if (p.length < 3 || p.some(isNaN)) return null;
+        return { r: p[0], g: p[1], b: p[2] };
+      }
+
+      // Set color on a single x3dom Material runtime node
+      function setRuntimeColor(rn, diffuse, emissive) {
+        try {
+          if (diffuse)  rn.setDiffuseColor(new x3dom.fields.SFColor(diffuse.r,  diffuse.g,  diffuse.b));
+        } catch(e) {
+          try { rn._vf.diffuseColor  = new x3dom.fields.SFColor(diffuse.r,  diffuse.g,  diffuse.b); } catch(e2){}
+        }
+        try {
+          if (emissive) rn.setEmissiveColor(new x3dom.fields.SFColor(emissive.r, emissive.g, emissive.b));
+        } catch(e) {
+          try { rn._vf.emissiveColor = new x3dom.fields.SFColor(emissive.r, emissive.g, emissive.b); } catch(e2){}
+        }
+        try { rn.invalidateCache(); } catch(e){}
+      }
+
+      // Get (or create) the x3dom Material runtime node for a Shape DOM element.
+      // Returns null if unavailable.
+      function getMaterialRuntime(shapeEl) {
+        // Try Appearance -> Material path
+        let app = shapeEl.querySelector('Appearance');
+        if (!app) {
+          app = document.createElement('Appearance');
+          shapeEl.appendChild(app);
+        }
+        let matEl = app.querySelector('Material');
+        if (!matEl) {
+          // Blender X3D: <Appearance> is empty. Insert a real Material node so
+          // x3dom will register it. We must do this before x3dom processes the
+          // node, but if we're here after load we force a re-init via x3dom API.
+          matEl = document.createElement('Material');
+          matEl.setAttribute('diffuseColor', DEFAULT_DIFFUSE.r + ' ' + DEFAULT_DIFFUSE.g + ' ' + DEFAULT_DIFFUSE.b);
+          matEl.setAttribute('data-injected', 'true');
+          app.appendChild(matEl);
+        }
+        // Return the _x3domNode runtime handle if available
+        if (matEl._x3domNode) return matEl._x3domNode;
+        return null;
+      }
+
+      // Collect all Material runtime nodes under a part Transform
+      function getRuntimeMaterials(part) {
+        const shapes = Array.from(part.getElementsByTagName('Shape'));
+        const result = [];
+        for (const s of shapes) {
+          // PhysicalMaterial (GLB/PBR path)
+          const physEl = s.querySelector('Appearance > PhysicalMaterial');
+          if (physEl && physEl._x3domNode) { result.push({ rn: physEl._x3domNode, type: 'phys' }); continue; }
+          // Classic Material
+          const rn = getMaterialRuntime(s);
+          if (rn) result.push({ rn, type: 'classic' });
+        }
+        return result;
+      }
+
+      // Capture baseline colors from runtime nodes
+      function captureBaseline(part) {
+        const rms = getRuntimeMaterials(part);
+        const baseline = [];
+        for (const { rn, type } of rms) {
+          try {
+            const dc = rn._vf && rn._vf.diffuseColor;
+            const ec = rn._vf && rn._vf.emissiveColor;
+            baseline.push({
+              rn,
+              type,
+              diffuse:  dc ? { r: dc.r, g: dc.g, b: dc.b } : { ...DEFAULT_DIFFUSE },
+              emissive: ec ? { r: ec.r, g: ec.g, b: ec.b } : { r: 0, g: 0, b: 0 },
+            });
+          } catch(e) {}
+        }
+        baselineByPart.set(part, baseline);
+        console.log('captureBaseline', part.getAttribute('DEF'), 'runtime nodes:', baseline.length);
+      }
+
+      function setPartColor(part, colorStr) {
+        const c = parseColor(colorStr);
+        if (!c) return;
+        const items = baselineByPart.get(part) || [];
+        if (items.length === 0) {
+          // Baseline not captured yet (e.g. part just loaded) — get fresh
+          const rms = getRuntimeMaterials(part);
+          for (const { rn, type } of rms) {
+            if (type === 'phys') setRuntimeColor(rn, { r:0.1, g:0.1, b:0.1 }, c);
+            else                 setRuntimeColor(rn, c, c);
+          }
+          return;
+        }
+        for (const { rn, type } of items) {
+          if (type === 'phys') setRuntimeColor(rn, { r:0.1, g:0.1, b:0.1 }, c);
+          else                 setRuntimeColor(rn, c, c);
+        }
+      }
+
+      function restorePartFromBaseline(part) {
+        const items = baselineByPart.get(part) || [];
+        for (const { rn, diffuse, emissive } of items) {
+          setRuntimeColor(rn, diffuse, emissive);
+        }
+      }
+
+      // ---------- Part setup (called after each Inline finishes loading) ----------
+
+      // After an Inline loads, x3dom has parsed the content into its scene graph.
+      // We give it one extra tick (setTimeout 0) so _x3domNode handles are live,
+      // then capture baselines and set the default color (fixing white parts).
+      function setupPart(part) {
+        const def = part.getAttribute('DEF');
+        const MAX_ATTEMPTS = 40;   // 40 × 50ms = 2 seconds max wait
+        const INTERVAL_MS  = 50;
+        let attempts = 0;
+
+        function trySetup() {
+          attempts++;
+          const shapes = Array.from(part.getElementsByTagName('Shape'));
+          if (shapes.length === 0) {
+            if (attempts < MAX_ATTEMPTS) setTimeout(trySetup, INTERVAL_MS);
+            return;
+          }
+
+          // Check that at least one material runtime node is live
+          const anyLive = shapes.some(s => {
+            const physEl = s.querySelector('Appearance > PhysicalMaterial');
+            if (physEl && physEl._x3domNode) return true;
+            const app = s.querySelector('Appearance');
+            const matEl = app && app.querySelector('Material');
+            return matEl && matEl._x3domNode;
+          });
+
+          if (!anyLive && attempts < MAX_ATTEMPTS) {
+            setTimeout(trySetup, INTERVAL_MS);
+            return;
+          }
+
+          // Now nodes are live — set default colors on unmaterialed shapes,
+          // then capture the true baseline BEFORE overwriting anything
+          for (const s of shapes) {
+            const physEl = s.querySelector('Appearance > PhysicalMaterial');
+            if (physEl && physEl._x3domNode) continue; // GLB — leave it alone
+            const rn = getMaterialRuntime(s);
+            if (rn) {
+              // Only set default if it has no meaningful color yet
+              const dc = rn._vf && rn._vf.diffuseColor;
+              const isBlack = dc && dc.r === 0 && dc.g === 0 && dc.b === 0;
+              const isDefault = !dc || isBlack;
+              if (isDefault) setRuntimeColor(rn, DEFAULT_DIFFUSE, { r:0, g:0, b:0 });
+            }
+          }
+
+          captureBaseline(part);       // capture AFTER defaults set, not mid-overwrite
+          attachHoverHandlers(part);
+          console.log('setupPart complete:', def, 'attempts:', attempts);
+        }
+
+        setTimeout(trySetup, INTERVAL_MS); // give x3dom at least one tick
+      }
+
+      // ---------- Interaction ----------
+
+      function selectPartByDEF(partDEF) {
+        if (!PART_DEFS.includes(partDEF)) return;
+        if (currentSelection) {
+          restorePartFromBaseline(currentSelection);
+          currentSelection = null;
+        }
+        const part = document.querySelector("Transform[DEF='" + partDEF + "']");
+        if (!part) { console.warn('Part not found:', partDEF); return; }
+        setPartColor(part, Colors.select);
+        currentSelection = part;
+        updateHideUI();
+      }
+
+      function hidePart() {
+        if (!currentSelection) return;
+        const partDEF = currentSelection.getAttribute('DEF');
+        currentSelection.setAttribute('visible', 'false');
+        hiddenParts.add(partDEF);
+        updateHideUI();
+      }
+
+      function restoreAllParts() {
+        for (const partDEF of hiddenParts) {
+          const part = document.querySelector("Transform[DEF='" + partDEF + "']");
+          if (part) part.setAttribute('visible', 'true');
+        }
+        hiddenParts.clear();
+        updateHideUI();
+      }
+
+      function updateHideUI() {
+        const hideBtn    = document.getElementById('hide-selected-btn');
+        const restoreBtn = document.getElementById('restore-all-btn');
+        if (hideBtn)    hideBtn.style.display    = currentSelection && !hiddenParts.has(currentSelection.getAttribute('DEF')) ? 'block' : 'none';
+        if (restoreBtn) restoreBtn.style.display = hiddenParts.size > 0 ? 'block' : 'none';
+      }
+
+      function attachHoverHandlers(part) {
+        part.addEventListener('mouseover', function () {
+          if (currentSelection === part) return;
+          setPartColor(part, Colors.hover);
+        });
+        part.addEventListener('mouseout', function () {
+          if (currentSelection === part) return;
+          restorePartFromBaseline(part);
+        });
+      }
+
+      // ---------- Initialization ----------
+
+      // KEY FIX: wait for each Inline to finish loading before setting up its part.
+      // x3dom.runtime.ready fires BEFORE Inline content is parsed — that's why
+      // getMaterials() was finding 0 materials at startup.
+      function waitForInlineAndSetup(inlineEl, partDef) {
+        const part = document.querySelector("Transform[DEF='" + partDef + "']");
+        if (!part) return;
+
+        inlineEl.addEventListener('load', function () {
+          console.log('Inline loaded for:', partDef);
+          if (!baselineByPart.has(part)) setupPart(part);
+        });
+
+        // Polling fallback in case the load event already fired (cached file)
+        let attempts = 0;
+        const poll = setInterval(function () {
+          attempts++;
+          if (part.getElementsByTagName('Shape').length > 0) {
+            clearInterval(poll);
+            if (!baselineByPart.has(part)) {
+              console.log('Inline poll found shapes for:', partDef);
+              setupPart(part);
+            }
+          }
+          if (attempts > 60) clearInterval(poll);
+        }, 100);
+      }
+
+      x3dom.runtime.ready = function () {
+        var x3dElement = document.getElementById('x3dElement');
+        if (x3dElement && x3dElement.runtime && x3dElement.runtime.resetView) {
+          try { x3dElement.runtime.resetView(); } catch (e) { }
+        }
+
+        const inlineMap = {
+          AIM_9X_Pylon_Assy_1_AIM_9X_Advanced_1: 'AIM_9X_Pylon_Assy_1_AIM_9X_Advanced_1_Inline',
+          AIM_9X_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1: 'AIM_9X_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1_Inline',
+          AIM_9X_Pylon_Assy_2_AIM_9X_Advanced_1: 'AIM_9X_Pylon_Assy_2_AIM_9X_Advanced_1_Inline',
+          AIM_9X_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1: 'AIM_9X_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1_Inline',
+          AIM_120_LAU176_Pylon_Assy_1_AIM_120D_AMRAAM_1: 'AIM_120_LAU176_Pylon_Assy_1_AIM_120D_AMRAAM_1_Inline',
+          AIM_120_LAU176_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1: 'AIM_120_LAU176_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1_Inline',
+          AIM_120_LAU176_Pylon_Assy_2_AIM_120D_AMRAAM_1: 'AIM_120_LAU176_Pylon_Assy_2_AIM_120D_AMRAAM_1_Inline',
+          AIM_120_LAU176_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1: 'AIM_120_LAU176_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1_Inline',
+          AIM_120_LAU176_Pylon_Assy_3_AIM_120D_AMRAAM_1: 'AIM_120_LAU176_Pylon_Assy_3_AIM_120D_AMRAAM_1_Inline',
+          AIM_120_LAU176_Pylon_Assy_3_LAU179_Pylon_LinkBroken_1: 'AIM_120_LAU176_Pylon_Assy_3_LAU179_Pylon_LinkBroken_1_Inline',
+          AIM_120_LAU176_Pylon_Assy_4_AIM_120D_AMRAAM_1: 'AIM_120_LAU176_Pylon_Assy_4_AIM_120D_AMRAAM_1_Inline',
+          AIM_120_LAU176_Pylon_Assy_4_LAU179_Pylon_LinkBroken_1: 'AIM_120_LAU176_Pylon_Assy_4_LAU179_Pylon_LinkBroken_1_Inline',
+          AIM_120_LAU176_Pylon_Assy_5_AIM_120D_AMRAAM_1: 'AIM_120_LAU176_Pylon_Assy_5_AIM_120D_AMRAAM_1_Inline',
+          AIM_120_LAU176_Pylon_Assy_5_LAU179_Pylon_LinkBroken_1: 'AIM_120_LAU176_Pylon_Assy_5_LAU179_Pylon_LinkBroken_1_Inline',
+          AIM_120_LAU176_Pylon_Assy_6_AIM_120D_AMRAAM_1: 'AIM_120_LAU176_Pylon_Assy_6_AIM_120D_AMRAAM_1_Inline',
+          AIM_120_LAU176_Pylon_Assy_6_LAU179_Pylon_LinkBroken_1: 'AIM_120_LAU176_Pylon_Assy_6_LAU179_Pylon_LinkBroken_1_Inline',
+          AMAD_Gearbox_1: 'AMAD_Gearbox_1_Inline',
+          AN_ALE_70_Decoy_Set_1: 'AN_ALE_70_Decoy_Set_1_Inline',
+          AN_ALE_70_Decoy_Set_2: 'AN_ALE_70_Decoy_Set_2_Inline',
+          AN_ALE47_Countermeasures_Dispensing_Set_1: 'AN_ALE47_Countermeasures_Dispensing_Set_1_Inline',
+          AN_ALE47_Countermeasures_Dispensing_Set_2: 'AN_ALE47_Countermeasures_Dispensing_Set_2_Inline',
+          AN_ALQ216_Jammer_1: 'AN_ALQ216_Jammer_1_Inline',
+          ANAPG_82_1: 'ANAPG_82_1_Inline',
+          ANASN_139_INS_Set_1: 'ANASN_139_INS_Set_1_Inline',
+          ANASN_163_SATNAV_Set_1: 'ANASN_163_SATNAV_Set_1_Inline',
+          Antennas_Data_Bus_1: 'Antennas_Data_Bus_1_Inline',
+          Antennas_Data_Bus_2: 'Antennas_Data_Bus_2_Inline',
+          Antennas_Data_Bus_4: 'Antennas_Data_Bus_4_Inline',
+          Armament_Data_Bus_1: 'Armament_Data_Bus_1_Inline',
+          ArrestorHook_1: 'ArrestorHook_1_Inline',
+          Cockpit_Data_Bus_1: 'Cockpit_Data_Bus_1_Inline',
+          Control_Surfaces_Data_Bus_1: 'Control_Surfaces_Data_Bus_1_Inline',
+          Control_Surfaces_Data_Bus_3: 'Control_Surfaces_Data_Bus_3_Inline',
+          Control_Surfaces_Data_Bus_4: 'Control_Surfaces_Data_Bus_4_Inline',
+          DFIRS_1: 'DFIRS_1_Inline',
+          EPACS_Cooling_Unit_1: 'EPACS_Cooling_Unit_1_Inline',
+          Fuel_Refuel_Data_Bus_1: 'Fuel_Refuel_Data_Bus_1_Inline',
+          Fuel_Refuel_Data_Bus_2: 'Fuel_Refuel_Data_Bus_2_Inline',
+          FuselageTank1_1: 'FuselageTank1_1_Inline',
+          FuselageTank2_1: 'FuselageTank2_1_Inline',
+          FuselageTank3_1: 'FuselageTank3_1_Inline',
+          GEF110_1: 'GEF110_1_Inline',
+          GEF110_2: 'GEF110_2_Inline',
+          Hydraulic_Actuator_1: 'Hydraulic_Actuator_1_Inline',
+          Hydraulic_Actuator_2: 'Hydraulic_Actuator_2_Inline',
+          Hydraulic_Actuator_3: 'Hydraulic_Actuator_3_Inline',
+          Hydraulic_Actuator_4: 'Hydraulic_Actuator_4_Inline',
+          Hydraulic_Actuator_5: 'Hydraulic_Actuator_5_Inline',
+          Hydraulic_Actuator_6: 'Hydraulic_Actuator_6_Inline',
+          Hydraulic_Actuator_7: 'Hydraulic_Actuator_7_Inline',
+          Hydraulic_Actuator_8: 'Hydraulic_Actuator_8_Inline',
+          Hydraulic_Actuator_9: 'Hydraulic_Actuator_9_Inline',
+          Hydraulic_Actuator_10: 'Hydraulic_Actuator_10_Inline',
+          Hydraulic_Actuator_11: 'Hydraulic_Actuator_11_Inline',
+          Hydraulic_Actuator_12: 'Hydraulic_Actuator_12_Inline',
+          Hydraulic_Pump_1: 'Hydraulic_Pump_1_Inline',
+          Hydraulic_Pump_2: 'Hydraulic_Pump_2_Inline',
+          InletTank_1: 'InletTank_1_Inline',
+          INS_CG_FCS_Data_Bus_1: 'INS_CG_FCS_Data_Bus_1_Inline',
+          INS_CG_FCS_Data_Bus_2: 'INS_CG_FCS_Data_Bus_2_Inline',
+          INS_CG_FCS_Data_Bus_5: 'INS_CG_FCS_Data_Bus_5_Inline',
+          INS_CG_FCS_Data_Bus_6: 'INS_CG_FCS_Data_Bus_6_Inline',
+          IRST_21_Independent_1: 'IRST_21_Independent_1_Inline',
+          Landing_Gear_Data_Bus_1: 'Landing_Gear_Data_Bus_1_Inline',
+          Main_Landing_Gear_1: 'Main_Landing_Gear_1_Inline',
+          Main_Landing_Gear_2: 'Main_Landing_Gear_2_Inline',
+          Martin_Baker_Ejection_Seat_Final_1: 'Martin_Baker_Ejection_Seat_Final_1_Inline',
+          Nose_Landing_Gear_1: 'Nose_Landing_Gear_1_Inline',
+          Nose_UHF_RWR_Data_Bus_1: 'Nose_UHF_RWR_Data_Bus_1_Inline',
+          Nose_UHF_RWR_Data_Bus_2: 'Nose_UHF_RWR_Data_Bus_2_Inline',
+          OBOGS_1: 'OBOGS_1_Inline',
+          Pilot_Interface_FCS_1: 'Pilot_Interface_FCS_1_Inline',
+          Powerplant_Data_Bus_1: 'Powerplant_Data_Bus_1_Inline',
+          Powerplant_Data_Bus_3: 'Powerplant_Data_Bus_3_Inline',
+          RAPTOR_Fiber_Optic_Recorder_1: 'RAPTOR_Fiber_Optic_Recorder_1_Inline',
+          Refuler_1_Bar_1: 'Refuler_1_Bar_1_Inline',
+          Refuler_1_Bar_2: 'Refuler_1_Bar_2_Inline',
+          Refuler_1_Probe_1: 'Refuler_1_Probe_1_Inline',
+          Refuler_1_Refueler_Probe_1: 'Refuler_1_Refueler_Probe_1_Inline',
+          Refuler_1_Slider_1: 'Refuler_1_Slider_1_Inline',
+          TestAssm_PDR_V3_FINALFINALFINAL_OMLShell_1: 'TestAssm_PDR_V3_FINALFINALFINAL_OMLShell_1_Inline',
+          WingTank_1: 'WingTank_1_Inline',
+          WingTank_2: 'WingTank_2_Inline'
+        };
+
+        for (const [partDef, inlineDef] of Object.entries(inlineMap)) {
+          const inlineEl = document.querySelector("Inline[DEF='" + inlineDef + "']");
+          if (inlineEl) waitForInlineAndSetup(inlineEl, partDef);
+          else console.log('Inline element not found:', inlineDef);
+        }
+
+        const boxInline = document.querySelector("Inline[DEF='BoxInline']");
+        if (boxInline) waitForInlineAndSetup(boxInline, 'Box');
+      };
+
+      // --- showDetail: called by onclick on plane parts and ground plane ---
+      function showDetail(partName) {
+        console.log("Clicked on:", partName);
+
+        let infoTitle = "";
+        let infoDescription = "";
+        let graphImageFile = "";
+
+        const graphContainer = document.getElementById('graph-container');
+        if (graphContainer) graphContainer.style.display = 'none';
+
+        if (PART_DEFS.includes(partName)) {
+          const info = INFO[partName];
+          infoTitle = info.title;
+          infoDescription = info.text;
+          if (partName === 'Wing') graphImageFile = 'Graph2.png';
+          if (partName === 'Fuselage' || partName === 'Canopy' || partName === 'HorStab') graphImageFile = 'Graph1.png';
+          selectPartByDEF(partName);
+        } else {
+          infoTitle = "FA-24 HellStinger";
+          infoDescription = initialText;
+          if (currentSelection) {
+            try { restorePartFromBaseline(currentSelection); } catch (e) { }
+            currentSelection = null;
+          }
+          updateHideUI();
+        }
+
+        const titleEl = document.getElementById('info-title');
+        const descEl  = document.getElementById('info-description');
+        if (titleEl) titleEl.innerText = infoTitle;
+        if (descEl)  descEl.innerHTML  = infoDescription;
+
+        if (graphImageFile) {
+          const img = document.getElementById('graph-image');
+          if (img) img.src = graphImageFile;
+          if (graphContainer) graphContainer.style.display = 'block';
+        }
+      }
+
+      // Expose bindButtonName for the radio buttons
+      function bindButtonName(viewpointID) {
+        console.log(viewpointID);
+        document.getElementById(viewpointID).bind = true;
+      }
+
+      // Show the intro on DOM ready
+      document.addEventListener("DOMContentLoaded", function () {
+        showDetail('initial');
+      });
+    </script>
+</head>
+
+<body>
+    <div id='HUDs_Div'> 
+      <div id='X3DOM_AOPT_Links' class='group'> 
+        AOE 4066: Xander Fry <br> Visualization of Hellstinger in HTML<br>
+        <hr>
+        <form>
+          <label><input type="radio" name="buttons" value="Viewpoint1" checked onclick="bindButtonName('Viewpoint1')"> Viewpoint 1</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint2" onclick="bindButtonName('Viewpoint2')"> Viewpoint 2</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint3" onclick="bindButtonName('Viewpoint3')"> Viewpoint 3</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint4" onclick="bindButtonName('Viewpoint4')"> Viewpoint 4</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint5" onclick="bindButtonName('Viewpoint5')"> Viewpoint 5</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint6" onclick="bindButtonName('Viewpoint6')"> Viewpoint 6</label><br>
+        </form>
+        <hr style="margin-top: 15px; margin-bottom: 10px;">
+        <button id="restore-all-btn" onclick="restoreAllParts()" style="display:none; width: 100%; padding: 8px 12px; background-color: #51cf66; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Restore All Hidden</button>
+      </div>
+    </div>
+
+    <x3d id='x3dElement' showStat='false' showLog='false' style='width:100%; height:100%; border:0; margin:0; padding:0;'>
+      <Scene>
+        <Viewpoint id='Viewpoint1' position="16.11338 80 -19.95448" orientation="-0.00040 0.99989 0.01496 2.32263" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 1"></Viewpoint>
+        <Viewpoint id='Viewpoint2' position="-9.07127 80 2.47211" orientation="-0.00850 0.99941 0.03342 2.30075" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 2"></Viewpoint>
+        <Viewpoint id='Viewpoint3' position="-34.65802 80 33.63939" orientation="-0.01098 0.99894 0.04477 2.38209" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 3"></Viewpoint>
+        <Viewpoint id='Viewpoint4' position="-11.25579 80 47.44333" orientation="-0.01024 0.99957 0.02746 1.59191" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 4"></Viewpoint>
+        <Viewpoint id='Viewpoint5' position="-24.74979 80 61.72199" orientation="-0.02138 0.99950 0.02327 1.84958" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 5"></Viewpoint>
+        <Viewpoint id='Viewpoint6' position="200 800 0" orientation="1 0 0 -1.5708" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="Top Down"></Viewpoint>
+
+<NavigationInfo type='"EXAMINE" "ANY"' avatarSize="0.25 1.75 0.75" headlight="false" visibilityLimit="50000"></NavigationInfo>
+        
+        <DirectionalLight direction='-.8 -.8 -.8' intensity='.7'></DirectionalLight>
+        <DirectionalLight direction='-.8 -.8 .8' intensity='.7'></DirectionalLight>
+        <DirectionalLight direction='.8 -.8 .8' intensity='.7'></DirectionalLight>
+        <DirectionalLight direction='.8 -.8 -.8' intensity='.7'></DirectionalLight>
+        <DirectionalLight direction='0 1 0' intensity='.2'></DirectionalLight>
+        <background skyColor="0.53 0.75 0.98" groundColor="0.0 0.2 0.5"></background>
+
+        <Transform translation="0 -0.25 0" onclick="showDetail('initial')">
+          <Shape><Appearance> <Material diffuseColor="0.6 0.8 1.0"></Material> <ImageTexture url='wataa.jpg'></ImageTexture> <TextureTransform center="0.5 0.5" scale="1 1" rotation="0" translation="0 0"></TextureTransform></Appearance>
+          <Box size="5000 .5 5000"></Box></Shape>
+        </Transform>
+
+        <Transform translation="0 0 0" rotation="0 0 0 0" scale='0.05 0.05 0.05'>
+          <Inline url='uss_nimitz_cvn-68_aircraft_carrier.glb'></Inline>
+        </Transform>
+
+        <Transform DEF="Box" id="Box" translation="600 60 0" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Box')" scale="7 7 7">
+            <Inline DEF="BoxInline" url="greenish_cube.glb" mapDEFToID="true" nameSpaceName="Box"></Inline>
+        </Transform>
+
+        <Transform DEF="PlanePitch" translation="650 42 0" rotation="0 0 1 3.1415926" scale='0.05 0.05 0.05'>
+        <Transform DEF="PlaneRotation" translation="0 0 0" rotation="0 1 0 0" scale='1 1 1'>
+        <Transform DEF="PlaneGroup" translation="0 0 0" rotation="1 0 0 0" scale='1 1 1'>
+        
+          <!--
+        <Transform DEF="PlaneGroup" translation="35 0 -40" rotation="1 0 0 -1.57" scale='1 1 1'>
+
+          <Transform DEF="Fuselage" id="Fuselage" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Fuselage')">
+            <Inline DEF="FuselageInline" url="GLB_Output/TestAssm - Param_Fuselage_Cut_V2.5-1.glb" mapDEFToID="true" nameSpaceName="Fuselage" ></Inline>
+          </Transform>
+          <Transform DEF="Wing" id="Wing" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Wing')">
+            <Inline DEF="WingInline" url="GLB_Output/TestAssm - Param_Wing_V3.01-1.glb" mapDEFToID="true" nameSpaceName="Wing"></Inline>
+          </Transform>
+          <Transform DEF="Canopy" id="Canopy" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Canopy')">
+            <Inline DEF="CanopyInline" url="GLB_Output/TestAssm - Param_Canopy-1.glb" mapDEFToID="true" nameSpaceName="Canopy"></Inline>
+          </Transform>
+          <Transform DEF="HorStab" id="HorStab" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('HorStab')">
+            <Inline DEF="HorStabInline" url="GLB_Output/TestAssm - Param_Horstab_V2-1.glb" mapDEFToID="true" nameSpaceName="HorStab"></Inline>
+          </Transform>
+          <Transform DEF="VTail" id="VTail" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('VTail')">
+            <Inline DEF="VTailInline" url="GLB_Output/TestAssm - Param_VTail_V2-1.glb" mapDEFToID="true" nameSpaceName="VTail"></Inline>
+          </Transform>
+          <Transform DEF="Inlet" id="Inlet" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Inlet')">
+            <Inline DEF="InletInline" url="GLB_Output/TestAssm - Param_Inlet_V5-1.glb" mapDEFToID="true" nameSpaceName="Inlet"></Inline>
+          </Transform>
+        </Transform>
+      -->
+        <Transform DEF="PlaneGroup" translation="35 0 -40" rotation="1 0 0 -1.57" scale='1 1 1'>
+
+          <Transform DEF="AIM_9X_Pylon_Assy_1_AIM_9X_Advanced_1" id="AIM_9X_Pylon_Assy_1_AIM_9X_Advanced_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AIM_9X_Pylon_Assy_1_AIM_9X_Advanced_1')">
+            <Inline DEF="AIM_9X_Pylon_Assy_1_AIM_9X_Advanced_1_Inline" url="X3D_Output/OMLV3_Packing - AIM-9X_Pylon_Assy-1 AIM-9X Advanced-1.x3d" mapDEFToID="true" nameSpaceName="AIM_9X_Pylon_Assy_1_AIM_9X_Advanced_1"></Inline>
+          </Transform>
+          <Transform DEF="AIM_9X_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1" id="AIM_9X_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AIM_9X_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1')">
+            <Inline DEF="AIM_9X_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1_Inline" url="X3D_Output/OMLV3_Packing - AIM-9X_Pylon_Assy-1 LAU179_Pylon_LinkBroken-1.x3d" mapDEFToID="true" nameSpaceName="AIM_9X_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1"></Inline>
+          </Transform>
+          <Transform DEF="AIM_9X_Pylon_Assy_2_AIM_9X_Advanced_1" id="AIM_9X_Pylon_Assy_2_AIM_9X_Advanced_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AIM_9X_Pylon_Assy_2_AIM_9X_Advanced_1')">
+            <Inline DEF="AIM_9X_Pylon_Assy_2_AIM_9X_Advanced_1_Inline" url="X3D_Output/OMLV3_Packing - AIM-9X_Pylon_Assy-2 AIM-9X Advanced-1.x3d" mapDEFToID="true" nameSpaceName="AIM_9X_Pylon_Assy_2_AIM_9X_Advanced_1"></Inline>
+          </Transform>
+          <Transform DEF="AIM_9X_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1" id="AIM_9X_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AIM_9X_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1')">
+            <Inline DEF="AIM_9X_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1_Inline" url="X3D_Output/OMLV3_Packing - AIM-9X_Pylon_Assy-2 LAU179_Pylon_LinkBroken-1.x3d" mapDEFToID="true" nameSpaceName="AIM_9X_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1"></Inline>
+          </Transform>
+          <Transform DEF="AIM_120_LAU176_Pylon_Assy_1_AIM_120D_AMRAAM_1" id="AIM_120_LAU176_Pylon_Assy_1_AIM_120D_AMRAAM_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AIM_120_LAU176_Pylon_Assy_1_AIM_120D_AMRAAM_1')">
+            <Inline DEF="AIM_120_LAU176_Pylon_Assy_1_AIM_120D_AMRAAM_1_Inline" url="X3D_Output/OMLV3_Packing - AIM-120_LAU176_Pylon_Assy-1 AIM-120D AMRAAM-1.x3d" mapDEFToID="true" nameSpaceName="AIM_120_LAU176_Pylon_Assy_1_AIM_120D_AMRAAM_1"></Inline>
+          </Transform>
+          <Transform DEF="AIM_120_LAU176_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1" id="AIM_120_LAU176_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AIM_120_LAU176_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1')">
+            <Inline DEF="AIM_120_LAU176_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1_Inline" url="X3D_Output/OMLV3_Packing - AIM-120_LAU176_Pylon_Assy-1 LAU179_Pylon_LinkBroken-1.x3d" mapDEFToID="true" nameSpaceName="AIM_120_LAU176_Pylon_Assy_1_LAU179_Pylon_LinkBroken_1"></Inline>
+          </Transform>
+          <Transform DEF="AIM_120_LAU176_Pylon_Assy_2_AIM_120D_AMRAAM_1" id="AIM_120_LAU176_Pylon_Assy_2_AIM_120D_AMRAAM_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AIM_120_LAU176_Pylon_Assy_2_AIM_120D_AMRAAM_1')">
+            <Inline DEF="AIM_120_LAU176_Pylon_Assy_2_AIM_120D_AMRAAM_1_Inline" url="X3D_Output/OMLV3_Packing - AIM-120_LAU176_Pylon_Assy-2 AIM-120D AMRAAM-1.x3d" mapDEFToID="true" nameSpaceName="AIM_120_LAU176_Pylon_Assy_2_AIM_120D_AMRAAM_1"></Inline>
+          </Transform>
+          <Transform DEF="AIM_120_LAU176_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1" id="AIM_120_LAU176_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AIM_120_LAU176_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1')">
+            <Inline DEF="AIM_120_LAU176_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1_Inline" url="X3D_Output/OMLV3_Packing - AIM-120_LAU176_Pylon_Assy-2 LAU179_Pylon_LinkBroken-1.x3d" mapDEFToID="true" nameSpaceName="AIM_120_LAU176_Pylon_Assy_2_LAU179_Pylon_LinkBroken_1"></Inline>
+          </Transform>
+          <Transform DEF="AIM_120_LAU176_Pylon_Assy_3_AIM_120D_AMRAAM_1" id="AIM_120_LAU176_Pylon_Assy_3_AIM_120D_AMRAAM_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AIM_120_LAU176_Pylon_Assy_3_AIM_120D_AMRAAM_1')">
+            <Inline DEF="AIM_120_LAU176_Pylon_Assy_3_AIM_120D_AMRAAM_1_Inline" url="X3D_Output/OMLV3_Packing - AIM-120_LAU176_Pylon_Assy-3 AIM-120D AMRAAM-1.x3d" mapDEFToID="true" nameSpaceName="AIM_120_LAU176_Pylon_Assy_3_AIM_120D_AMRAAM_1"></Inline>
+          </Transform>
+          <Transform DEF="AIM_120_LAU176_Pylon_Assy_3_LAU179_Pylon_LinkBroken_1" id="AIM_120_LAU176_Pylon_Assy_3_LAU179_Pylon_LinkBroken_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AIM_120_LAU176_Pylon_Assy_3_LAU179_Pylon_LinkBroken_1')">
+            <Inline DEF="AIM_120_LAU176_Pylon_Assy_3_LAU179_Pylon_LinkBroken_1_Inline" url="X3D_Output/OMLV3_Packing - AIM-120_LAU176_Pylon_Assy-3 LAU179_Pylon_LinkBroken-1.x3d" mapDEFToID="true" nameSpaceName="AIM_120_LAU176_Pylon_Assy_3_LAU179_Pylon_LinkBroken_1"></Inline>
+          </Transform>
+          <Transform DEF="AIM_120_LAU176_Pylon_Assy_4_AIM_120D_AMRAAM_1" id="AIM_120_LAU176_Pylon_Assy_4_AIM_120D_AMRAAM_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AIM_120_LAU176_Pylon_Assy_4_AIM_120D_AMRAAM_1')">
+            <Inline DEF="AIM_120_LAU176_Pylon_Assy_4_AIM_120D_AMRAAM_1_Inline" url="X3D_Output/OMLV3_Packing - AIM-120_LAU176_Pylon_Assy-4 AIM-120D AMRAAM-1.x3d" mapDEFToID="true" nameSpaceName="AIM_120_LAU176_Pylon_Assy_4_AIM_120D_AMRAAM_1"></Inline>
+          </Transform>
+          <Transform DEF="AIM_120_LAU176_Pylon_Assy_4_LAU179_Pylon_LinkBroken_1" id="AIM_120_LAU176_Pylon_Assy_4_LAU179_Pylon_LinkBroken_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AIM_120_LAU176_Pylon_Assy_4_LAU179_Pylon_LinkBroken_1')">
+            <Inline DEF="AIM_120_LAU176_Pylon_Assy_4_LAU179_Pylon_LinkBroken_1_Inline" url="X3D_Output/OMLV3_Packing - AIM-120_LAU176_Pylon_Assy-4 LAU179_Pylon_LinkBroken-1.x3d" mapDEFToID="true" nameSpaceName="AIM_120_LAU176_Pylon_Assy_4_LAU179_Pylon_LinkBroken_1"></Inline>
+          </Transform>
+          <Transform DEF="AIM_120_LAU176_Pylon_Assy_5_AIM_120D_AMRAAM_1" id="AIM_120_LAU176_Pylon_Assy_5_AIM_120D_AMRAAM_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AIM_120_LAU176_Pylon_Assy_5_AIM_120D_AMRAAM_1')">
+            <Inline DEF="AIM_120_LAU176_Pylon_Assy_5_AIM_120D_AMRAAM_1_Inline" url="X3D_Output/OMLV3_Packing - AIM-120_LAU176_Pylon_Assy-5 AIM-120D AMRAAM-1.x3d" mapDEFToID="true" nameSpaceName="AIM_120_LAU176_Pylon_Assy_5_AIM_120D_AMRAAM_1"></Inline>
+          </Transform>
+          <Transform DEF="AIM_120_LAU176_Pylon_Assy_5_LAU179_Pylon_LinkBroken_1" id="AIM_120_LAU176_Pylon_Assy_5_LAU179_Pylon_LinkBroken_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AIM_120_LAU176_Pylon_Assy_5_LAU179_Pylon_LinkBroken_1')">
+            <Inline DEF="AIM_120_LAU176_Pylon_Assy_5_LAU179_Pylon_LinkBroken_1_Inline" url="X3D_Output/OMLV3_Packing - AIM-120_LAU176_Pylon_Assy-5 LAU179_Pylon_LinkBroken-1.x3d" mapDEFToID="true" nameSpaceName="AIM_120_LAU176_Pylon_Assy_5_LAU179_Pylon_LinkBroken_1"></Inline>
+          </Transform>
+          <Transform DEF="AIM_120_LAU176_Pylon_Assy_6_AIM_120D_AMRAAM_1" id="AIM_120_LAU176_Pylon_Assy_6_AIM_120D_AMRAAM_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AIM_120_LAU176_Pylon_Assy_6_AIM_120D_AMRAAM_1')">
+            <Inline DEF="AIM_120_LAU176_Pylon_Assy_6_AIM_120D_AMRAAM_1_Inline" url="X3D_Output/OMLV3_Packing - AIM-120_LAU176_Pylon_Assy-6 AIM-120D AMRAAM-1.x3d" mapDEFToID="true" nameSpaceName="AIM_120_LAU176_Pylon_Assy_6_AIM_120D_AMRAAM_1"></Inline>
+          </Transform>
+          <Transform DEF="AIM_120_LAU176_Pylon_Assy_6_LAU179_Pylon_LinkBroken_1" id="AIM_120_LAU176_Pylon_Assy_6_LAU179_Pylon_LinkBroken_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AIM_120_LAU176_Pylon_Assy_6_LAU179_Pylon_LinkBroken_1')">
+            <Inline DEF="AIM_120_LAU176_Pylon_Assy_6_LAU179_Pylon_LinkBroken_1_Inline" url="X3D_Output/OMLV3_Packing - AIM-120_LAU176_Pylon_Assy-6 LAU179_Pylon_LinkBroken-1.x3d" mapDEFToID="true" nameSpaceName="AIM_120_LAU176_Pylon_Assy_6_LAU179_Pylon_LinkBroken_1"></Inline>
+          </Transform>
+          <Transform DEF="AMAD_Gearbox_1" id="AMAD_Gearbox_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AMAD_Gearbox_1')">
+            <Inline DEF="AMAD_Gearbox_1_Inline" url="X3D_Output/OMLV3_Packing - AMAD Gearbox-1.x3d" mapDEFToID="true" nameSpaceName="AMAD_Gearbox_1"></Inline>
+          </Transform>
+          <Transform DEF="AN_ALE_70_Decoy_Set_1" id="AN_ALE_70_Decoy_Set_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AN_ALE_70_Decoy_Set_1')">
+            <Inline DEF="AN_ALE_70_Decoy_Set_1_Inline" url="X3D_Output/OMLV3_Packing - AN ALE-70 Decoy Set-1.x3d" mapDEFToID="true" nameSpaceName="AN_ALE_70_Decoy_Set_1"></Inline>
+          </Transform>
+          <Transform DEF="AN_ALE_70_Decoy_Set_2" id="AN_ALE_70_Decoy_Set_2" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AN_ALE_70_Decoy_Set_2')">
+            <Inline DEF="AN_ALE_70_Decoy_Set_2_Inline" url="X3D_Output/OMLV3_Packing - AN ALE-70 Decoy Set-2.x3d" mapDEFToID="true" nameSpaceName="AN_ALE_70_Decoy_Set_2"></Inline>
+          </Transform>
+          <Transform DEF="AN_ALE47_Countermeasures_Dispensing_Set_1" id="AN_ALE47_Countermeasures_Dispensing_Set_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AN_ALE47_Countermeasures_Dispensing_Set_1')">
+            <Inline DEF="AN_ALE47_Countermeasures_Dispensing_Set_1_Inline" url="X3D_Output/OMLV3_Packing - AN-ALE47 Countermeasures Dispensing Set-1.x3d" mapDEFToID="true" nameSpaceName="AN_ALE47_Countermeasures_Dispensing_Set_1"></Inline>
+          </Transform>
+          <Transform DEF="AN_ALE47_Countermeasures_Dispensing_Set_2" id="AN_ALE47_Countermeasures_Dispensing_Set_2" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AN_ALE47_Countermeasures_Dispensing_Set_2')">
+            <Inline DEF="AN_ALE47_Countermeasures_Dispensing_Set_2_Inline" url="X3D_Output/OMLV3_Packing - AN-ALE47 Countermeasures Dispensing Set-2.x3d" mapDEFToID="true" nameSpaceName="AN_ALE47_Countermeasures_Dispensing_Set_2"></Inline>
+          </Transform>
+          <Transform DEF="AN_ALQ216_Jammer_1" id="AN_ALQ216_Jammer_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('AN_ALQ216_Jammer_1')">
+            <Inline DEF="AN_ALQ216_Jammer_1_Inline" url="X3D_Output/OMLV3_Packing - AN-ALQ216 Jammer-1.x3d" mapDEFToID="true" nameSpaceName="AN_ALQ216_Jammer_1"></Inline>
+          </Transform>
+          <Transform DEF="ANAPG_82_1" id="ANAPG_82_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('ANAPG_82_1')">
+            <Inline DEF="ANAPG_82_1_Inline" url="X3D_Output/OMLV3_Packing - ANAPG 82-1.x3d" mapDEFToID="true" nameSpaceName="ANAPG_82_1"></Inline>
+          </Transform>
+          <Transform DEF="ANASN_139_INS_Set_1" id="ANASN_139_INS_Set_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('ANASN_139_INS_Set_1')">
+            <Inline DEF="ANASN_139_INS_Set_1_Inline" url="X3D_Output/OMLV3_Packing - ANASN-139 INS Set-1.x3d" mapDEFToID="true" nameSpaceName="ANASN_139_INS_Set_1"></Inline>
+          </Transform>
+          <Transform DEF="ANASN_163_SATNAV_Set_1" id="ANASN_163_SATNAV_Set_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('ANASN_163_SATNAV_Set_1')">
+            <Inline DEF="ANASN_163_SATNAV_Set_1_Inline" url="X3D_Output/OMLV3_Packing - ANASN-163 SATNAV Set-1.x3d" mapDEFToID="true" nameSpaceName="ANASN_163_SATNAV_Set_1"></Inline>
+          </Transform>
+          <Transform DEF="Antennas_Data_Bus_1" id="Antennas_Data_Bus_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Antennas_Data_Bus_1')">
+            <Inline DEF="Antennas_Data_Bus_1_Inline" url="X3D_Output/OMLV3_Packing - Antennas Data Bus-1.x3d" mapDEFToID="true" nameSpaceName="Antennas_Data_Bus_1"></Inline>
+          </Transform>
+          <Transform DEF="Antennas_Data_Bus_2" id="Antennas_Data_Bus_2" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Antennas_Data_Bus_2')">
+            <Inline DEF="Antennas_Data_Bus_2_Inline" url="X3D_Output/OMLV3_Packing - Antennas Data Bus-2.x3d" mapDEFToID="true" nameSpaceName="Antennas_Data_Bus_2"></Inline>
+          </Transform>
+          <Transform DEF="Antennas_Data_Bus_4" id="Antennas_Data_Bus_4" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Antennas_Data_Bus_4')">
+            <Inline DEF="Antennas_Data_Bus_4_Inline" url="X3D_Output/OMLV3_Packing - Antennas Data Bus-4.x3d" mapDEFToID="true" nameSpaceName="Antennas_Data_Bus_4"></Inline>
+          </Transform>
+          <Transform DEF="Armament_Data_Bus_1" id="Armament_Data_Bus_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Armament_Data_Bus_1')">
+            <Inline DEF="Armament_Data_Bus_1_Inline" url="X3D_Output/OMLV3_Packing - Armament Data Bus-1.x3d" mapDEFToID="true" nameSpaceName="Armament_Data_Bus_1"></Inline>
+          </Transform>
+          <Transform DEF="ArrestorHook_1" id="ArrestorHook_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('ArrestorHook_1')">
+            <Inline DEF="ArrestorHook_1_Inline" url="X3D_Output/OMLV3_Packing - ArrestorHook-1.x3d" mapDEFToID="true" nameSpaceName="ArrestorHook_1"></Inline>
+          </Transform>
+          <Transform DEF="Cockpit_Data_Bus_1" id="Cockpit_Data_Bus_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Cockpit_Data_Bus_1')">
+            <Inline DEF="Cockpit_Data_Bus_1_Inline" url="X3D_Output/OMLV3_Packing - Cockpit Data Bus-1.x3d" mapDEFToID="true" nameSpaceName="Cockpit_Data_Bus_1"></Inline>
+          </Transform>
+          <Transform DEF="Control_Surfaces_Data_Bus_1" id="Control_Surfaces_Data_Bus_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Control_Surfaces_Data_Bus_1')">
+            <Inline DEF="Control_Surfaces_Data_Bus_1_Inline" url="X3D_Output/OMLV3_Packing - Control Surfaces Data Bus-1.x3d" mapDEFToID="true" nameSpaceName="Control_Surfaces_Data_Bus_1"></Inline>
+          </Transform>
+          <Transform DEF="Control_Surfaces_Data_Bus_3" id="Control_Surfaces_Data_Bus_3" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Control_Surfaces_Data_Bus_3')">
+            <Inline DEF="Control_Surfaces_Data_Bus_3_Inline" url="X3D_Output/OMLV3_Packing - Control Surfaces Data Bus-3.x3d" mapDEFToID="true" nameSpaceName="Control_Surfaces_Data_Bus_3"></Inline>
+          </Transform>
+          <Transform DEF="Control_Surfaces_Data_Bus_4" id="Control_Surfaces_Data_Bus_4" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Control_Surfaces_Data_Bus_4')">
+            <Inline DEF="Control_Surfaces_Data_Bus_4_Inline" url="X3D_Output/OMLV3_Packing - Control Surfaces Data Bus-4.x3d" mapDEFToID="true" nameSpaceName="Control_Surfaces_Data_Bus_4"></Inline>
+          </Transform>
+          <Transform DEF="DFIRS_1" id="DFIRS_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('DFIRS_1')">
+            <Inline DEF="DFIRS_1_Inline" url="X3D_Output/OMLV3_Packing - DFIRS-1.x3d" mapDEFToID="true" nameSpaceName="DFIRS_1"></Inline>
+          </Transform>
+          <Transform DEF="EPACS_Cooling_Unit_1" id="EPACS_Cooling_Unit_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('EPACS_Cooling_Unit_1')">
+            <Inline DEF="EPACS_Cooling_Unit_1_Inline" url="X3D_Output/OMLV3_Packing - EPACS Cooling Unit-1.x3d" mapDEFToID="true" nameSpaceName="EPACS_Cooling_Unit_1"></Inline>
+          </Transform>
+          <Transform DEF="Fuel_Refuel_Data_Bus_1" id="Fuel_Refuel_Data_Bus_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Fuel_Refuel_Data_Bus_1')">
+            <Inline DEF="Fuel_Refuel_Data_Bus_1_Inline" url="X3D_Output/OMLV3_Packing - Fuel Refuel Data Bus-1.x3d" mapDEFToID="true" nameSpaceName="Fuel_Refuel_Data_Bus_1"></Inline>
+          </Transform>
+          <Transform DEF="Fuel_Refuel_Data_Bus_2" id="Fuel_Refuel_Data_Bus_2" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Fuel_Refuel_Data_Bus_2')">
+            <Inline DEF="Fuel_Refuel_Data_Bus_2_Inline" url="X3D_Output/OMLV3_Packing - Fuel Refuel Data Bus-2.x3d" mapDEFToID="true" nameSpaceName="Fuel_Refuel_Data_Bus_2"></Inline>
+          </Transform>
+          <Transform DEF="FuselageTank1_1" id="FuselageTank1_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('FuselageTank1_1')">
+            <Inline DEF="FuselageTank1_1_Inline" url="X3D_Output/OMLV3_Packing - FuselageTank1-1.x3d" mapDEFToID="true" nameSpaceName="FuselageTank1_1"></Inline>
+          </Transform>
+          <Transform DEF="FuselageTank2_1" id="FuselageTank2_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('FuselageTank2_1')">
+            <Inline DEF="FuselageTank2_1_Inline" url="X3D_Output/OMLV3_Packing - FuselageTank2-1.x3d" mapDEFToID="true" nameSpaceName="FuselageTank2_1"></Inline>
+          </Transform>
+          <Transform DEF="FuselageTank3_1" id="FuselageTank3_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('FuselageTank3_1')">
+            <Inline DEF="FuselageTank3_1_Inline" url="X3D_Output/OMLV3_Packing - FuselageTank3-1.x3d" mapDEFToID="true" nameSpaceName="FuselageTank3_1"></Inline>
+          </Transform>
+          <Transform DEF="GEF110_1" id="GEF110_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('GEF110_1')">
+            <Inline DEF="GEF110_1_Inline" url="X3D_Output/OMLV3_Packing - GEF110-1.x3d" mapDEFToID="true" nameSpaceName="GEF110_1"></Inline>
+          </Transform>
+          <Transform DEF="GEF110_2" id="GEF110_2" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('GEF110_2')">
+            <Inline DEF="GEF110_2_Inline" url="X3D_Output/OMLV3_Packing - GEF110-2.x3d" mapDEFToID="true" nameSpaceName="GEF110_2"></Inline>
+          </Transform>
+          <Transform DEF="Hydraulic_Actuator_1" id="Hydraulic_Actuator_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Hydraulic_Actuator_1')">
+            <Inline DEF="Hydraulic_Actuator_1_Inline" url="X3D_Output/OMLV3_Packing - Hydraulic Actuator-1.x3d" mapDEFToID="true" nameSpaceName="Hydraulic_Actuator_1"></Inline>
+          </Transform>
+          <Transform DEF="Hydraulic_Actuator_2" id="Hydraulic_Actuator_2" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Hydraulic_Actuator_2')">
+            <Inline DEF="Hydraulic_Actuator_2_Inline" url="X3D_Output/OMLV3_Packing - Hydraulic Actuator-2.x3d" mapDEFToID="true" nameSpaceName="Hydraulic_Actuator_2"></Inline>
+          </Transform>
+          <Transform DEF="Hydraulic_Actuator_3" id="Hydraulic_Actuator_3" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Hydraulic_Actuator_3')">
+            <Inline DEF="Hydraulic_Actuator_3_Inline" url="X3D_Output/OMLV3_Packing - Hydraulic Actuator-3.x3d" mapDEFToID="true" nameSpaceName="Hydraulic_Actuator_3"></Inline>
+          </Transform>
+          <Transform DEF="Hydraulic_Actuator_4" id="Hydraulic_Actuator_4" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Hydraulic_Actuator_4')">
+            <Inline DEF="Hydraulic_Actuator_4_Inline" url="X3D_Output/OMLV3_Packing - Hydraulic Actuator-4.x3d" mapDEFToID="true" nameSpaceName="Hydraulic_Actuator_4"></Inline>
+          </Transform>
+          <Transform DEF="Hydraulic_Actuator_5" id="Hydraulic_Actuator_5" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Hydraulic_Actuator_5')">
+            <Inline DEF="Hydraulic_Actuator_5_Inline" url="X3D_Output/OMLV3_Packing - Hydraulic Actuator-5.x3d" mapDEFToID="true" nameSpaceName="Hydraulic_Actuator_5"></Inline>
+          </Transform>
+          <Transform DEF="Hydraulic_Actuator_6" id="Hydraulic_Actuator_6" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Hydraulic_Actuator_6')">
+            <Inline DEF="Hydraulic_Actuator_6_Inline" url="X3D_Output/OMLV3_Packing - Hydraulic Actuator-6.x3d" mapDEFToID="true" nameSpaceName="Hydraulic_Actuator_6"></Inline>
+          </Transform>
+          <Transform DEF="Hydraulic_Actuator_7" id="Hydraulic_Actuator_7" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Hydraulic_Actuator_7')">
+            <Inline DEF="Hydraulic_Actuator_7_Inline" url="X3D_Output/OMLV3_Packing - Hydraulic Actuator-7.x3d" mapDEFToID="true" nameSpaceName="Hydraulic_Actuator_7"></Inline>
+          </Transform>
+          <Transform DEF="Hydraulic_Actuator_8" id="Hydraulic_Actuator_8" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Hydraulic_Actuator_8')">
+            <Inline DEF="Hydraulic_Actuator_8_Inline" url="X3D_Output/OMLV3_Packing - Hydraulic Actuator-8.x3d" mapDEFToID="true" nameSpaceName="Hydraulic_Actuator_8"></Inline>
+          </Transform>
+          <Transform DEF="Hydraulic_Actuator_9" id="Hydraulic_Actuator_9" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Hydraulic_Actuator_9')">
+            <Inline DEF="Hydraulic_Actuator_9_Inline" url="X3D_Output/OMLV3_Packing - Hydraulic Actuator-9.x3d" mapDEFToID="true" nameSpaceName="Hydraulic_Actuator_9"></Inline>
+          </Transform>
+          <Transform DEF="Hydraulic_Actuator_10" id="Hydraulic_Actuator_10" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Hydraulic_Actuator_10')">
+            <Inline DEF="Hydraulic_Actuator_10_Inline" url="X3D_Output/OMLV3_Packing - Hydraulic Actuator-10.x3d" mapDEFToID="true" nameSpaceName="Hydraulic_Actuator_10"></Inline>
+          </Transform>
+          <Transform DEF="Hydraulic_Actuator_11" id="Hydraulic_Actuator_11" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Hydraulic_Actuator_11')">
+            <Inline DEF="Hydraulic_Actuator_11_Inline" url="X3D_Output/OMLV3_Packing - Hydraulic Actuator-11.x3d" mapDEFToID="true" nameSpaceName="Hydraulic_Actuator_11"></Inline>
+          </Transform>
+          <Transform DEF="Hydraulic_Actuator_12" id="Hydraulic_Actuator_12" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Hydraulic_Actuator_12')">
+            <Inline DEF="Hydraulic_Actuator_12_Inline" url="X3D_Output/OMLV3_Packing - Hydraulic Actuator-12.x3d" mapDEFToID="true" nameSpaceName="Hydraulic_Actuator_12"></Inline>
+          </Transform>
+          <Transform DEF="Hydraulic_Pump_1" id="Hydraulic_Pump_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Hydraulic_Pump_1')">
+            <Inline DEF="Hydraulic_Pump_1_Inline" url="X3D_Output/OMLV3_Packing - Hydraulic Pump-1.x3d" mapDEFToID="true" nameSpaceName="Hydraulic_Pump_1"></Inline>
+          </Transform>
+          <Transform DEF="Hydraulic_Pump_2" id="Hydraulic_Pump_2" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Hydraulic_Pump_2')">
+            <Inline DEF="Hydraulic_Pump_2_Inline" url="X3D_Output/OMLV3_Packing - Hydraulic Pump-2.x3d" mapDEFToID="true" nameSpaceName="Hydraulic_Pump_2"></Inline>
+          </Transform>
+          <Transform DEF="InletTank_1" id="InletTank_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('InletTank_1')">
+            <Inline DEF="InletTank_1_Inline" url="X3D_Output/OMLV3_Packing - InletTank-1.x3d" mapDEFToID="true" nameSpaceName="InletTank_1"></Inline>
+          </Transform>
+          <Transform DEF="INS_CG_FCS_Data_Bus_1" id="INS_CG_FCS_Data_Bus_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('INS_CG_FCS_Data_Bus_1')">
+            <Inline DEF="INS_CG_FCS_Data_Bus_1_Inline" url="X3D_Output/OMLV3_Packing - INS CG FCS Data Bus-1.x3d" mapDEFToID="true" nameSpaceName="INS_CG_FCS_Data_Bus_1"></Inline>
+          </Transform>
+          <Transform DEF="INS_CG_FCS_Data_Bus_2" id="INS_CG_FCS_Data_Bus_2" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('INS_CG_FCS_Data_Bus_2')">
+            <Inline DEF="INS_CG_FCS_Data_Bus_2_Inline" url="X3D_Output/OMLV3_Packing - INS CG FCS Data Bus-2.x3d" mapDEFToID="true" nameSpaceName="INS_CG_FCS_Data_Bus_2"></Inline>
+          </Transform>
+          <Transform DEF="INS_CG_FCS_Data_Bus_5" id="INS_CG_FCS_Data_Bus_5" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('INS_CG_FCS_Data_Bus_5')">
+            <Inline DEF="INS_CG_FCS_Data_Bus_5_Inline" url="X3D_Output/OMLV3_Packing - INS CG FCS Data Bus-5.x3d" mapDEFToID="true" nameSpaceName="INS_CG_FCS_Data_Bus_5"></Inline>
+          </Transform>
+          <Transform DEF="INS_CG_FCS_Data_Bus_6" id="INS_CG_FCS_Data_Bus_6" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('INS_CG_FCS_Data_Bus_6')">
+            <Inline DEF="INS_CG_FCS_Data_Bus_6_Inline" url="X3D_Output/OMLV3_Packing - INS CG FCS Data Bus-6.x3d" mapDEFToID="true" nameSpaceName="INS_CG_FCS_Data_Bus_6"></Inline>
+          </Transform>
+          <Transform DEF="IRST_21_Independent_1" id="IRST_21_Independent_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('IRST_21_Independent_1')">
+            <Inline DEF="IRST_21_Independent_1_Inline" url="X3D_Output/OMLV3_Packing - IRST-21 Independent-1.x3d" mapDEFToID="true" nameSpaceName="IRST_21_Independent_1"></Inline>
+          </Transform>
+          <Transform DEF="Landing_Gear_Data_Bus_1" id="Landing_Gear_Data_Bus_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Landing_Gear_Data_Bus_1')">
+            <Inline DEF="Landing_Gear_Data_Bus_1_Inline" url="X3D_Output/OMLV3_Packing - Landing Gear Data Bus-1.x3d" mapDEFToID="true" nameSpaceName="Landing_Gear_Data_Bus_1"></Inline>
+          </Transform>
+          <Transform DEF="Main_Landing_Gear_1" id="Main_Landing_Gear_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Main_Landing_Gear_1')">
+            <Inline DEF="Main_Landing_Gear_1_Inline" url="X3D_Output/OMLV3_Packing - Main Landing Gear-1.x3d" mapDEFToID="true" nameSpaceName="Main_Landing_Gear_1"></Inline>
+          </Transform>
+          <Transform DEF="Main_Landing_Gear_2" id="Main_Landing_Gear_2" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Main_Landing_Gear_2')">
+            <Inline DEF="Main_Landing_Gear_2_Inline" url="X3D_Output/OMLV3_Packing - Main Landing Gear-2.x3d" mapDEFToID="true" nameSpaceName="Main_Landing_Gear_2"></Inline>
+          </Transform>
+          <Transform DEF="Martin_Baker_Ejection_Seat_Final_1" id="Martin_Baker_Ejection_Seat_Final_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Martin_Baker_Ejection_Seat_Final_1')">
+            <Inline DEF="Martin_Baker_Ejection_Seat_Final_1_Inline" url="X3D_Output/OMLV3_Packing - Martin-Baker Ejection Seat_Final-1.x3d" mapDEFToID="true" nameSpaceName="Martin_Baker_Ejection_Seat_Final_1"></Inline>
+          </Transform>
+          <Transform DEF="Nose_Landing_Gear_1" id="Nose_Landing_Gear_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Nose_Landing_Gear_1')">
+            <Inline DEF="Nose_Landing_Gear_1_Inline" url="X3D_Output/OMLV3_Packing - Nose Landing Gear-1.x3d" mapDEFToID="true" nameSpaceName="Nose_Landing_Gear_1"></Inline>
+          </Transform>
+          <Transform DEF="Nose_UHF_RWR_Data_Bus_1" id="Nose_UHF_RWR_Data_Bus_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Nose_UHF_RWR_Data_Bus_1')">
+            <Inline DEF="Nose_UHF_RWR_Data_Bus_1_Inline" url="X3D_Output/OMLV3_Packing - Nose UHF RWR Data Bus-1.x3d" mapDEFToID="true" nameSpaceName="Nose_UHF_RWR_Data_Bus_1"></Inline>
+          </Transform>
+          <Transform DEF="Nose_UHF_RWR_Data_Bus_2" id="Nose_UHF_RWR_Data_Bus_2" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Nose_UHF_RWR_Data_Bus_2')">
+            <Inline DEF="Nose_UHF_RWR_Data_Bus_2_Inline" url="X3D_Output/OMLV3_Packing - Nose UHF RWR Data Bus-2.x3d" mapDEFToID="true" nameSpaceName="Nose_UHF_RWR_Data_Bus_2"></Inline>
+          </Transform>
+          <Transform DEF="OBOGS_1" id="OBOGS_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('OBOGS_1')">
+            <Inline DEF="OBOGS_1_Inline" url="X3D_Output/OMLV3_Packing - OBOGS-1.x3d" mapDEFToID="true" nameSpaceName="OBOGS_1"></Inline>
+          </Transform>
+          <Transform DEF="Pilot_Interface_FCS_1" id="Pilot_Interface_FCS_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Pilot_Interface_FCS_1')">
+            <Inline DEF="Pilot_Interface_FCS_1_Inline" url="X3D_Output/OMLV3_Packing - Pilot Interface FCS-1.x3d" mapDEFToID="true" nameSpaceName="Pilot_Interface_FCS_1"></Inline>
+          </Transform>
+          <Transform DEF="Powerplant_Data_Bus_1" id="Powerplant_Data_Bus_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Powerplant_Data_Bus_1')">
+            <Inline DEF="Powerplant_Data_Bus_1_Inline" url="X3D_Output/OMLV3_Packing - Powerplant Data Bus-1.x3d" mapDEFToID="true" nameSpaceName="Powerplant_Data_Bus_1"></Inline>
+          </Transform>
+          <Transform DEF="Powerplant_Data_Bus_3" id="Powerplant_Data_Bus_3" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Powerplant_Data_Bus_3')">
+            <Inline DEF="Powerplant_Data_Bus_3_Inline" url="X3D_Output/OMLV3_Packing - Powerplant Data Bus-3.x3d" mapDEFToID="true" nameSpaceName="Powerplant_Data_Bus_3"></Inline>
+          </Transform>
+          <Transform DEF="RAPTOR_Fiber_Optic_Recorder_1" id="RAPTOR_Fiber_Optic_Recorder_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('RAPTOR_Fiber_Optic_Recorder_1')">
+            <Inline DEF="RAPTOR_Fiber_Optic_Recorder_1_Inline" url="X3D_Output/OMLV3_Packing - RAPTOR Fiber Optic Recorder-1.x3d" mapDEFToID="true" nameSpaceName="RAPTOR_Fiber_Optic_Recorder_1"></Inline>
+          </Transform>
+          <Transform DEF="Refuler_1_Bar_1" id="Refuler_1_Bar_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Refuler_1_Bar_1')">
+            <Inline DEF="Refuler_1_Bar_1_Inline" url="X3D_Output/OMLV3_Packing - Refuler-1 Bar-1.x3d" mapDEFToID="true" nameSpaceName="Refuler_1_Bar_1"></Inline>
+          </Transform>
+          <Transform DEF="Refuler_1_Bar_2" id="Refuler_1_Bar_2" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Refuler_1_Bar_2')">
+            <Inline DEF="Refuler_1_Bar_2_Inline" url="X3D_Output/OMLV3_Packing - Refuler-1 Bar-2.x3d" mapDEFToID="true" nameSpaceName="Refuler_1_Bar_2"></Inline>
+          </Transform>
+          <Transform DEF="Refuler_1_Probe_1" id="Refuler_1_Probe_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Refuler_1_Probe_1')">
+            <Inline DEF="Refuler_1_Probe_1_Inline" url="X3D_Output/OMLV3_Packing - Refuler-1 Probe-1.x3d" mapDEFToID="true" nameSpaceName="Refuler_1_Probe_1"></Inline>
+          </Transform>
+          <Transform DEF="Refuler_1_Refueler_Probe_1" id="Refuler_1_Refueler_Probe_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Refuler_1_Refueler_Probe_1')">
+            <Inline DEF="Refuler_1_Refueler_Probe_1_Inline" url="X3D_Output/OMLV3_Packing - Refuler-1 Refueler_Probe-1.x3d" mapDEFToID="true" nameSpaceName="Refuler_1_Refueler_Probe_1"></Inline>
+          </Transform>
+          <Transform DEF="Refuler_1_Slider_1" id="Refuler_1_Slider_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Refuler_1_Slider_1')">
+            <Inline DEF="Refuler_1_Slider_1_Inline" url="X3D_Output/OMLV3_Packing - Refuler-1 Slider-1.x3d" mapDEFToID="true" nameSpaceName="Refuler_1_Slider_1"></Inline>
+          </Transform>
+          <Transform DEF="TestAssm_PDR_V3_FINALFINALFINAL_OMLShell_1" id="TestAssm_PDR_V3_FINALFINALFINAL_OMLShell_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('TestAssm_PDR_V3_FINALFINALFINAL_OMLShell_1')">
+            <Inline DEF="TestAssm_PDR_V3_FINALFINALFINAL_OMLShell_1_Inline" url="X3D_Output/OMLV3_Packing - TestAssm_PDR_V3_FINALFINALFINAL_OMLShell-1.x3d" mapDEFToID="true" nameSpaceName="TestAssm_PDR_V3_FINALFINALFINAL_OMLShell_1"></Inline>
+          </Transform>
+          <Transform DEF="WingTank_1" id="WingTank_1" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('WingTank_1')">
+            <Inline DEF="WingTank_1_Inline" url="X3D_Output/OMLV3_Packing - WingTank-1.x3d" mapDEFToID="true" nameSpaceName="WingTank_1"></Inline>
+          </Transform>
+          <Transform DEF="WingTank_2" id="WingTank_2" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('WingTank_2')">
+            <Inline DEF="WingTank_2_Inline" url="X3D_Output/OMLV3_Packing - WingTank-2.x3d" mapDEFToID="true" nameSpaceName="WingTank_2"></Inline>
+          </Transform>
+        </Transform>
+
+        <!--
+        <Transform DEF="PlanePitch" translation="0 0 0" rotation="1 0 0 0" scale='1 1 1'>
+        <Transform DEF="Boeing737Part" id="Boeing737Part" translation="38 -10 -50" rotation="0 1 0 3.14" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Boeing737Part')">
+          <Inline DEF="Boeing737Inline" url="./boeing737.glb" mapDEFToID="true" nameSpaceName="Boeing737"></Inline>
+        </Transform>
+        </Transform>
+
+        <Transform DEF="Cessna172Part" id="Cessna172Part" translation="20 7 -20" rotation="0 1 0 -1.5708" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Boeing737Part')">
+          <Inline DEF="Cessna172Inline" url="./cessna172.glb" mapDEFToID="true" nameSpaceName="Cessna172"></Inline>
+        </Transform>
+
+        <Transform DEF="X57Part" id="X57Part" translation="20 5 -5" rotation="0 1 0" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0">
+          <Inline DEF="X57Inline" url="./x57.glb" mapDEFToID="true" nameSpaceName="X57"></Inline>
+        </Transform>
+        -->
+      </Scene>
+    </x3d>
+    
+    <div id="output-container">
+      <div id="output-text">
+        <h3 id="info-title"></h3>
+        <p id="info-description"></p>
+        <div id="button-container" style="margin-top: 15px;">
+          <button id="hide-selected-btn" onclick="hidePart()" style="display:none; padding: 8px 12px; background-color: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer;">Hide Selected</button>
+        </div>
+      </div>
+      <div id="graph-container">
+        <img id="graph-image" src="" alt="Relevant Graph">
+      </div>
+    </div>
+    
+</body>
+</html>

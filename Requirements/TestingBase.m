@@ -9,7 +9,7 @@ classdef TestingBase < matlab.unittest.TestCase
 
     methods (TestClassSetup)
         function initializeAircraft(testCase)
-            file_name = "HellstingerV3";
+            file_name = "HellstingerV3"; % HellstingerV3
 
             testCase.settings = readSettings();
             testCase.geom = readAircraftFile(file_name);
@@ -20,7 +20,7 @@ classdef TestingBase < matlab.unittest.TestCase
             testCase.perf = performance_class(testCase.model);
             testCase.perf.clear_data();
 
-            testCase.sc_model = systemcomposer.openModel("AircraftArch");
+            % testCase.sc_model = systemcomposer.openModel("AircraftArch");
         end
     end
 end

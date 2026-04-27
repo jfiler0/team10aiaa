@@ -16,24 +16,29 @@ set.transonic_M_eps = 0.005;
 
 set.g_const = 9.8051; % gravitational consts
 set.jeta_density = 0.82; % kg/L
+set.tropical_day_alt = ft2m(2000);
 
 set.be_imperial = true;
 
 set.spot_factor_reference = 84.517; % Folded wing area of an f18e
 
-set.CD0_scaler = 1.1743; % general scaler to parasite drag
-set.CDi_scaler = 0.8929;
+X0 = [1.2,      0.93,     1.8, 1.05,  1.3,    0.85,    1.6,    0.96,     0.42]; xs = X0;
+
+set.CD0_scaler = 1.1; % general scaler to parasite drag
+set.CDi_scaler = 0.907;
 set.CDw_scaler = 1.7; % general scaler to wave drag
-set.CLa_scaler = 1;
-set.CDp_scaler = 1.244;
+set.CLa_scaler = 1.05;
+set.CDp_scaler = 1.23;
 set.SpotFactor_scaler = 1;
 
 set.COST_scaler = 1;
-set.TA_scaler = 0.9;
-set.TSFC_scaler = 1.554; % 1.3
+set.TA_scaler = 0.98;
+set.TSFC_scaler = 1.6; % 1.3 1.554
+set.TSFC_AB_scaler = 1.5; % extra scaler applied to after burner (mainly for max prop condition)
 
-set.WE_scaler = 0.9786; % scales all components and the final empty weight 0.8752
-set.WF_ratio =  0.44; % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
+set.WE_scaler = 0.96; % scales all components and the final empty weight 0.8752
+set.WF_ratio =  0.52; % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
+    % RESET TO 0.42 to normal comparisons. Hard increase to 0.52 for hellstinger
 
 set.codes = build_default_codes();
 

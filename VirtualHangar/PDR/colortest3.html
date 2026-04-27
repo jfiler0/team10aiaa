@@ -1,0 +1,450 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html;charset=utf-8'></meta>
+    <link rel='stylesheet' type='text/css' href='https://www.x3dom.org/download/x3dom.css'></link>
+    <script type='text/javascript' src='https://www.x3dom.org/download/x3dom.js'></script>
+    <title>SuperDuperHornet</title>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      html, body {
+         height: 100%;
+      }
+      #HUDs_Div {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+        background-color: rgba(255, 255, 255, 0.7);
+        padding: 10px;
+        border-radius: 5px;
+        font-family: sans-serif;
+      }
+      /* Container for text and graph, allowing side-by-side layout */
+      #output-container {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+        color: white; /* White text */
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 80%;
+        max-width: 1000px; /* Increased max-width for graph space */
+        font-family: sans-serif;
+        font-size: 1.1em;
+        line-height: 1.4;
+        display: flex; /* Enable flexbox for side-by-side content */
+        justify-content: center;
+        align-items: flex-start; 
+        gap: 20px; /* Space between text and graph */
+      }
+      #output-text {
+        flex: 1; /* Allows text to take available space */
+        text-align: left; 
+      }
+      #output-text h3 {
+        margin-top: 0;
+      }
+      #output-text p {
+        margin-bottom: 0;
+      }
+      #graph-container {
+        flex: 0 0 350px; /* Fixed width for the graph (adjust as needed) */
+        display: none; /* Hidden by default */
+        text-align: center;
+      }
+      #graph-container img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 5px;
+      }
+    </style>
+
+    <script>
+      // ------------------------------
+      // Color-based highlighting system
+      // Hover -> cyan ; Click/select -> yellow
+      // Restore -> remove emissive, fall back to subsystem diffuseColor
+      // ------------------------------
+
+      const PART_DEFS = [
+        'Fuselage',
+        'Canopy',
+        'HorStab',
+        'VTail',
+        'Wing',
+        'Inlet',
+        'Box'
+      ];
+
+      const INFO = {
+        Fuselage: {
+          title: 'Plane Fuselage',
+          text: "stores fuel and stuff",
+        },
+        Canopy: {
+          title: 'Canopy',
+          text: "super awesome pilot man",
+        },
+        HorStab: {
+          title: 'Horizontal Stabilators',
+          text: "supermaneuverability go brrrrrr",
+        },
+        VTail: {
+          title: 'V-Tail',
+          text: "V-tail so we aren't the size of New York on radar",
+        },
+        Wing: {
+          title: 'Wings',
+          text: 'Red Bull gives you wiiiiiiiiiiiiings',
+        },
+        Inlet: {
+          title: 'Engine Inlets',
+          text: 'feed air to the Very Hungry Catipillar of our 2 F-110 engines',
+        },
+        Box: {
+          title: 'box',
+          text: 'box box box',
+        }
+      };
+
+      // Subsystem color map — add/edit entries here as you divide parts by subsystem.
+      // Colors are RGB triplets (each channel 0–1).
+      const SUBSYSTEM_COLORS = {
+        // Airframe
+        Fuselage: '0.45 0.50 0.55',  // steel gray
+        Canopy:   '0.20 0.65 0.85',  // glass blue
+        // Aerosurfaces
+        Wing:     '0.30 0.55 0.40',  // muted green
+        HorStab:  '0.30 0.55 0.40',  // muted green
+        VTail:    '0.30 0.55 0.40',  // muted green
+        // Propulsion
+        Inlet:    '0.75 0.45 0.20',  // amber
+        // Other
+        Box:      '0.50 0.30 0.70',  // purple
+      };
+
+      const initialText = "hi we are Roy and Sons and we da best";
+
+      const Colors = { hover: '0 1 1', select: '1 1 0' };
+
+      let currentSelection = null;
+      const hiddenParts = new Set();
+
+      // Find PhysicalMaterial and classic Material nodes under a Transform
+      function getMaterials(part) {
+        return {
+          phys:    Array.from(part.getElementsByTagName('PhysicalMaterial')),
+          classic: Array.from(part.getElementsByTagName('Material')),
+        };
+      }
+
+      // Set emissive highlight color. emissiveFactor drives intensity high enough
+      // to overpower X3DOM's built-in red pick highlight.
+      function setPartColor(part, color) {
+        const { phys, classic } = getMaterials(part);
+        for (const el of phys) {
+          try { el.setAttribute('emissiveColor',  color); } catch (e) {}
+          try { el.setAttribute('emissiveFactor', '8');   } catch (e) {}
+        }
+        for (const el of classic) {
+          try { el.setAttribute('emissiveColor', color); } catch (e) {}
+        }
+      }
+
+      // Remove emissive attributes so the part returns to its subsystem diffuseColor.
+      function restorePart(part) {
+        const { phys, classic } = getMaterials(part);
+        for (const el of phys) {
+          try { el.removeAttribute('emissiveColor');  } catch (e) {}
+          try { el.removeAttribute('emissiveFactor'); } catch (e) {}
+        }
+        for (const el of classic) {
+          try { el.removeAttribute('emissiveColor'); } catch (e) {}
+        }
+      }
+
+      // Apply a subsystem diffuseColor to a part after its Inline has loaded.
+      // This becomes the natural resting appearance restore() returns to.
+      function applySubsystemColor(partDEF) {
+        const color = SUBSYSTEM_COLORS[partDEF];
+        if (!color) return;
+        const part = document.querySelector("Transform[DEF='" + partDEF + "']");
+        if (!part) return;
+        const { phys, classic } = getMaterials(part);
+        for (const el of phys) {
+          try { el.setAttribute('diffuseColor',  color); } catch (e) {}
+          try { el.setAttribute('diffuseFactor', '1');   } catch (e) {}
+          try { el.removeAttribute('emissiveColor');     } catch (e) {}
+          try { el.removeAttribute('emissiveFactor');    } catch (e) {}
+        }
+        for (const el of classic) {
+          try { el.setAttribute('diffuseColor', color); } catch (e) {}
+          try { el.removeAttribute('emissiveColor');    } catch (e) {}
+        }
+        console.log('applySubsystemColor:', partDEF, color);
+      }
+
+      // Reapply all subsystem colors at once (call from console if needed).
+      function setupColors() {
+        for (const def of PART_DEFS) { applySubsystemColor(def); }
+      }
+
+      // Select a part: restore old selection, then highlight the new one.
+      function selectPartByDEF(partDEF) {
+        if (!PART_DEFS.includes(partDEF)) return;
+        if (currentSelection) {
+          try { restorePart(currentSelection); } catch (e) {}
+          currentSelection = null;
+        }
+        const part = document.querySelector("Transform[DEF='" + partDEF + "']");
+        if (!part) { console.warn("Part not found:", partDEF); return; }
+        setPartColor(part, Colors.select);
+        currentSelection = part;
+        updateHideUI();
+      }
+
+      // Hide the currently selected part
+      function hidePart() {
+        if (!currentSelection) return;
+        const partDEF = currentSelection.getAttribute('DEF');
+        currentSelection.setAttribute('visible', 'false');
+        hiddenParts.add(partDEF);
+        updateHideUI();
+      }
+
+      // Show all hidden parts
+      function restoreAllParts() {
+        for (const partDEF of hiddenParts) {
+          const part = document.querySelector("Transform[DEF='" + partDEF + "']");
+          if (part) { try { part.setAttribute('visible', 'true'); } catch (e) {} }
+        }
+        hiddenParts.clear();
+        updateHideUI();
+      }
+
+      // Update hide/restore button visibility
+      function updateHideUI() {
+        const hideBtn    = document.getElementById('hide-selected-btn');
+        const restoreBtn = document.getElementById('restore-all-btn');
+        if (hideBtn)    hideBtn.style.display    = currentSelection && !hiddenParts.has(currentSelection.getAttribute('DEF')) ? 'block' : 'none';
+        if (restoreBtn) restoreBtn.style.display = hiddenParts.size > 0 ? 'block' : 'none';
+      }
+
+      // Hover: highlight on enter, restore on leave (skip if already selected)
+      function attachHoverHandlers(part) {
+        part.addEventListener('mouseover', function () {
+          if (currentSelection === part) return;
+          setPartColor(part, Colors.hover);
+        });
+        part.addEventListener('mouseout', function () {
+          if (currentSelection === part) return;
+          restorePart(part);
+        });
+      }
+
+      // Initialize once X3DOM runtime is ready
+      x3dom.runtime.ready = function () {
+        const x3dElement = document.getElementById('x3dElement');
+        if (x3dElement && x3dElement.runtime && x3dElement.runtime.resetView) {
+          try { x3dElement.runtime.resetView(); } catch (e) {}
+        }
+
+        for (const def of PART_DEFS) {
+          const part = document.querySelector("Transform[DEF='" + def + "']");
+          if (!part) { console.log('ready: part not found', def); continue; }
+
+          attachHoverHandlers(part);
+
+          // Apply subsystem color once the Inline's GLB finishes loading
+          const inlineEl = document.querySelector("Inline[DEF='" + def + "Inline']");
+          if (inlineEl) {
+            inlineEl.addEventListener('load', function () {
+              applySubsystemColor(def);
+            });
+          }
+        }
+      };
+
+      // --- showDetail ---
+      function showDetail(partName) {
+        console.log("Clicked on:", partName);
+
+        let infoTitle = "";
+        let infoDescription = "";
+        let graphImageFile = ""; 
+
+        const graphContainer = document.getElementById('graph-container');
+        if (graphContainer) graphContainer.style.display = 'none';
+
+        // If the partName matches a known part, use the INFO block; else show initial text
+        if (PART_DEFS.includes(partName)) {
+          const info = INFO[partName];
+          infoTitle = info.title;
+          infoDescription = info.text;
+          // map images same as original logic
+          if (partName === 'Wing') graphImageFile = 'Graph2.png';
+          if (partName === 'Fuselage' || partName === 'Canopy' || partName === 'HorStab') graphImageFile = 'Graph1.png';
+
+          // Select and color the part (yellow). Selection is only applied for recognized parts.
+          selectPartByDEF(partName);
+        } else {
+          // Default intro: show initial text and clear any selection without altering materials unexpectedly
+          infoTitle = "FA-24 HellStinger";
+          infoDescription = initialText;
+
+          // If a part is currently selected, restore it
+          if (currentSelection) {
+            try { restorePart(currentSelection); } catch (e) {}
+            currentSelection = null;
+          }
+          updateHideUI();
+        }
+
+        // Update DOM text
+        const titleEl = document.getElementById('info-title');
+        const descEl = document.getElementById('info-description');
+        if (titleEl) titleEl.innerText = infoTitle;
+        if (descEl) descEl.innerHTML = infoDescription;
+
+        // Show graph if present
+        if (graphImageFile) {
+          const img = document.getElementById('graph-image');
+          if (img) img.src = graphImageFile;
+          if (graphContainer) graphContainer.style.display = 'block';
+        }
+      }
+
+      // Expose bindButtonName for the radio buttons (no change)
+      function bindButtonName(viewpointID) 
+      {
+        console.log(viewpointID);
+        document.getElementById(viewpointID).bind = true;
+      }
+
+      // Show the intro on DOM ready
+      document.addEventListener("DOMContentLoaded", function() {
+        showDetail('initial');
+      });
+    </script>
+</head>
+
+<body>
+    <div id='HUDs_Div'> 
+      <div id='X3DOM_AOPT_Links' class='group'> 
+        AOE 4066: Xander Fry <br> Visualization of Hellstinger in HTML<br>
+        <hr>
+        <form>
+          <label><input type="radio" name="buttons" value="Viewpoint1" checked onclick="bindButtonName('Viewpoint1')"> Viewpoint 1</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint2" onclick="bindButtonName('Viewpoint2')"> Viewpoint 2</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint3" onclick="bindButtonName('Viewpoint3')"> Viewpoint 3</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint4" onclick="bindButtonName('Viewpoint4')"> Viewpoint 4</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint5" onclick="bindButtonName('Viewpoint5')"> Viewpoint 5</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint6" onclick="bindButtonName('Viewpoint6')"> Viewpoint 6</label><br>
+        </form>
+        <hr style="margin-top: 15px; margin-bottom: 10px;">
+        <button id="restore-all-btn" onclick="restoreAllParts()" style="display:none; width: 100%; padding: 8px 12px; background-color: #51cf66; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Restore All Hidden</button>
+      </div>
+    </div>
+
+    <x3d id='x3dElement' showStat='false' showLog='false' style='width:100%; height:100%; border:0; margin:0; padding:0;'>
+      <Scene>
+        <Viewpoint id='Viewpoint1' position="16.11338 80 -19.95448" orientation="-0.00040 0.99989 0.01496 2.32263" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 1"></Viewpoint>
+        <Viewpoint id='Viewpoint2' position="-9.07127 80 2.47211" orientation="-0.00850 0.99941 0.03342 2.30075" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 2"></Viewpoint>
+        <Viewpoint id='Viewpoint3' position="-34.65802 80 33.63939" orientation="-0.01098 0.99894 0.04477 2.38209" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 3"></Viewpoint>
+        <Viewpoint id='Viewpoint4' position="-11.25579 80 47.44333" orientation="-0.01024 0.99957 0.02746 1.59191" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 4"></Viewpoint>
+        <Viewpoint id='Viewpoint5' position="-24.74979 80 61.72199" orientation="-0.02138 0.99950 0.02327 1.84958" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 5"></Viewpoint>
+        <Viewpoint id='Viewpoint6' position="200 800 0" orientation="1 0 0 -1.5708" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="Top Down"></Viewpoint>
+
+<NavigationInfo type='"EXAMINE" "ANY"' avatarSize="0.25 1.75 0.75" headlight="false" visibilityLimit="50000"></NavigationInfo>
+        
+        <DirectionalLight direction='-.8 -.8 -.8' intensity='.7'></DirectionalLight>
+        <DirectionalLight direction='-.8 -.8 .8' intensity='.7'></DirectionalLight>
+        <DirectionalLight direction='.8 -.8 .8' intensity='.7'></DirectionalLight>
+        <DirectionalLight direction='.8 -.8 -.8' intensity='.7'></DirectionalLight>
+        <DirectionalLight direction='0 1 0' intensity='.2'></DirectionalLight>
+        <background skyColor="0.53 0.75 0.98" groundColor="0.0 0.2 0.5"></background>
+
+        <Transform translation="0 -0.25 0" onclick="showDetail('initial')">
+          <Shape><Appearance> <Material diffuseColor="0.6 0.8 1.0"></Material> <ImageTexture url='wataa.jpg'></ImageTexture> <TextureTransform center="0.5 0.5" scale="1 1" rotation="0" translation="0 0"></TextureTransform></Appearance>
+          <Box size="5000 .5 5000"></Box></Shape>
+        </Transform>
+
+        <Transform translation="0 0 0" rotation="0 0 0 0" scale='0.05 0.05 0.05'>
+          <Inline url='uss_nimitz_cvn-68_aircraft_carrier.glb'></Inline>
+        </Transform>
+
+        <Transform DEF="Box" id="Box" translation="600 60 0" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Box')" scale="7 7 7">
+            <Inline DEF="BoxInline" url="greenish_cube.glb" mapDEFToID="true" nameSpaceName="Box"></Inline>
+          </Transform>
+
+        <Transform DEF="PlanePitch" translation="650 42 0" rotation="0 0 1 3.1415926" scale='0.05 0.05 0.05'>
+        <Transform DEF="PlaneRotation" translation="0 0 0" rotation="0 1 0 0" scale='1 1 1'>
+        <Transform DEF="PlaneGroup" translation="0 0 0" rotation="1 0 0 0" scale='1 1 1'>
+        
+        <Transform DEF="PlaneGroup" translation="35 0 -40" rotation="1 0 0 -1.57" scale='1 1 1'>
+
+          <Transform DEF="Fuselage" id="Fuselage" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Fuselage')">
+            <Inline DEF="FuselageInline" url="GLB_Output/TestAssm - Param_Fuselage_Cut_V2.5-1.glb" mapDEFToID="true" nameSpaceName="Fuselage" ></Inline>
+          </Transform>
+          <Transform DEF="Wing" id="Wing" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Wing')">
+            <Inline DEF="WingInline" url="GLB_Output/TestAssm - Param_Wing_V3.01-1.glb" mapDEFToID="true" nameSpaceName="Wing"></Inline>
+          </Transform>
+          <Transform DEF="Canopy" id="Canopy" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Canopy')">
+            <Inline DEF="CanopyInline" url="GLB_Output/TestAssm - Param_Canopy-1.glb" mapDEFToID="true" nameSpaceName="Canopy"></Inline>
+          </Transform>
+          <Transform DEF="HorStab" id="HorStab" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('HorStab')">
+            <Inline DEF="HorStabInline" url="GLB_Output/TestAssm - Param_Horstab_V2-1.glb" mapDEFToID="true" nameSpaceName="HorStab"></Inline>
+          </Transform>
+          <Transform DEF="VTail" id="VTail" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('VTail')">
+            <Inline DEF="VTailInline" url="GLB_Output/TestAssm - Param_VTail_V2-1.glb" mapDEFToID="true" nameSpaceName="VTail"></Inline>
+          </Transform>
+          <Transform DEF="Inlet" id="Inlet" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Inlet')">
+            <Inline DEF="InletInline" url="GLB_Output/TestAssm - Param_Inlet_V5-1.glb" mapDEFToID="true" nameSpaceName="Inlet"></Inline>
+          </Transform>
+        </Transform>
+      
+
+        <!--
+        <Transform DEF="PlanePitch" translation="0 0 0" rotation="1 0 0 0" scale='1 1 1'>
+        <Transform DEF="Boeing737Part" id="Boeing737Part" translation="38 -10 -50" rotation="0 1 0 3.14" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Boeing737Part')">
+          <Inline DEF="Boeing737Inline" url="./boeing737.glb" mapDEFToID="true" nameSpaceName="Boeing737"></Inline>
+        </Transform>
+        </Transform>
+
+        <Transform DEF="Cessna172Part" id="Cessna172Part" translation="20 7 -20" rotation="0 1 0 -1.5708" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Boeing737Part')">
+          <Inline DEF="Cessna172Inline" url="./cessna172.glb" mapDEFToID="true" nameSpaceName="Cessna172"></Inline>
+        </Transform>
+
+        <Transform DEF="X57Part" id="X57Part" translation="20 5 -5" rotation="0 1 0" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0">
+          <Inline DEF="X57Inline" url="./x57.glb" mapDEFToID="true" nameSpaceName="X57"></Inline>
+        </Transform>
+        -->
+      </Scene>
+    </x3d>
+    
+    <div id="output-container">
+      <div id="output-text">
+        <h3 id="info-title"></h3>
+        <p id="info-description"></p>
+        <div id="button-container" style="margin-top: 15px;">
+          <button id="hide-selected-btn" onclick="hidePart()" style="display:none; padding: 8px 12px; background-color: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer;">Hide Selected</button>
+        </div>
+      </div>
+      <div id="graph-container">
+        <img id="graph-image" src="" alt="Relevant Graph">
+      </div>
+    </div>
+    
+</body>
+</html>

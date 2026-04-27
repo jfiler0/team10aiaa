@@ -1,0 +1,638 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv='Content-Type' content='text/html;charset=utf-8'></meta>
+    <link rel='stylesheet' type='text/css' href='https://www.x3dom.org/download/x3dom.css'></link>
+    <script type='text/javascript' src='https://www.x3dom.org/download/x3dom.js'></script>
+    <title>SuperDuperHornet</title>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      html, body {
+         height: 100%;
+      }
+      #HUDs_Div {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+        background-color: rgba(255, 255, 255, 0.7);
+        padding: 10px;
+        border-radius: 5px;
+        font-family: sans-serif;
+      }
+      /* Container for text and graph, allowing side-by-side layout */
+      #output-container {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+        color: white; /* White text */
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 80%;
+        max-width: 1000px; /* Increased max-width for graph space */
+        font-family: sans-serif;
+        font-size: 1.1em;
+        line-height: 1.4;
+        display: flex; /* Enable flexbox for side-by-side content */
+        justify-content: center;
+        align-items: flex-start; 
+        gap: 20px; /* Space between text and graph */
+      }
+      #output-text {
+        flex: 1; /* Allows text to take available space */
+        text-align: left; 
+      }
+      #output-text h3 {
+        margin-top: 0;
+      }
+      #output-text p {
+        margin-bottom: 0;
+      }
+      #graph-container {
+        flex: 0 0 350px; /* Fixed width for the graph (adjust as needed) */
+        display: none; /* Hidden by default */
+        text-align: center;
+      }
+      #graph-container img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 5px;
+      }
+    </style>
+
+        <script>
+      // ------------------------------
+      // Color-based highlighting system
+      // Hover -> magenta ; Click/select -> green
+      // Supports X3D Inline async loading
+      // ------------------------------
+
+      const PART_DEFS = [
+        'Fuselage', 'Canopy', 'HorStab', 'VTail', 'Wing', 'Inlet', 'Box'
+      ];
+
+      // Default color for X3D parts with no material (prevents white rendering)
+      const DEFAULT_PART_COLOR = '0.6 0.6 0.7';
+
+      const INFO = {
+        Fuselage: { title: 'Plane Fuselage', text: "stores fuel and stuff" },
+        Canopy:   { title: 'Canopy',         text: "super awesome pilot man" },
+        HorStab:  { title: 'Horizontal Stabilators', text: "supermaneuverability go brrrrrr" },
+        VTail:    { title: 'V-Tail',         text: "V-tail so we aren't the size of New York on radar" },
+        Wing:     { title: 'Wings',          text: 'Red Bull gives you wiiiiiiiiiiiiings' },
+        Inlet:    { title: 'Engine Inlets',  text: 'feed air to the Very Hungry Catipillar of our 2 F-110 engines' },
+        Box:      { title: 'box',           text: 'box box box' }
+      };
+
+      const initialText = "hi we are Roy and Sons and we da best";
+      const Colors = { hover: '1 0 1', select: '0 1 0' };
+
+      let currentSelection = null;
+      const baselineByPart = new Map();
+      const elementBaseline = new WeakMap();
+      const hiddenParts = new Set();
+
+      // ---------- x3dom runtime color helpers ----------
+      // x3dom parses the scene on load into an internal scene graph (_x3domNode).
+      // After that, DOM changes are ignored by the renderer — we must operate
+      // directly on _x3domNode objects.
+      //
+      // For X3D parts exported by Blender, <Appearance> is empty (no Material child).
+      // x3dom creates an Appearance _x3domNode but with no Material child node.
+      // We use x3dom's own addChild() to programmatically insert a Material runtime
+      // node into the Appearance, which DOES get rendered.
+
+      const DEFAULT_DIFFUSE = { r: 0.6, g: 0.6, b: 0.7 };
+
+      // Trigger x3dom to re-render a node
+      function invalidateNode(rn) {
+        try { rn.invalidateCache(); } catch(e) {}
+        try {
+          let n = rn;
+          while (n) { try { n.setAllDirty && n.setAllDirty(); } catch(e){} n = n._parentNodes && n._parentNodes[0]; }
+        } catch(e) {}
+        try { x3dom.canvases[0] && x3dom.canvases[0].doc && x3dom.canvases[0].doc.needRender = true; } catch(e) {}
+      }
+
+      // Set diffuse + emissive on a Material or PhysicalMaterial _x3domNode
+      function setRuntimeColor(rn, diffuse, emissive) {
+        try {
+          if (diffuse) {
+            rn._vf.diffuseColor = new x3dom.fields.SFColor(diffuse.r, diffuse.g, diffuse.b);
+          }
+        } catch(e) {}
+        try {
+          if (emissive) {
+            rn._vf.emissiveColor = new x3dom.fields.SFColor(emissive.r, emissive.g, emissive.b);
+          }
+        } catch(e) {}
+        invalidateNode(rn);
+      }
+
+      // For a Shape's Appearance _x3domNode, find or create a Material child _x3domNode.
+      // Returns the Material _x3domNode or null.
+      function getOrCreateMaterialNode(appRN) {
+        if (!appRN) return null;
+
+        // Look for existing Material child
+        if (appRN._childNodes) {
+          for (const child of appRN._childNodes) {
+            if (child && child._vf && 'diffuseColor' in child._vf && !('baseColor' in child._vf)) {
+              return child; // classic Material
+            }
+          }
+        }
+
+        // No Material child — create one via x3dom's own API
+        try {
+          // Create a DOM node in the correct namespace so x3dom recognises it
+          const ns = 'http://www.web3d.org/specifications/x3d-namespace';
+          let matDom = document.createElementNS(ns, 'Material');
+          // Fall back to uppercase tag if namespace version doesn't work
+          if (!matDom || matDom.nodeName === 'Material' && !x3dom.nodeTypes['Material']) {
+            matDom = document.createElement('material'); // x3dom lowercases anyway
+          }
+          matDom.setAttribute('diffuseColor',
+            DEFAULT_DIFFUSE.r + ' ' + DEFAULT_DIFFUSE.g + ' ' + DEFAULT_DIFFUSE.b);
+
+          // x3dom processes nodes via its document's setupTree
+          const x3dDoc = x3dom.canvases[0] && x3dom.canvases[0].doc;
+          if (x3dDoc && x3dDoc.setupTree) {
+            x3dDoc.setupTree(matDom);
+          }
+
+          if (matDom._x3domNode) {
+            // Wire into the scene graph
+            appRN.addChild(matDom._x3domNode, 'material');
+            invalidateNode(appRN);
+            return matDom._x3domNode;
+          }
+        } catch(e) {
+          console.log('getOrCreateMaterialNode error:', e);
+        }
+        return null;
+      }
+
+      // Get all colorable runtime nodes under a part Transform
+      function getRuntimeMaterials(part) {
+        const shapes = Array.from(part.getElementsByTagName('Shape'));
+        const result = [];
+        for (const s of shapes) {
+          const shapeRN = s._x3domNode;
+          if (!shapeRN) continue;
+
+          // Find Appearance child
+          let appRN = null;
+          if (shapeRN._childNodes) {
+            for (const c of shapeRN._childNodes) {
+              if (c && c._vf && 'visible' in c._vf === false && c._childNodes) {
+                appRN = c; break; // Appearance node heuristic
+              }
+              // More reliable: check constructor name
+              if (c && c.constructor && c.constructor.name === 'x3dom.nodeTypes.Appearance') {
+                appRN = c; break;
+              }
+            }
+          }
+          // Fallback: try _appearance field
+          if (!appRN) appRN = shapeRN._cf && shapeRN._cf.appearance && shapeRN._cf.appearance.node;
+
+          if (!appRN) continue;
+
+          // Check for PhysicalMaterial (GLB)
+          if (appRN._childNodes) {
+            for (const c of appRN._childNodes) {
+              if (c && c.constructor && c.constructor.name === 'x3dom.nodeTypes.PhysicalMaterial') {
+                result.push({ rn: c, type: 'phys' });
+              }
+            }
+          }
+          if (result.length && result[result.length-1].type === 'phys') continue;
+
+          // Classic Material — find or create
+          const matRN = getOrCreateMaterialNode(appRN);
+          if (matRN) result.push({ rn: matRN, type: 'classic' });
+        }
+        return result;
+      }
+
+      // Capture baseline colors from runtime nodes
+      function captureBaseline(part) {
+        const rms = getRuntimeMaterials(part);
+        const baseline = [];
+        for (const { rn, type } of rms) {
+          try {
+            const dc = rn._vf && rn._vf.diffuseColor;
+            const ec = rn._vf && rn._vf.emissiveColor;
+            baseline.push({
+              rn,
+              type,
+              diffuse:  dc ? { r: dc.r, g: dc.g, b: dc.b } : { ...DEFAULT_DIFFUSE },
+              emissive: ec ? { r: ec.r, g: ec.g, b: ec.b } : { r: 0, g: 0, b: 0 },
+            });
+          } catch(e) {}
+        }
+        baselineByPart.set(part, baseline);
+        console.log('captureBaseline', part.getAttribute('DEF'), 'runtime nodes:', baseline.length);
+      }
+
+      function setPartColor(part, colorStr) {
+        const c = parseColor(colorStr);
+        if (!c) return;
+        const items = baselineByPart.get(part) || [];
+        for (const { rn, type } of items) {
+          if (type === 'phys') setRuntimeColor(rn, { r:0.1, g:0.1, b:0.1 }, c);
+          else                 setRuntimeColor(rn, c, c);
+        }
+      }
+
+      function restorePartFromBaseline(part) {
+        const items = baselineByPart.get(part) || [];
+        for (const { rn, diffuse, emissive } of items) {
+          setRuntimeColor(rn, diffuse, emissive);
+        }
+      }
+
+      // Parse "r g b" string → {r,g,b}
+      function parseColor(str) {
+        if (!str) return null;
+        const p = str.trim().split(/[\s,]+/).map(Number);
+        if (p.length < 3 || p.some(isNaN)) return null;
+        return { r: p[0], g: p[1], b: p[2] };
+      }
+
+      // ---------- Part setup (called after each Inline finishes loading) ----------
+
+      // After an Inline loads, x3dom parses the content into its internal scene graph,
+      // but _x3domNode handles may not be live immediately.
+      // We poll until Shape _x3domNode handles exist, log the scene graph structure
+      // for debugging, then apply the default color and capture baselines.
+      function setupPart(part) {
+        const def = part.getAttribute('DEF');
+        console.log('setupPart:', def);
+
+        if (baselineByPart.has(part)) return; // guard against double-setup
+
+        let attempts = 0;
+        const trySetup = function() {
+          attempts++;
+
+          // Wait until Shape _x3domNode handles are live
+          const shapes = Array.from(part.getElementsByTagName('Shape'));
+          const shapeRNsReady = shapes.length > 0 && shapes.every(s => !!s._x3domNode);
+
+          if (!shapeRNsReady && attempts < 60) {
+            setTimeout(trySetup, 50);
+            return;
+          }
+          if (!shapeRNsReady) {
+            console.warn(def, ': Shape _x3domNode never became live');
+            attachHoverHandlers(part);
+            return;
+          }
+
+          // Debug: log the scene graph structure so we can see what x3dom built
+          for (const s of shapes) {
+            const sRN = s._x3domNode;
+            console.log(def, 'Shape RN:', sRN && sRN.constructor && sRN.constructor.name);
+            if (sRN && sRN._childNodes) {
+              sRN._childNodes.forEach((c, i) => console.log('  child', i,
+                c && c.constructor && c.constructor.name,
+                c && c._vf && Object.keys(c._vf).slice(0, 6)));
+            }
+            if (sRN && sRN._cf) {
+              const appNode = sRN._cf.appearance && sRN._cf.appearance.node;
+              console.log('  appearance node:', appNode && appNode.constructor && appNode.constructor.name);
+              if (appNode && appNode._childNodes) {
+                appNode._childNodes.forEach((c, i) => console.log('  app child', i,
+                  c && c.constructor && c.constructor.name,
+                  c && c._vf && Object.keys(c._vf).slice(0, 6)));
+              }
+            }
+          }
+
+          const rms = getRuntimeMaterials(part);
+          if (rms.length === 0 && attempts < 60) {
+            setTimeout(trySetup, 50);
+            return;
+          }
+          if (rms.length === 0) {
+            console.warn(def, ': gave up waiting for runtime material nodes');
+            attachHoverHandlers(part);
+            return;
+          }
+
+          // Apply default grey-blue to X3D parts (overrides x3dom white default)
+          const black = { r: 0, g: 0, b: 0 };
+          for (const { rn, type } of rms) {
+            if (type === 'classic') setRuntimeColor(rn, DEFAULT_DIFFUSE, black);
+          }
+
+          captureBaseline(part);
+          attachHoverHandlers(part);
+          console.log(def, 'fully initialized,', rms.length, 'runtime node(s)');
+        };
+
+        setTimeout(trySetup, 100);
+      }
+
+      // ---------- Interaction ----------
+
+      function selectPartByDEF(partDEF) {
+        if (!PART_DEFS.includes(partDEF)) return;
+        if (currentSelection) {
+          restorePartFromBaseline(currentSelection);
+          currentSelection = null;
+        }
+        const part = document.querySelector("Transform[DEF='" + partDEF + "']");
+        if (!part) { console.warn('Part not found:', partDEF); return; }
+        setPartColor(part, Colors.select);
+        currentSelection = part;
+        updateHideUI();
+      }
+
+      function hidePart() {
+        if (!currentSelection) return;
+        const partDEF = currentSelection.getAttribute('DEF');
+        currentSelection.setAttribute('visible', 'false');
+        hiddenParts.add(partDEF);
+        updateHideUI();
+      }
+
+      function restoreAllParts() {
+        for (const partDEF of hiddenParts) {
+          const part = document.querySelector("Transform[DEF='" + partDEF + "']");
+          if (part) part.setAttribute('visible', 'true');
+        }
+        hiddenParts.clear();
+        updateHideUI();
+      }
+
+      function updateHideUI() {
+        const hideBtn    = document.getElementById('hide-selected-btn');
+        const restoreBtn = document.getElementById('restore-all-btn');
+        if (hideBtn)    hideBtn.style.display    = currentSelection && !hiddenParts.has(currentSelection.getAttribute('DEF')) ? 'block' : 'none';
+        if (restoreBtn) restoreBtn.style.display = hiddenParts.size > 0 ? 'block' : 'none';
+      }
+
+      function attachHoverHandlers(part) {
+        part.addEventListener('mouseover', function () {
+          if (currentSelection === part) return;
+          setPartColor(part, Colors.hover);
+        });
+        part.addEventListener('mouseout', function () {
+          if (currentSelection === part) return;
+          restorePartFromBaseline(part);
+        });
+      }
+
+      // ---------- Initialization ----------
+
+      // KEY FIX: wait for each Inline to finish loading before setting up its part.
+      // x3dom.runtime.ready fires BEFORE Inline content is parsed.
+      // setupPart() handles its own retry loop for _x3domNode availability.
+      function waitForInlineAndSetup(inlineEl, partDef) {
+        const part = document.querySelector("Transform[DEF='" + partDef + "']");
+        if (!part) return;
+
+        let triggered = false;
+
+        inlineEl.addEventListener('load', function () {
+          console.log('Inline loaded for:', partDef);
+          triggered = true;
+          setupPart(part);
+        });
+
+        // Fallback poll only for cached files where load event may have already fired
+        let attempts = 0;
+        const poll = setInterval(function () {
+          attempts++;
+          if (triggered || baselineByPart.has(part)) { clearInterval(poll); return; }
+          if (part.getElementsByTagName('Shape').length > 0) {
+            clearInterval(poll);
+            console.log('Inline poll fallback for:', partDef);
+            setupPart(part);
+          }
+          if (attempts > 80) clearInterval(poll);
+        }, 100);
+      }
+
+      x3dom.runtime.ready = function () {
+        var x3dElement = document.getElementById('x3dElement');
+        if (x3dElement && x3dElement.runtime && x3dElement.runtime.resetView) {
+          try { x3dElement.runtime.resetView(); } catch (e) { }
+        }
+
+        const inlineMap = {
+          Fuselage: 'FuselageInline',
+          Wing:     'WingInline',
+          Canopy:   'CanopyInline',
+          HorStab:  'HorStabInline',
+          VTail:    'VTailInline',
+          Inlet:    'InletInline',
+        };
+
+        for (const [partDef, inlineDef] of Object.entries(inlineMap)) {
+          const inlineEl = document.querySelector("Inline[DEF='" + inlineDef + "']");
+          if (inlineEl) waitForInlineAndSetup(inlineEl, partDef);
+          else console.log('Inline element not found:', inlineDef);
+        }
+
+        const boxInline = document.querySelector("Inline[DEF='BoxInline']");
+        if (boxInline) waitForInlineAndSetup(boxInline, 'Box');
+      };
+
+      // --- showDetail: called by onclick on plane parts and ground plane ---
+      function showDetail(partName) {
+        console.log("Clicked on:", partName);
+
+        let infoTitle = "";
+        let infoDescription = "";
+        let graphImageFile = "";
+
+        const graphContainer = document.getElementById('graph-container');
+        if (graphContainer) graphContainer.style.display = 'none';
+
+        if (PART_DEFS.includes(partName)) {
+          const info = INFO[partName];
+          infoTitle = info.title;
+          infoDescription = info.text;
+          if (partName === 'Wing') graphImageFile = 'Graph2.png';
+          if (partName === 'Fuselage' || partName === 'Canopy' || partName === 'HorStab') graphImageFile = 'Graph1.png';
+          selectPartByDEF(partName);
+        } else {
+          infoTitle = "FA-24 HellStinger";
+          infoDescription = initialText;
+          if (currentSelection) {
+            try { restorePartFromBaseline(currentSelection); } catch (e) { }
+            currentSelection = null;
+          }
+          updateHideUI();
+        }
+
+        const titleEl = document.getElementById('info-title');
+        const descEl  = document.getElementById('info-description');
+        if (titleEl) titleEl.innerText = infoTitle;
+        if (descEl)  descEl.innerHTML  = infoDescription;
+
+        if (graphImageFile) {
+          const img = document.getElementById('graph-image');
+          if (img) img.src = graphImageFile;
+          if (graphContainer) graphContainer.style.display = 'block';
+        }
+      }
+
+      // Expose bindButtonName for the radio buttons
+      function bindButtonName(viewpointID) {
+        console.log(viewpointID);
+        document.getElementById(viewpointID).bind = true;
+      }
+
+      // Show the intro on DOM ready
+      document.addEventListener("DOMContentLoaded", function () {
+        showDetail('initial');
+      });
+    </script>
+</head>
+
+<body>
+    <div id='HUDs_Div'> 
+      <div id='X3DOM_AOPT_Links' class='group'> 
+        AOE 4066: Xander Fry <br> Visualization of Hellstinger in HTML<br>
+        <hr>
+        <form>
+          <label><input type="radio" name="buttons" value="Viewpoint1" checked onclick="bindButtonName('Viewpoint1')"> Viewpoint 1</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint2" onclick="bindButtonName('Viewpoint2')"> Viewpoint 2</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint3" onclick="bindButtonName('Viewpoint3')"> Viewpoint 3</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint4" onclick="bindButtonName('Viewpoint4')"> Viewpoint 4</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint5" onclick="bindButtonName('Viewpoint5')"> Viewpoint 5</label><br>
+          <label><input type="radio" name="buttons" value="Viewpoint6" onclick="bindButtonName('Viewpoint6')"> Viewpoint 6</label><br>
+        </form>
+        <hr style="margin-top: 15px; margin-bottom: 10px;">
+        <button id="restore-all-btn" onclick="restoreAllParts()" style="display:none; width: 100%; padding: 8px 12px; background-color: #51cf66; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Restore All Hidden</button>
+      </div>
+    </div>
+
+    <x3d id='x3dElement' showStat='false' showLog='false' style='width:100%; height:100%; border:0; margin:0; padding:0;'>
+      <Scene>
+        <Viewpoint id='Viewpoint1' position="16.11338 80 -19.95448" orientation="-0.00040 0.99989 0.01496 2.32263" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 1"></Viewpoint>
+        <Viewpoint id='Viewpoint2' position="-9.07127 80 2.47211" orientation="-0.00850 0.99941 0.03342 2.30075" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 2"></Viewpoint>
+        <Viewpoint id='Viewpoint3' position="-34.65802 80 33.63939" orientation="-0.01098 0.99894 0.04477 2.38209" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 3"></Viewpoint>
+        <Viewpoint id='Viewpoint4' position="-11.25579 80 47.44333" orientation="-0.01024 0.99957 0.02746 1.59191" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 4"></Viewpoint>
+        <Viewpoint id='Viewpoint5' position="-24.74979 80 61.72199" orientation="-0.02138 0.99950 0.02327 1.84958" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="View 5"></Viewpoint>
+        <Viewpoint id='Viewpoint6' position="200 800 0" orientation="1 0 0 -1.5708" zNear="0.1" zFar="50000" centerOfRotation="-77 0 77" fieldOfView="0.78540" description="Top Down"></Viewpoint>
+
+<NavigationInfo type='"EXAMINE" "ANY"' avatarSize="0.25 1.75 0.75" headlight="false" visibilityLimit="50000"></NavigationInfo>
+        
+        <DirectionalLight direction='-.8 -.8 -.8' intensity='.7'></DirectionalLight>
+        <DirectionalLight direction='-.8 -.8 .8' intensity='.7'></DirectionalLight>
+        <DirectionalLight direction='.8 -.8 .8' intensity='.7'></DirectionalLight>
+        <DirectionalLight direction='.8 -.8 -.8' intensity='.7'></DirectionalLight>
+        <DirectionalLight direction='0 1 0' intensity='.2'></DirectionalLight>
+        <background skyColor="0.53 0.75 0.98" groundColor="0.0 0.2 0.5"></background>
+
+        <Transform translation="0 -0.25 0" onclick="showDetail('initial')">
+          <Shape><Appearance> <Material diffuseColor="0.6 0.8 1.0"></Material> <ImageTexture url='wataa.jpg'></ImageTexture> <TextureTransform center="0.5 0.5" scale="1 1" rotation="0" translation="0 0"></TextureTransform></Appearance>
+          <Box size="5000 .5 5000"></Box></Shape>
+        </Transform>
+
+        <Transform translation="0 0 0" rotation="0 0 0 0" scale='0.05 0.05 0.05'>
+          <Inline url='uss_nimitz_cvn-68_aircraft_carrier.glb'></Inline>
+        </Transform>
+
+        <Transform DEF="Box" id="Box" translation="600 60 0" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Box')" scale="7 7 7">
+            <Inline DEF="BoxInline" url="greenish_cube.glb" mapDEFToID="true" nameSpaceName="Box"></Inline>
+          </Transform>
+
+        <Transform DEF="PlanePitch" translation="650 42 0" rotation="0 0 1 3.1415926" scale='0.05 0.05 0.05'>
+        <Transform DEF="PlaneRotation" translation="0 0 0" rotation="0 1 0 0" scale='1 1 1'>
+        <Transform DEF="PlaneGroup" translation="0 0 0" rotation="1 0 0 0" scale='1 1 1'>
+        
+          <!--
+        <Transform DEF="PlaneGroup" translation="35 0 -40" rotation="1 0 0 -1.57" scale='1 1 1'>
+
+          <Transform DEF="Fuselage" id="Fuselage" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Fuselage')">
+            <Inline DEF="FuselageInline" url="GLB_Output/TestAssm - Param_Fuselage_Cut_V2.5-1.glb" mapDEFToID="true" nameSpaceName="Fuselage" ></Inline>
+          </Transform>
+          <Transform DEF="Wing" id="Wing" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Wing')">
+            <Inline DEF="WingInline" url="GLB_Output/TestAssm - Param_Wing_V3.01-1.glb" mapDEFToID="true" nameSpaceName="Wing"></Inline>
+          </Transform>
+          <Transform DEF="Canopy" id="Canopy" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Canopy')">
+            <Inline DEF="CanopyInline" url="GLB_Output/TestAssm - Param_Canopy-1.glb" mapDEFToID="true" nameSpaceName="Canopy"></Inline>
+          </Transform>
+          <Transform DEF="HorStab" id="HorStab" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('HorStab')">
+            <Inline DEF="HorStabInline" url="GLB_Output/TestAssm - Param_Horstab_V2-1.glb" mapDEFToID="true" nameSpaceName="HorStab"></Inline>
+          </Transform>
+          <Transform DEF="VTail" id="VTail" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('VTail')">
+            <Inline DEF="VTailInline" url="GLB_Output/TestAssm - Param_VTail_V2-1.glb" mapDEFToID="true" nameSpaceName="VTail"></Inline>
+          </Transform>
+          <Transform DEF="Inlet" id="Inlet" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Inlet')">
+            <Inline DEF="InletInline" url="GLB_Output/TestAssm - Param_Inlet_V5-1.glb" mapDEFToID="true" nameSpaceName="Inlet"></Inline>
+          </Transform>
+        </Transform>
+      -->
+        <Transform DEF="PlaneGroup" translation="35 0 -40" rotation="1 0 0 -1.57" scale='1 1 1'>
+
+          <Transform DEF="Fuselage" id="Fuselage" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Fuselage')">
+            <Inline DEF="FuselageInline" url="X3D_Output/TestAssm - Param_Fuselage_Cut_V2.5-1.x3d" mapDEFToID="true" nameSpaceName="Fuselage" ></Inline>
+          </Transform>
+          <Transform DEF="Wing" id="Wing" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Wing')">
+            <Inline DEF="WingInline" url="X3D_Output/TestAssm - Param_Wing_V3.01-1.x3d" mapDEFToID="true" nameSpaceName="Wing"></Inline>
+          </Transform>
+          <Transform DEF="Canopy" id="Canopy" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Canopy')">
+            <Inline DEF="CanopyInline" url="X3D_Output/TestAssm - Param_Canopy-1.x3d" mapDEFToID="true" nameSpaceName="Canopy"></Inline>
+          </Transform>
+          <Transform DEF="HorStab" id="HorStab" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('HorStab')">
+            <Inline DEF="HorStabInline" url="X3D_Output/TestAssm - Param_Horstab_V2-1.x3d" mapDEFToID="true" nameSpaceName="HorStab"></Inline>
+          </Transform>
+          <Transform DEF="VTail" id="VTail" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('VTail')">
+            <Inline DEF="VTailInline" url="X3D_Output/TestAssm - Param_VTail_V2-1.x3d" mapDEFToID="true" nameSpaceName="VTail"></Inline>
+          </Transform>
+          <Transform DEF="Inlet" id="Inlet" rotation="0 0 0 0" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Inlet')">
+            <Inline DEF="InletInline" url="X3D_Output/TestAssm - Param_Inlet_V5-1.x3d" mapDEFToID="true" nameSpaceName="Inlet"></Inline>
+          </Transform>
+        </Transform>
+
+        <!--
+        <Transform DEF="PlanePitch" translation="0 0 0" rotation="1 0 0 0" scale='1 1 1'>
+        <Transform DEF="Boeing737Part" id="Boeing737Part" translation="38 -10 -50" rotation="0 1 0 3.14" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Boeing737Part')">
+          <Inline DEF="Boeing737Inline" url="./boeing737.glb" mapDEFToID="true" nameSpaceName="Boeing737"></Inline>
+        </Transform>
+        </Transform>
+
+        <Transform DEF="Cessna172Part" id="Cessna172Part" translation="20 7 -20" rotation="0 1 0 -1.5708" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0" onclick="showDetail('Boeing737Part')">
+          <Inline DEF="Cessna172Inline" url="./cessna172.glb" mapDEFToID="true" nameSpaceName="Cessna172"></Inline>
+        </Transform>
+
+        <Transform DEF="X57Part" id="X57Part" translation="20 5 -5" rotation="0 1 0" scale="1 1 1" bboxDisplay="false" bboxColor="1 1 1" bboxMargin="0">
+          <Inline DEF="X57Inline" url="./x57.glb" mapDEFToID="true" nameSpaceName="X57"></Inline>
+        </Transform>
+        -->
+      </Scene>
+    </x3d>
+    
+    <div id="output-container">
+      <div id="output-text">
+        <h3 id="info-title"></h3>
+        <p id="info-description"></p>
+        <div id="button-container" style="margin-top: 15px;">
+          <button id="hide-selected-btn" onclick="hidePart()" style="display:none; padding: 8px 12px; background-color: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer;">Hide Selected</button>
+        </div>
+      </div>
+      <div id="graph-container">
+        <img id="graph-image" src="" alt="Relevant Graph">
+      </div>
+    </div>
+    
+</body>
+</html>

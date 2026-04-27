@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.0//EN" "http://www.web3d.org/specifications/x3d-3.0.dtd">
+<X3D version="3.0" profile="Immersive" xmlns:xsd="http://www.w3.org/2001/XMLSchema-instance" xsd:noNamespaceSchemaLocation="http://www.web3d.org/specifications/x3d-3.0.xsd">
+	<head>
+		<meta name="filename" content="OMLV4_Packing - For Xander - OBOGS-1.x3d" />
+		<meta name="created" content="2026-04-19 20:21:18" />
+		<meta name="generator" content="Blender 4.3.2" />
+		<meta name="translator" content="Web3D X3D/VRML2 format v2.5.1" />
+	</head>
+	<Scene>
+		<NavigationInfo headlight="true"
+		                visibilityLimit="0.0"
+		                type='"EXAMINE", "ANY"'
+		                avatarSize="0.25, 1.75, 0.75"
+		                />
+		<Background DEF="WO_World"
+		            groundColor="0.051 0.051 0.051"
+		            skyColor="0.051 0.051 0.051"
+		            />
+		<Transform DEF="OMLV4_Packing_-_For_Xander_-_OBOGS-1_TRANSFORM"
+		           translation="0.000000 0.000000 0.000000"
+		           scale="1.000000 1.000000 1.000000"
+		           rotation="-1.000000 0.000000 0.000000 1.570796"
+		           >
+			<Transform DEF="OMLV4_Packing_-_For_Xander_-_OBOGS-1_ifs_TRANSFORM"
+			           translation="0.000000 0.000000 0.000000"
+			           scale="1.000000 1.000000 1.000000"
+			           rotation="0.000000 1.000000 0.000000 0.000000"
+			           >
+				<Group DEF="group_ME_OMLV4_Packing_-_For_Xander_-_OBOGS-1">
+					<Shape>
+						<Appearance>
+						</Appearance>
+						<IndexedFaceSet solid="false"
+						                coordIndex="0 1 2 -1 2 1 3 -1 4 0 5 -1 5 0 2 -1 6 4 7 -1 7 4 5 -1 1 6 3 -1 3 6 7 -1 4 6 0 -1 0 6 1 -1 7 5 3 -1 3 5 2 -1 "
+						                >
+							<Coordinate DEF="coords_ME_OMLV4_Packing_-_For_Xander_-_OBOGS-1"
+							            point="81.503342 98.758293 357.443451 81.503342 103.758293 357.443451 69.503342 98.758293 357.443451 69.503342 103.758293 357.443451 81.503342 98.758293 349.443451 69.503342 98.758293 349.443451 81.503342 103.758293 349.443451 69.503342 103.758293 349.443451 "
+							            />
+						</IndexedFaceSet>
+					</Shape>
+				</Group>
+			</Transform>
+		</Transform>
+	</Scene>
+</X3D>

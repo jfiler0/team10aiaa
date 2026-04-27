@@ -37,7 +37,7 @@ clear all
         % 9 -> Concept 5
         % 11 -> PSC (can paste in values here to save them temporarily)
 
-    performance_plots = false; % Aerodynamics, Propulsion, Atmospere, Performance grids
+    performance_plots = true; % Aerodynamics, Propulsion, Atmospere, Performance grids
     mission_plots = false; % Fuel burn, LD, TSFC over time
     drag_polar = false;
     print_components = false;
@@ -244,6 +244,8 @@ if print_components
     disp('Best Glide Angle at Sea Level:')
     [M, best_glide_ang] = plane.calcBestGlideAngle(ft2m(0), plane.mid_mission_weight);
     disp(best_glide_ang)
+    disp('Plane CG Location:')
+    disp(m2ft(plane.x_cg))
     disp('Plane Static Margin:')
     disp(plane.SM)
 

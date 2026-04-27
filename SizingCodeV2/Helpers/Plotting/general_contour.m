@@ -33,13 +33,13 @@ function general_contour(xname, yname, zname, title_name, X, Y, z_long, filter_v
     end
     
     figure("Name", title_name);
-    surf(X_fine, Y_fine, Z_fine, 'EdgeColor', 'none');
+    surf(X_fine, Y_fine, Z_fine, 'EdgeColor', 'none', HandleVisibility='off');
     view(2);  % flatten to top-down 2D view
     % shading interp; % can comment this out to not shade
     hold on;
     
     if do_0_line && min(Z_fine(:)) < 0 && max(Z_fine(:)) > 0
-        contour(X_fine, Y_fine, Z_fine, [0 0], 'k', 'LineWidth', 2);
+        contour(X_fine, Y_fine, Z_fine, [0 0], 'k', 'LineWidth', 2, HandleVisibility='off');
     end
     
     axis tight

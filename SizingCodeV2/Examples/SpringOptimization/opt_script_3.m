@@ -5,9 +5,8 @@ build_kevin_cad % editing this geometry as it already holds to most constraints
 % INITIAL OBJECTS TO LOAD
 build_default_settings
 settings = readSettings();
-% 0.059408
 
-settings.WF_ratio = 0.6; % important override here
+% settings.WF_ratio = 0.6; % important override here
 
 geom = loadAircraft("kevin_cad", settings); % note that this included loading prop which is why it is disabled in the loop
 geom.prop.engine.v = "F110";

@@ -1,12 +1,9 @@
 function CD0 = fortran_cd0(geom, M_vec, h_vec)
 
-caseDef.title = geom.id.v;
-caseDef.Sref  = m2ft(m2ft(geom.ref_area.v));
+caseDef.title = "Hellstinger_V3";
+caseDef.Sref = m2ft(m2ft(geom.ref_area.v));
 caseDef.scale = 1;
 caseDef.inmd  = 0;  % 0 => xinput is altitude in kft
-
-% All lengths in feet
-% All areas in ft2
 
 fuse_tc = geom.fuselage.diameter.v / geom.fuselage.length.v;
 
@@ -24,6 +21,7 @@ caseDef.components = struct( ...
     "icode", {1,                            0,                                0,                                   0}, ... % 1 -> body of revolution. 0 -> planar
     "trans", {0.0,                          0.0,                              0.0,                                 0.0} ... % 0 -> all turbulent. 1 -> all laminar. 0-1 -> some mix
 );
+
 
 % Aircraft at Sea Level and 30kft Max Machs
 caseDef.conds = [M_vec' , m2ft(h_vec')/1000 ];

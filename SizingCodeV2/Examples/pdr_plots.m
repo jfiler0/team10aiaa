@@ -7,7 +7,7 @@ geom_f18= updateGeom(geom_f18, settings, true); % true -> update prop
 model_f18 = model_class(settings, geom_f18);
 perf_f18 = performance_class(model_f18);
 
-file_name = "HellstingerV3_OPM";
+file_name = "HellstingerV3";
 geom = readAircraftFile(file_name);
 geom = updateGeom(geom, settings, true); % true -> update prop
 model = model_class(settings, geom);

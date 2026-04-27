@@ -25,7 +25,7 @@ perf.model.cond = levelFlightCondition(perf, 0, 0.3, model.geom.weights.mtow.v);
 %%  Part 1 — JKayVLM  (M < 0.6)
 %% ========================================================================
 VLM_LIMIT = 0.60;
-alphaVec  = [-4, -2, 0, 2, 4, 8, 12, 16, 20];
+alphaVec  = [-4, -2, 0, 2, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40];
 
 machVLM = [0.30, 0.40, 0.50];
 reVLM   = [0.9e6, 1.3e6, 1.6e6];
@@ -83,8 +83,8 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
             cLa(iM) = (4 / sqrt(M^2 - 1)) * (pi/180);
         end
     end
-    clmaxWing = linspace(1.40, 0.45, nMach);
-    clmaxHT   = linspace(1.10, 0.35, nMach);
+    clmaxWing = linspace(1.40, 0.45, nMach);   % was linspace(1.40, 0.45, nMach)
+    clmaxHT   = linspace(1.10, 0.35, nMach);   % was linspace(1.10, 0.35, nMach)
     
     c = struct();
     c.caseid = 'GENERIC SUPERSONIC FIGHTER - BASELINE';
@@ -92,7 +92,7 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     c.fltcon.nalpha = numel(alphaVec);
     c.fltcon.alschd = alphaVec;
     c.fltcon.rnnub  = reVec;
-
+    c.optins.nvert = 2;   % twin vertical tails
     c.optins.sref  = m2ft(m2ft(geom.ref_area.v));
     c.optins.cbarr = m2ft(geom.wing.average_chord.v);
     c.optins.blref = m2ft(geom.wing.span.v);
@@ -105,7 +105,7 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     c.synths.xh     = m2ft(geom.elevator.le_x.v);
     c.synths.zh     = m2ft(model.geom.elevator.sections(1).le_z.v);
     c.synths.alih   = 0.0;
-    c.synths.xv     = m2ft(geom.rudder.le_x.v);
+    c.synths.xv = m2ft(geom.rudder.le_x.v) + 0.25 * m2ft(model.geom.rudder.root_chord.v);
     c.synths.zv     = m2ft(model.geom.rudder.sections(1).le_z.v);  % <-- ADD
     c.synths.vertup = true;
     
@@ -160,22 +160,22 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     c.vtschr.clalpa = repmat(0.090, 1, nMach);
     c.vtschr.clmax  = repmat(0.80,  1, nMach);
     c.vtschr.leri   = 0.007;
-    c.vtplnf.nvert  = 2.0;  % twin vertical tails
+    c.optins.nvert = 2;  
 
     cfgPass  = struct(); cfgPass.dim = 'FT'; cfgPass.cases(1) = c;
-    inpLocal = write_datcom_input(cfgPass, [passName '.inp']);
+    %inpLocal = write_datcom_input(cfgPass, [passName '.inp']);
 
-    inpLines = splitlines(string(fileread(inpLocal)));
-    for kL = 1:numel(inpLines)
-        if strlength(inpLines(kL)) > 72
-            fprintf('WARNING [%s] line %d too long (%d chars)\n', ...
-                    passName, kL, strlength(inpLines(kL)));
-        end
-    end
+    % inpLines = splitlines(string(fileread(inpLocal)));
+    % for kL = 1:numel(inpLines)
+    %     if strlength(inpLines(kL)) > 72
+    %         fprintf('WARNING [%s] line %d too long (%d chars)\n', ...
+    %                 passName, kL, strlength(inpLines(kL)));
+    %     end
+    % end
 
-    inpFile = fullfile(examplesDir, [passName '.inp']);
-    copyfile(inpLocal, inpFile, 'f');
-    out = runDatcom(inpFile, 'keepOut', true);
+    %inpLocal = write_datcom_input(cfgPass, fullfile(examplesDir, [passName '.inp']));
+    % inpFile = fullfile(examplesDir, [passName '.inp']);
+    out = runDatcom('datcom_A.inp', 'keepOut', true);
     fprintf('DATCOM %s: status=%d  raw tables=%d\n', passName, out.status, numel(out.tables));
 
        tbl = out.tables([]);
@@ -187,31 +187,37 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
             tbl = [tbl, out.tables(idx)];  % keep ALL tables (long. + lat.-dir.)
         end
     end
-    if isfile(inpLocal), delete(inpLocal); end
+    % if isfile(inpLocal), delete(inpLocal); end
 end
 
 % =========================================================================
 cfg = struct(); cfg.dim = 'FT';
 
-machA = [0.60, 0.75, 1.15, 1.30, 1.50];
-reA   = [2.0e6, 2.8e6, 4.5e6, 5.5e6, 6.5e6];
+machA = 0.60;
+reA   = 2.0e6;
 tblA  = runDatcomPass(cfg, geom, model, examplesDir, ...
                       machA, reA, alphaVec, xb, rb, xb_m, rb_m, ...
                       bln_ft, bla_ft, rb_at_wing_m, rb_at_ht_m, 'datcom_A');
+% machA = [0.60, 0.75, 1.15, 1.30, 1.50];
+% reA   = [2.0e6, 2.8e6, 4.5e6, 5.5e6, 6.5e6];
+% tblA  = runDatcomPass(cfg, geom, model, examplesDir, ...
+%                       machA, reA, alphaVec, xb, rb, xb_m, rb_m, ...
+%                       bln_ft, bla_ft, rb_at_wing_m, rb_at_ht_m, 'datcom_A');
+% 
+% machB = [1.20, 1.35, 1.65, 1.80];
+% reB   = [5.0e6, 5.8e6, 7.2e6, 8.0e6];
+% tblB  = runDatcomPass(cfg, geom, model, examplesDir, ...
+%                       machB, reB, alphaVec, xb, rb, xb_m, rb_m, ...
+%                       bln_ft, bla_ft, rb_at_wing_m, rb_at_ht_m, 'datcom_B');
+% 
+% machC = [1.60, 1.70, 1.80, 1.90, 2.00];
+% reC   = [7.5e6, 8.0e6, 8.5e6, 9.0e6, 9.5e6];
+% tblC  = runDatcomPass(cfg, geom, model, examplesDir, ...
+%                       machC, reC, alphaVec, xb, rb, xb_m, rb_m, ...
+%                       bln_ft, bla_ft, rb_at_wing_m, rb_at_ht_m, 'datcom_C');
 
-machB = [1.20, 1.35, 1.65, 1.80];
-reB   = [5.0e6, 5.8e6, 7.2e6, 8.0e6];
-tblB  = runDatcomPass(cfg, geom, model, examplesDir, ...
-                      machB, reB, alphaVec, xb, rb, xb_m, rb_m, ...
-                      bln_ft, bla_ft, rb_at_wing_m, rb_at_ht_m, 'datcom_B');
-
-machC = [1.60, 1.70, 1.80, 1.90, 2.00];
-reC   = [7.5e6, 8.0e6, 8.5e6, 9.0e6, 9.5e6];
-tblC  = runDatcomPass(cfg, geom, model, examplesDir, ...
-                      machC, reC, alphaVec, xb, rb, xb_m, rb_m, ...
-                      bln_ft, bla_ft, rb_at_wing_m, rb_at_ht_m, 'datcom_C');
-
-rawTables = [tblA, tblB, tblC];
+%rawTables = [tblA, tblB, tblC];
+rawTables = tblA;
 outDATCOM.tables = rawTables;  % keep all — both long. and lat.-dir. tables per Mach
 
 fprintf('\n=== DATCOM (M >= %.2f) ===\n', VLM_LIMIT);
@@ -596,32 +602,31 @@ text(0.009, 0.3, ...
     'Color','b');
 
 %% CN_beta vs. alpha generation
-% CN_beta = 180/pi *-1*[-0.0007911 -0.0007198 -0.0006842 -0.0007198 -0.0007882 -0.000919];
-% %Alpha_vec = [-4 -2 0 2 4 8];
-% 
-% figure;
-% plot(Alpha_vec, CN_beta, 'b-o', 'LineWidth', 1.5);
-% xlabel('alpha (deg)')
-% ylabel('Cn\_beta (/deg)')
-% title('Cn\_Beta vs. alpha');
-% 
-% % Set y-axis lower limit to -0.01
-% ylim([-0.01, max(ylim)]);
-% 
-% % Horizontal line at y = 0 — Level 1 flying qualities requirement
-% yline(0, 'r--', 'LineWidth', 1.5, 'Label', 'Level 1 Flying Qualities Requirement', ...
-%     'LabelHorizontalAlignment', 'left', 'LabelVerticalAlignment', 'bottom');
-% 
-% % Horizontal line at y = 0.04 — Navy preferred yaw stability value
-% yline(0.04, 'k--', 'LineWidth', 1.5, 'Label', 'Navy Preferred Yaw Stability value', ...
-%     'LabelHorizontalAlignment', 'left', 'LabelVerticalAlignment', 'bottom');
-% legend('Cn_beta');
-% grid on;
-% % =========================================================================
-% function v = model.x)
-% if isstruct(x), v = x.v; else, v = double(x); end
-% end
-% 
-% function s = ternary(cond, a, b)
-% if cond, s = a; else, s = b; end
-% end
+Alpha_veccnbeta = [-4, -2, 0, 2, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40];
+CN_beta   = 180*[1.949E-05, 4.875E-06, 0.000E+00, 4.898E-06, 1.960E-05, ...
+    6.140E-05, 1.329E-04, 2.369E-04, 3.635E-04, 5.089E-04, 6.689E-04, ...
+    8.400E-04, 1.019E-03, 1.201E-03]/pi;
+figure;
+plot(Alpha_veccnbeta, CN_beta, 'b-o', 'LineWidth', 1.5);
+xlabel('alpha (deg)')
+ylabel('Cn\_beta (/deg)')
+title('Cn\_Beta vs. alpha');
+
+% Set y-axis lower limit to -0.01
+ylim([-0.01, max(ylim)]);
+
+% Horizontal line at y = 0 — Level 1 flying qualities requirement
+yline(0, 'r--', 'LineWidth', 1.5, 'Label', 'Level 1 Flying Qualities Requirement', ...
+    'LabelHorizontalAlignment', 'left', 'LabelVerticalAlignment', 'bottom');
+
+% Horizontal line at y = 0.04 — Navy preferred yaw stability value
+yline(0.04, 'k--', 'LineWidth', 1.5, 'Label', 'Navy Preferred Yaw Stability value', ...
+    'LabelHorizontalAlignment', 'left', 'LabelVerticalAlignment', 'bottom');
+legend('Cn_beta');
+grid on;
+% =========================================================================
+
+S_VT   = 0.5 * (m2ft(model.geom.rudder.root_chord.v) + m2ft(model.geom.rudder.tip_chord.v)) * m2ft(model.geom.rudder.span.v);
+l_VT   = 41 - 34;          % moment arm ft
+CLa_VT = 180*0.09/pi;              % per deg (from your VTSCHR)
+CNB_est = 2 * eta_H * CLa_VT * S_VT * l_VT / (SW_ft2 * m2ft(geom.wing.span.v));

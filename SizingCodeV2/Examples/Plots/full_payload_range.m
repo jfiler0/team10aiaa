@@ -73,6 +73,8 @@ function full_payload_range(perf)
     title('Payload-Range Diagram');
     grid on;
     hold off;
+
+    xlim([700 1200])
 end
 
 function range_nm = get_mission_range(fun, input, perf, loadout)

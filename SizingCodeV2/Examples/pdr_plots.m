@@ -71,11 +71,11 @@ h6 = plot(NaN, NaN, 'k:', 'LineWidth', 1.5);   % dashed meaning
 
 legend([h1 h2 h3 h4 h5 h6], ...
     {'Clean', 'Air-to-Air', 'Air-to-Ground', ...
-     'Afterburner', 'Military Power', 'F18/Clean/AB'}, ...
-    'Location','northwest', 'FontSize',13);
+     'AB', 'Mil Power', 'F18 Best'}, ...
+    'Location','north', 'FontSize',11, 'NumColumns', 2);
 
 xlabel('Mach Number'); xlim([0 max(M_vec)])
-ylabel('Altitude [kft]'); ylim([0 90])
+ylabel('Altitude [kft]'); ylim([0 100])
 title('Max Mach Contours')
 grid on;
 
@@ -101,7 +101,7 @@ function plot_mach_contour(perf, loadout, T, W, M, H, line_spec)
     contour(M, m2ft(H)/1000, EP_grid, [0 0], line_spec, 'LineWidth', 1.5, 'HandleVisibility','off');
 end
 
-%% PAYLOAD RANG
+%% PAYLOAD RANGE
 full_payload_range(perf)
 
 %% RANGE VS COMBAT TIME

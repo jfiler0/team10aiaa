@@ -63,7 +63,7 @@ fprintf("<9> [Understanding the Threat] F18 STRIKE REACH = %.3f nm\n", range_nm_
 %% MEASURES OF MERIT
 
 fprintf("<16> [Measures of Merit] COST = %.5f mil\n", model.COST)
-fprintf("<16> [Measures of Merit] CRUISE SFC = %.5f lb/lbf.hr\n", 0) % ???
+% fprintf("<16> [Measures of Merit] CRUISE SFC = %.5f lb/lbf.hr\n", 0) % ???
 fprintf("<16> [Measures of Merit] COMBAT RADIUS = %.5f nm\n", range_nm_air2gnd_max)
 
 max_combat_time = get_mission_input_max(@eval_air2air, 700, perf, ["AIM-9X" "AIM-120" "AIM-120" "FPU-12" "FPU-12" "FPU-12" "AIM-120" "AIM-120" "AIM-9x"]);
@@ -174,14 +174,14 @@ fprintf("<37> [Performance Overview: Maximums ] MAX MACH 30kft = %.3f\n", max_ma
 
 perf.clear_data();
 perf.model.geom = setLoadout(geom, ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"]);
-max_mach_sealevel_mtow = compute_max_mach_at_h(perf, 1, 0);
+max_mach_sealevel_mtow = compute_max_mach_at_h(perf, 1, 0, 0.9);
 
 perf.clear_data();
 perf.model.geom = setLoadout(geom, ["" "" "" "" "" "" "" ""]);
-max_mach_sealevel_empty = compute_max_mach_at_h(perf, 0, 0);
+max_mach_sealevel_empty = compute_max_mach_at_h(perf, 0, 0, 0.9);
 
 max_mach_sealevel = (max_mach_sealevel_mtow + max_mach_sealevel_empty)/2;
-fprintf("<37> [Performance Overview: Maximums] MAX MACH SEALEVEL = %.3f\n", max_mach_sealevel);
+fprintf("<37> [Performance Overview: Maximums] MAX MACH SEALEVEL (MIL) = %.3f\n", max_mach_sealevel);
 fprintf("<37> [Performance Overview: Maximums] MAX MACH = %.3f\n", max_mach);
 fprintf("<37> [Performance Overview: Maximums] COMBAT CEILING = %.3f kft\n", m2ft(combat_ceiling)/1000)
 
@@ -198,7 +198,7 @@ cost_struct = xanderscript_modified(geom, true, false);
 
 fprintf("<77> [Why] COST = %.3f mil\n", model.COST);
 fprintf("<77> [Why] MAX MACH 30kft = %.3f\n", max_mach_30);
-fprintf("<77> [Why] MAX MACH SEALEVEL = %.3f\n", max_mach_sealevel);
+fprintf("<77> [Why] MAX MACH SEALEVEL (MIL) = %.3f\n", max_mach_sealevel);
 fprintf("<77> [Why] COMBAT REACH = %.3f nm\n", range_nm_air2air_max);
 
 max_ext_store_weight = geom.weights.mtow.v - geom.weights.empty.v - geom.weights.max_fuel_weight.v;

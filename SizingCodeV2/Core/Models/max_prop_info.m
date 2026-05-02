@@ -33,7 +33,7 @@ F_th_mil = T0_NoAB * alpha_dry; % (whatever unit thrust was passed with)
 F_th_AB = T0_AB * alpha_AB; % (whatever unit thrust was passed with)
 
 TSFC_mil = (0.9 + 0.30 * cond.M.v) .* sqrt(theta); %hour^-1; Mattingly Eq.3.55a (No, these are lbm/lbf*hr)
-TSFC_AB = settings.TSFC_AB_scaler * (1.6 + 0.27 * cond.M.v) .* sqrt(theta); %hour^-1; Mattingly Eq.3.55b (No, these are lbm/lbf*hr)
+TSFC_AB = settings.scalers.TSFC_AB_scaler.ask(cond.M.v) .* (1.6 + 0.27 * cond.M.v) .* sqrt(theta); %hour^-1; Mattingly Eq.3.55b (No, these are lbm/lbf*hr)
 
 TA = [F_th_mil ; F_th_AB];
 TSFC = [TSFC_mil ; TSFC_AB];

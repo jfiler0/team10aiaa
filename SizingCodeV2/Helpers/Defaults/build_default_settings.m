@@ -24,17 +24,35 @@ set.spot_factor_reference = 84.517; % Folded wing area of an f18e
 
 X0 = [1.2,      0.93,     1.8, 1.05,  1.3,    0.85,    1.6,    0.96,     0.42]; xs = X0;
 
-set.CD0_scaler = 1.1; % general scaler to parasite drag
-set.CDi_scaler = 0.907;
-set.CDw_scaler = 1.7; % general scaler to wave drag
-set.CLa_scaler = 1.05;
-set.CDp_scaler = 1.23;
-set.SpotFactor_scaler = 1;
+% set.CD0_scaler = 1.1; % general scaler to parasite drag
+% set.CDi_scaler = 0.907;
+% set.CDw_scaler = 1.7; % general scaler to wave drag
+% set.CLa_scaler = 1.05;
+% set.CDp_scaler = 1.23;
+% set.SpotFactor_scaler = 1;
+% set.COST_scaler = 1;
+% set.TA_scaler = 0.98;
+% set.TSFC_scaler = 1.6; % 1.3 1.554
+% set.TSFC_AB_scaler = 1.5; % extra scaler applied to after burner (mainly for max prop condition)
 
-set.COST_scaler = 1;
-set.TA_scaler = 0.98;
-set.TSFC_scaler = 1.6; % 1.3 1.554
-set.TSFC_AB_scaler = 1.5; % extra scaler applied to after burner (mainly for max prop condition)
+% set.scalers will be looped through replacing the structs with the correction_factor class over again since writing removes the class
+% defenition
+
+mach_range = [0.3, 0.8, 1.2, 1.6];
+
+set.scalers.CD0_scaler = correction_factor(mach_range, [0.8 0.9 1.1 1.2]); % general scaler to parasite drag
+set.scalers.CDi_scaler = correction_factor(0, 0.907);
+set.scalers.CDw_scaler = correction_factor(0, 1.7); % general scaler to wave drag
+set.scalers.CLa_scaler = correction_factor(0, 1.05);
+set.scalers.CDp_scaler = correction_factor(0, 1.23);
+set.scalers.SpotFactor_scaler = correction_factor(0, 1);
+set.scalers.COST_scaler = correction_factor(0, 1);
+set.scalers.TA_scaler = correction_factor(0, 0.98);
+set.scalers.TSFC_scaler = correction_factor(0, 1.6); % 1.3 1.554
+set.scalers.TSFC_AB_scaler = correction_factor(0, 1.5); % extra scaler applied to after burner (mainly for max prop condition)
+
+% correction_factor(mach_vec, scale_vec)
+
 
 set.WE_scaler = 0.96; % scales all components and the final empty weight 0.8752
 set.WF_ratio =  0.52; % WF = WF_ratio * (MTOW - WE) -> internal fuel weight

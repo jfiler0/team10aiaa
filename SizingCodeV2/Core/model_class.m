@@ -49,7 +49,7 @@ classdef model_class < handle
                 result = obj.mem.(property_name);
             else
                 % Compute the value using the provided function
-                result = compute_func() * scaler;
+                result = compute_func() .* scaler.ask(obj.cond.M.v); % now has the potential to be a vector and has ask command
                 
                 % Check if we should write to cache
                 should_write = (override ~= obj.settings.codes.OVER_NO_WRITE && ...
@@ -136,7 +136,7 @@ classdef model_class < handle
             % Define the computation as a nested function
             compute_CD0 = @() obj.compute_CD0_value(code);
             
-            CD0 = obj.compute_with_cache('CD0', override, compute_CD0, obj.settings.CD0_scaler);
+            CD0 = obj.compute_with_cache('CD0', override, compute_CD0, obj.settings.scalers.CD0_scaler);
         end
         
             function value = compute_CD0_value(obj, code)
@@ -168,7 +168,7 @@ classdef model_class < handle
             
             compute_CDi = @() obj.compute_CDi_value(code);
             
-            CDi = obj.compute_with_cache('CDi', override, compute_CDi, obj.settings.CDi_scaler);
+            CDi = obj.compute_with_cache('CDi', override, compute_CDi, obj.settings.scalers.CDi_scaler);
         end
         
             function value = compute_CDi_value(obj, code)
@@ -211,7 +211,7 @@ classdef model_class < handle
             
             compute_CDw = @() obj.compute_CDw_value(code);
             
-            CDw = obj.compute_with_cache('CDw', override, compute_CDw, obj.settings.CDw_scaler);
+            CDw = obj.compute_with_cache('CDw', override, compute_CDw, obj.settings.scalers.CDw_scaler);
         end
 
             function value = compute_CDw_value(obj, code)
@@ -245,7 +245,7 @@ classdef model_class < handle
             
             compute_CLa = @() obj.compute_CLa_value(code);
             
-            CLa = obj.compute_with_cache('CLa', override, compute_CLa, obj.settings.CLa_scaler);
+            CLa = obj.compute_with_cache('CLa', override, compute_CLa, obj.settings.scalers.CLa_scaler);
         end
 
             function value = compute_CLa_value(obj, code)
@@ -286,7 +286,7 @@ classdef model_class < handle
             
             compute_COST = @() obj.compute_COST_value(code);
             
-            COST = obj.compute_with_cache('COST', override, compute_COST, obj.settings.COST_scaler);
+            COST = obj.compute_with_cache('COST', override, compute_COST, obj.settings.scalers.COST_scaler);
         end
 
             function value = compute_COST_value(obj, code)
@@ -316,7 +316,7 @@ classdef model_class < handle
             
             % The scalers are embeded in the equations now
             % [TA, TSFC, alpha]
-            PROP = obj.compute_with_cache('PROP', override, compute_PROP, 1);
+            PROP = obj.compute_with_cache('PROP', override, compute_PROP, correction_factor(0, 1)); % add a correction factor of 1 since they are applied elsewhere for prop
         end
             
             % Note that TA is scaled
@@ -382,8 +382,8 @@ classdef model_class < handle
 
                 % seperating out the checks since they are the same across models
 
-                TA = TA * obj.settings.TA_scaler;
-                TSFC = TSFC * obj.settings.TSFC_scaler;
+                TA = TA .* obj.settings.scalers.TA_scaler.ask(obj.cond.M.v);
+                TSFC = TSFC .* obj.settings.scalers.TSFC_scaler.ask(obj.cond.M.v);
 
                 less_than_0 = TA < 0;
                 TA(less_than_0) = 0;
@@ -401,7 +401,7 @@ classdef model_class < handle
             
             compute_CDp = @() obj.compute_CDp_value(code);
             
-            CDp = obj.compute_with_cache('CDp', override, compute_CDp, obj.settings.CDp_scaler);
+            CDp = obj.compute_with_cache('CDp', override, compute_CDp, obj.settings.scalers.CDp_scaler);
         end
 
             function value = compute_CDp_value(obj, code)
@@ -430,7 +430,7 @@ classdef model_class < handle
             
             compute_SpotFactor = @() obj.compute_SpotFactor_value(code);
             
-            SpotFactor = obj.compute_with_cache('SpotFactor', override, compute_SpotFactor, obj.settings.SpotFactor_scaler);
+            SpotFactor = obj.compute_with_cache('SpotFactor', override, compute_SpotFactor, obj.settings.scalers.SpotFactor_scaler);
         end
 
             function value = compute_SpotFactor_value(obj, code)

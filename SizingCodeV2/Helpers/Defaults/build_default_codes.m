@@ -29,6 +29,7 @@ function codes = build_default_codes()
 
     codes.CDp_CONST = 801; % payload drag -> all payloads have the same CD0
     codes.CDp_IGNORE = 802;
+    codes.CDp_WAVE = 803; % has both const CDp for subsonic and wave drag with basic sears hack multiplier
 
     codes.SpotFactor_BASIC = 1001;
 

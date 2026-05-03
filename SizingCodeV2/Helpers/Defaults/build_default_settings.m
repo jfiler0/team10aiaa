@@ -40,7 +40,7 @@ X0 = [1.2,      0.93,     1.8, 1.05,  1.3,    0.85,    1.6,    0.96,     0.42]; 
 
 mach_range = [0.3, 0.8, 1.2, 1.6];
 
-set.scalers.CD0_scaler = correction_factor(mach_range, [0.8 0.9 1.1 1.2]); % general scaler to parasite drag
+set.scalers.CD0_scaler = correction_factor(0, 1.1); % general scaler to parasite drag
 set.scalers.CDi_scaler = correction_factor(0, 0.907);
 set.scalers.CDw_scaler = correction_factor(0, 1.7); % general scaler to wave drag
 set.scalers.CLa_scaler = correction_factor(0, 1.05);
@@ -50,9 +50,9 @@ set.scalers.COST_scaler = correction_factor(0, 1);
 set.scalers.TA_scaler = correction_factor(0, 0.98);
 set.scalers.TSFC_scaler = correction_factor(0, 1.6); % 1.3 1.554
 set.scalers.TSFC_AB_scaler = correction_factor(0, 1.5); % extra scaler applied to after burner (mainly for max prop condition)
+set.scalers.CDp_EW_scaler = correction_factor(0, 0);
 
 % correction_factor(mach_vec, scale_vec)
-
 
 set.WE_scaler = 0.96; % scales all components and the final empty weight 0.8752
 set.WF_ratio =  0.52; % WF = WF_ratio * (MTOW - WE) -> internal fuel weight
@@ -68,7 +68,7 @@ set.CDw_model = set.codes.CDw_BASIC;
 set.CLa_model = set.codes.CLa_RAYMER;
 set.COST_model = set.codes.COST_XANDERSCRIPT;
 set.PROP_model = set.codes.PROP_HOOK; % PROP_BASIC PROP_NPSS PROP_HOOK PROP_HYBRID
-set.CDp_model = set.codes.CDp_CONST;
+set.CDp_model = set.codes.CDp_CONST; % CDp_WAVE
 set.SpotFactor_model = set.codes.SpotFactor_BASIC;
 
 set.CDp_CONST_CD = 0.15; % the drag coefficent used for each store in the CDp_CONST model

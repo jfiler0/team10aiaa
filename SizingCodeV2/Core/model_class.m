@@ -412,8 +412,39 @@ classdef model_class < handle
                             store = obj.geom.stores(i);
                             value = value + store.frontal_area.v * obj.settings.CDp_CONST_CD / obj.geom.ref_area.v;
                         end
-                    case obj.settings.codes.CDp_IGNORE
-                        value = 0;
+                    case obj.settings.codes.CDp_WAVE
+                        if(isempty(obj.geom.stores))
+                            value = 0;
+                            return
+                        end
+                    
+                        % Vectorized field extraction from struct array
+                        frontal_areas  = [obj.geom.stores.frontal_area];
+                        frontal_vals   = [frontal_areas.v];
+                    
+                        lengths        = [obj.geom.stores.length];
+                        length_vals    = [lengths.v];
+                    
+                        diameters      = [obj.geom.stores.diameter];
+                        diameter_vals  = [diameters.v];
+
+                        area_scale = frontal_vals / obj.geom.ref_area.v;
+                    
+                        % Compute per-store constants (no Mach dependency)
+                        sub_vals      = obj.settings.CDp_CONST_CD;
+                        fineness_terms = (9 * pi^2 ./ (8 * (length_vals ./ diameter_vals).^2));
+                        sup_vals      = sub_vals + fineness_terms;
+                    
+                        % Sum across all stores — now just two scalar constants
+                        total_sub = sum(sub_vals.*area_scale);
+                        total_sup = sum(sup_vals.*area_scale);
+                    
+                        % Single transonicMerge call on the summed scalars
+                        sub_fun = @(M, I) M*0 + total_sub;
+
+                        M_ref = 1.5;
+                        sup_fun = @(M, I) obj.settings.scalers.CDp_EW_scaler.ask(M) .* total_sup * sqrt(M_ref^2 - 1) ./ sqrt(M.^2 - 1);
+                        value = obj.transonicMerge(sub_fun, sup_fun);
 
                     otherwise
                         error("Code '%i' has no recognized definition for the CDp model.", code)

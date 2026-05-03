@@ -14,7 +14,7 @@ plane.name = json_entry("Aircraft Name", "F/A-18E Super Hornet", "s");
 plane.id = json_entry("Aircraft ID", "f18_superhornet", "s");
 
 plane.fuselage.length = json_entry("Fuselage Length", 17.54, "m");
-plane.fuselage.max_area = json_entry("Fuselage Max Area", 2.8, "m2");
+plane.fuselage.max_area = json_entry("Fuselage Max Area", 4.25, "m2");
 plane.fuselage.E_WD = json_entry("Fuselage Wave Drag Efficency", 2.2, "");
 
 plane.input.g_limit = json_entry("Structural G-Limit", 7.5, "");

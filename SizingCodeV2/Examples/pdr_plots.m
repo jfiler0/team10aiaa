@@ -28,9 +28,7 @@ one_vec = ones(size(h_vec_long));
 perf.model.cond = generateCondition(perf.model.geom, h_vec_long, M_vec_long,one_vec, W * one_vec, one_vec);
 filter = -perf.ExcessPower; % When a filter is less than 0, it is plotted
 ydata = m2ft(H);
-general_contour("Mach Number", "Altitude [ft]", "TSFC [lbm/lbfhr]", "TSFC (Max AB)", M, ydata, kgNs_2_lbmlbfhr(perf.TSFC), filter)
-xline(1.6, 'k:', LineWidth=2, DisplayName="M1.6 Req")
-legend(Location="northwest")
+general_contour("Mach Number", "Altitude [ft]", "TSFC [lbm/lbfhr]", "TSFC (Max AB)", M, ydata, kgNs_2_lbmlbfhr(perf.TSFC), filter);
 perf.model.clear_mem(); perf.clear_data();
 
 exportPDF("TSFC_MaxAB")

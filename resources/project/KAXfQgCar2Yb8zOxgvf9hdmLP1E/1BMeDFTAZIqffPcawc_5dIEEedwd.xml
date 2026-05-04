@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Info File="SizingCodeV2/initialize.m" GroupUUID="default" Icon="" Name="initialize" Type="StartUp" Visible="0">
+    <Extension Name="StartUpPrev" Value="cbecebe1-2a2e-4cfe-9430-e00b4bed1ad7"/>
+</Info>

@@ -1,6 +1,7 @@
-function surf = assemble_surface(sections, mirror)
+function surf = assemble_surface(sections, settings, mirror)
     arguments
         sections 
+        settings = readSettings()
         mirror = true
     end
     % mirror is true for most things. But for the f16 it is false as it is just one. This changes how some calculations are done
@@ -14,6 +15,7 @@ function surf = assemble_surface(sections, mirror)
     prev_y = 0;
     prev_yp = 0;
     prev_z = 0;
+    dCLmax = 0; % in the loop will be scaled by section area and then divided later
     for j = 1:length(sections)
         % loop through the sections to correct XYZ coordinates to the body using local dihedral
         sections(j).le_x.v = sections(j).le_x.v + sections(j).offset(1);
@@ -39,6 +41,7 @@ function surf = assemble_surface(sections, mirror)
     surf.qrtr_chd_x = json_entry("Quarter Chord X Position", sections(1).qrtr_chd_coords(1), "m", true);
     surf.root_chord = json_entry("Root Chord", sections(1).chord_length.v, "m", true);
     surf.tip_chord = json_entry("Tip Chord", sections(end).chord_length.v, "m", true);
+    
     if mirror
         surf.span = json_entry("Span", 2 * sections(end).le_y.v, "m", true); % this ends up as PROJECTED span which changes vtail aspect ratio (AND INCLUDES MIRRORED)
     else
@@ -58,7 +61,9 @@ function surf = assemble_surface(sections, mirror)
     surf.qrtr_chd_x = json_entry("Quarter Chord X Position", 0, "m", true); % filled in a sec
     surf.average_tc = json_entry("Average t/c Ratio", 0, "", true); % filled in a sec
     surf.x_cp = json_entry("Surface CP X Pos from nose", 0, "", true); % filled in a sec
+    surf.dCL_max = json_entry("CL Max Increase", 0, "", true);
 
+    % NOTE THAT dCL_max only inherits from the inboard panel section
     num_panels = length(sections)-1;
     for i = 1:num_panels
         height = sections(i+1).le_yp.v - sections(i).le_yp.v; % spanwist distance fo the panels
@@ -81,6 +86,7 @@ function surf = assemble_surface(sections, mirror)
         surf.qrtr_chd_x.v = surf.qrtr_chd_x.v + sections(1).qrtr_chd_coords(1) * area;
         surf.average_tc.v = surf.average_tc.v + 0.5 * ( sections(i+1).tc.v + sections(i).tc.v ) * area;
         surf.x_cp.v = surf.x_cp.v + x_cp*area;
+        surf.dCL_max.v = surf.dCL_max.v + area * get_CLmaxInc(sections(i).le_device, sections(i).te_device, settings) * cosd(te_sweep);
     end
 
     surf.average_chord.v = surf.average_chord.v / surf.area.v;
@@ -90,6 +96,7 @@ function surf = assemble_surface(sections, mirror)
     surf.qrtr_chd_x.v = surf.qrtr_chd_x.v / surf.area.v;
     surf.average_tc.v = surf.average_tc.v / surf.area.v;
     surf.x_cp.v = surf.x_cp.v / surf.area.v;
+    surf.dCL_max.v = surf.dCL_max.v / surf.area.v;
 
     surf.AR = json_entry("Aspect Ratio", surf.span.v / surf.average_chord.v, "m", true);
 end

@@ -271,7 +271,7 @@ fprintf("LANDING | MTOW (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , thr
 v_cmea_rfp = compute_cmea(perf, geom.weights.mtow.v);
 fprintf("       CMEA = %.2f kt\n", ms2kt(v_cmea_rfp));
 
-[v_land, glide_angle, throttle, descent_rate] = compute_landing_speed(perf, 0); perf.clear_data(); % landing at empty weight
+ [v_land, glide_angle, throttle, descent_rate] = compute_landing_speed(perf, 0); perf.clear_data(); % landing at empty weight
 fprintf("LANDING | EMPTY WEIGHT (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.1f perc, descent rate = %.2f ft/s\n", N2lb(weightRatio(0, perf.model.geom)), ms2kt(v_land), glide_angle, 100*throttle, m2ft(descent_rate))
 fprintf("       CMEA = %.2f kt\n", ms2kt(compute_cmea(perf, 1)) );
 

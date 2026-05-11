@@ -15,7 +15,9 @@ function sec = new_section(chord_length, le_x, le_y, opts)
         opts.tc double = 0.04 % thickness of the section
         opts.control_name string = ""
         opts.offset (1,3) double = [0 0 0] % needs to be three elements long. X, Y, Z. This offset stacks with each section. An initial offset applies to all sections after.
-
+        
+        opts.le_device int16 = 0 % nothing
+        opts.te_device int16 = 0 % no flap
     end
 
     sec = struct();
@@ -38,4 +40,7 @@ function sec = new_section(chord_length, le_x, le_y, opts)
     sec.control_name = json_entry("Control Name", opts.control_name, "s");
 
     sec.offset = opts.offset; % this is just a vector which is added to the section when build in assemble_surface for more flexibility
+
+    sec.le_device = opts.le_device;
+    sec.te_device = opts.te_device;
 end

@@ -16,6 +16,8 @@ function sec = btw_section(sec_inner, sec_outer, span_pos, opts)
         % Flap only needs to be defined for inboard section
         opts.flap_length double = 0 % normalized by chord length. If 0 there is no flap
         opts.control_name string = ""
+        opts.le_device int16 = 0
+        opts.te_device int16 = 0
     end
 
     sec = sec_inner;
@@ -54,4 +56,7 @@ function sec = btw_section(sec_inner, sec_outer, span_pos, opts)
     sec.control_name.v = opts.control_name;
 
     sec.offset = [0 0 0]; % not bothering with this for btw_section
+
+    sec.le_device = opts.le_device;
+    sec.te_device = opts.te_device;
 end

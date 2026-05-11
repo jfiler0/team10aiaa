@@ -1,4 +1,4 @@
-function cond = P_Specified_Condition(perf, EP, h, MV, W, MV_decleration)
+function cond = P_Specified_Condition(perf, EP, h, MV, W, MV_decleration, load_factor)
     arguments
         perf 
         EP 
@@ -6,6 +6,7 @@ function cond = P_Specified_Condition(perf, EP, h, MV, W, MV_decleration)
         MV 
         W 
         MV_decleration = perf.model.settings.codes.MV_DEC_UNKOWN
+        load_factor = 1
     end
 
     % EP -> array of target excess power for each flight condition
@@ -20,7 +21,7 @@ function cond = P_Specified_Condition(perf, EP, h, MV, W, MV_decleration)
     if ~isstruct(perf.model.cond)
         perf.model.cond = buildDefaultCondStruct();
     end
-    perf.model.cond = generateCondition(perf.model.geom, h(:)', MV(:)', one_vec(:)', W(:)', one_vec(:)', perf.model.cond, MV_decleration); % make sure everything is forced to row vector with (:)'
+    perf.model.cond = generateCondition(perf.model.geom, h(:)', MV(:)', load_factor * one_vec(:)', W(:)', one_vec(:)', perf.model.cond, MV_decleration); % make sure everything is forced to row vector with (:)'
     EP = EP(:)'; % also needs to be a row vector
    
     drag = perf.Drag;

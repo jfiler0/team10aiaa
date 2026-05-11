@@ -9,6 +9,7 @@
 clear; % Start fresh
 
 plane = struct();
+settings = readSettings();
 
 plane.name = json_entry("Aircraft Name", "F/A-18E Super Hornet", "s");
 plane.id = json_entry("Aircraft ID", "f18_superhornet", "s");
@@ -33,14 +34,14 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(1500), "N"); % extra avi
     sec6 = new_section(1.686, lerx_root+wing_le_x-1.686 - 0.25, 4.518 + 0.297 + 1.509, tc=0.02, dihedral=-1.764);
     
     % MAIN FLAP
-    sec2 = btw_section(sec1, sec6, 0.1, flap_length=0.2, control_name="Main Flap");
+    sec2 = btw_section(sec1, sec6, 0.1, flap_length=0.2, control_name="Main Flap", le_device=settings.codes.LE_DEVICE_SLOT, te_device=settings.codes.TE_DEVICE_PLAIN);
     sec3 = btw_section(sec1, sec6, 0.5);
     
     % AILERON
     sec4 = btw_section(sec1, sec6, 0.6, flap_length=0.1, control_name="Aileron");
     sec5 = btw_section(sec1, sec6, 0.9);
     
-    plane.wing = assemble_surface([sec0, sec1, sec2, sec3, sec4, sec5, sec6]);
+    plane.wing = assemble_surface([sec0, sec1, sec2, sec3, sec4, sec5, sec6], settings);
 
 % ELEVATOR DEFENITION
     sec0 = new_section(3.234, 13.622, 0.328, tc=0.04, offset=[0 0 -0.2]);
@@ -49,7 +50,7 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(1500), "N"); % extra avi
     % Flap
     sec1 = btw_section(sec0, sec2, 0.1, flap_length=1, control_name="Elevator"); % Full Flying
     
-    plane.elevator = assemble_surface([sec0, sec1, sec2]);
+    plane.elevator = assemble_surface([sec0, sec1, sec2], settings);
 
 % VTAIL DEFENITION
     sec0 = new_section(3.2, 12.5, 1, tc=0.04, dihedral=68.84, offset=[0 0.5 -0.6], twist=-2);
@@ -59,7 +60,7 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(1500), "N"); % extra avi
     sec1 = btw_section(sec0, sec3, 0.1, flap_length=0.15, control_name="Rudder"); % vtail
     sec2 = btw_section(sec0, sec3, 0.9);
     
-    plane.rudder = assemble_surface([sec0, sec1, sec2, sec3]);
+    plane.rudder = assemble_surface([sec0, sec1, sec2, sec3], settings);
 
 plane.type = json_entry("Raymer Aircraft Type", "Jet fighter", "s"); % for coefficent lookups
 plane.weights.raymer.A = json_entry("Raymer A Coeff", getRaymerCoefficents(plane.type.v, 1), "");

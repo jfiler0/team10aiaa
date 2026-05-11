@@ -114,30 +114,33 @@ classdef missionSegObj < handle
                     is_specified = true;
             end
         end
-        function [W_out, h_out, v_out, d_out] = evaluate(obj, perf, W_in)
+        function [W_out, h_out, v_out, d_out, t_out] = evaluate(obj, perf, W_in)
             % INPUT: The performance obj (and the missionSeg object)
             % OUTPUTS: W, h, v, d (reative to start). These can be column vectors if it the seg
-            h_out = obj.h; v_out = obj.vel; d_out = v_out * 60; % default vals if not set
+            h_out = obj.h; v_out = obj.vel; t_out = 60; d_out = v_out * t_out; % default vals if not set
             switch(obj.type)
                 case 'TAKEOFF'
                     W_out = 0.97 * W_in;
+                    d_out = nm2m(0.5); t_out = d_out/v_out; % override to have reasonable distance
                 case 'CLIMB'
                     W_out = 0.985 * W_in;
                 case 'CRUISE'
-                    [W_out, h_out, v_out, d_out] = obj.evaluate_split(@(perf, W_in, distance) obj.evaluate_cruise(perf, W_in, distance), perf, W_in, obj.distance);
+                    [W_out, h_out, v_out, d_out, t_out] = obj.evaluate_split(@(perf, W_in, distance) obj.evaluate_cruise(perf, W_in, distance), perf, W_in, obj.distance);
                 case 'LOITER'
-                    [W_out, h_out, v_out, d_out] = obj.evaluate_split(@(perf, W_in, distance) obj.evaluate_loiter(perf, W_in, distance), perf, W_in, obj.time);
+                    [W_out, h_out, v_out, d_out, t_out] = obj.evaluate_split(@(perf, W_in, distance) obj.evaluate_loiter(perf, W_in, distance), perf, W_in, obj.time);
                 case 'COMBAT'
-                    [W_out, h_out, v_out, d_out] = obj.evaluate_split(@(perf, W_in, distance) obj.evaluate_combat(perf, W_in, distance), perf, W_in, obj.time);
+                    [W_out, h_out, v_out, d_out, t_out] = obj.evaluate_split(@(perf, W_in, distance) obj.evaluate_combat(perf, W_in, distance), perf, W_in, obj.time);
                 case 'LANDING'
                     W_out = 0.995 * W_in;
+                    d_out = nm2m(0.5); t_out = d_out/v_out; % override to have reasonable distance
             end
         end
-        function [W_out, h_out, v_out, d_out] = evaluate_split(obj, fun, perf, W_in, split_input)
+        function [W_out, h_out, v_out, d_out, t_out] = evaluate_split(obj, fun, perf, W_in, split_input)
             % evaluats fun N times advancing it forward as needed and dividing up split_input
-            W_out = zeros([obj.N_split, 1]); h_out = W_out; v_out = W_out; d_out = W_out;
+            W_out = zeros([obj.N_split, 1]); h_out = W_out; v_out = W_out; d_out = W_out; t_out = W_out;
 
             prev_d = 0; % need to track distance increase
+            prev_t = 0;
             for i = 1:obj.N_split
                 % running this function will update perf to be the optimal/set for the mission
                 time = fun(perf, W_in, split_input / cast(obj.N_split,"double")); % having issues with integer def carrying
@@ -147,7 +150,8 @@ classdef missionSegObj < handle
                 W_out(i) = W_in - perf.model.settings.g_const * perf.mdotf * time;
                 W_in = W_out(i);
                 d_out(i) = time * perf.model.cond.vel.v + prev_d; % add previous distance
-                prev_d = d_out(i); % update
+                t_out(i) = time + prev_t; % add previous time
+                prev_d = d_out(i); prev_t = t_out(i); % update
             end
         end
         function time = evaluate_cruise(obj, perf, W_in, distance)
@@ -163,9 +167,9 @@ classdef missionSegObj < handle
         end
         function time = evaluate_combat(obj, perf, W_in, time)
             if(obj.throttle_override==0) % fly at best turn rate
-                fun = @(perf) 1./perf.TurnRate; % best combat when this is minimized
+                fun = @(perf) abs(1./perf.TurnRate); % best combat when this is minimized
             else % fly at max excess power as it is now non zero
-                fun = @(perf) 1./perf.ExcessPower; % best combat when this is minimized
+                fun = @(perf) abs(1./perf.ExcessPower); % best combat when this is minimized
             end 
             perf = obj.set_cond_opt(perf, W_in, fun);
         end
@@ -222,7 +226,8 @@ classdef missionSegObj < handle
                 % so as insane as it is, we don't need to extract the optimum. perf stays passed as its memory position
                 % so when fminunc returns, it will have modified perf
                 options = optimoptions(@fminunc,'Display','off');
-                fminunc(fun_mod, X0, options);
+                [~, ~, ~, output] = fminunc(fun_mod, X0, options);
+                % fprintf('  [%s] iters: %d | fevals: %d\n', obj.type, output.iterations, output.funcCount);
             end 
             % else we already set the default and just keep that
         end

@@ -75,12 +75,12 @@ classdef model_class < handle
                 end
             end
         end
-        
+       
         function value = transonicMerge(obj, sub_fun, sup_fun)
             transonic_range = obj.settings.transonic_range;
             M = obj.cond.M.v;
-        
-            % Fast paths - avoid spline entirely for pure subsonic/supersonic
+
+            % Fast paths
             if all(M <= transonic_range(1))
                 value = sub_fun(M, true(size(M)));
                 return
@@ -89,13 +89,13 @@ classdef model_class < handle
                 value = sup_fun(M, true(size(M)));
                 return
             end
-        
+
             index_sub  = M <= transonic_range(1);
             index_sup  = M >= transonic_range(2);
             index_tran = ~index_sub & ~index_sup;
-        
+
             value = zeros(size(M));
-        
+
             if any(index_sub)
                 value(index_sub) = sub_fun(M(index_sub), index_sub);
             end
@@ -103,19 +103,30 @@ classdef model_class < handle
                 value(index_sup) = sup_fun(M(index_sup), index_sup);
             end
             if any(index_tran)
-                I_tran_start = find(index_tran, 2, 'first');
-                I_tran_end   = find(index_tran, 2, 'last');
-                index_tran_start = false(size(index_tran));
-                index_tran_end   = false(size(index_tran));
-                index_tran_start(I_tran_start) = true;
-                index_tran_end(I_tran_end)     = true;
-        
-                M_eps = obj.settings.transonic_M_eps;
-                M_vec = [transonic_range(1)-M_eps, transonic_range(1), ...
-                         transonic_range(2),       transonic_range(2)+M_eps];
-                value_spline_input = [ sub_fun(M_vec(1:2), index_tran_start), ...
-                                        sup_fun(M_vec(3:4), index_tran_end) ];
-                value(index_tran) = spline(M_vec, value_spline_input, M(index_tran));
+                M_t  = M(index_tran);
+                M0   = transonic_range(1);
+                M1   = transonic_range(2);
+                eps  = obj.settings.transonic_M_eps;
+
+                % Values at boundaries
+                f0 = sub_fun(M0,       index_tran);
+                f1 = sup_fun(M1,       index_tran);
+
+                % One-sided finite difference slopes at each boundary
+                f0m = sub_fun(M0 - eps, index_tran);
+                f1p = sup_fun(M1 + eps, index_tran);
+                d0  = (f0 - f0m) / eps;   % slope entering transonic from sub side
+                d1  = (f1p - f1) / eps;   % slope leaving transonic on sup side
+
+                % Hermite basis on t in [0,1]
+                t  = (M_t - M0) / (M1 - M0);
+                dM = M1 - M0;
+                h00 =  2*t.^3 - 3*t.^2 + 1;
+                h10 =     t.^3 - 2*t.^2 + t;
+                h01 = -2*t.^3 + 3*t.^2;
+                h11 =     t.^3 -   t.^2;
+
+                value(index_tran) = h00.*f0 + h10.*dM.*d0 + h01.*f1 + h11.*dM.*d1;
             end
         end
 

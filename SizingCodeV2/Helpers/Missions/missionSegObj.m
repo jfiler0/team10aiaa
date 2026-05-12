@@ -183,7 +183,7 @@ classdef missionSegObj < handle
             % return the set performance object with the optimal condition to minimzie the given function. Given x0 [h, vel]
             if obj.do_search && (~obj.h_specified || (~obj.vel_specified && ~obj.mach_specified))
                 % just for readability here:
-                do_h_opt = ~obj.h_specified; do_vel_opt = ~obj.vel_specified; do_mach_opt = ~obj.mach_specified && ~obj.vel_specified;
+                do_h_opt = ~obj.h_specified; do_vel_opt = ~obj.vel_specified && ~obj.mach_specified; do_mach_opt = ~obj.mach_specified && ~do_vel_opt;
 
                 % Remeber: X values are scaled in their functions so X0 is not the physical starting values
                 if(do_h_opt)

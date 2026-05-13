@@ -1,6 +1,7 @@
-function W_res = eval_mission(perf, segObjs, do_plot, W_start, loadout)
-    perf.model.geom = setLoadout(perf.model.geom, loadout);
+function W_res = eval_mission(perf, mission_obj, do_plot, W_start)
+    perf.model.geom = setLoadout(perf.model.geom, mission_obj.loadout);
     W_current = weightRatio(W_start, perf.model.geom);
+    segObjs = mission_obj.segObjs;
 
     if do_plot
         n_segs = length(segObjs);

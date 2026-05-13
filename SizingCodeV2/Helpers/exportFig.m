@@ -4,7 +4,7 @@ function exportFig(name)
         error('No valid figure found.');
     end
 
-    filepath = fullfile("C:\Users\jfile\Downloads", name);
+    filepath = fullfile("C:\Users\VonBe\Downloads", name);
     if ~endsWith(filepath, '.pdf')
         filepath = filepath + ".pdf";
     end

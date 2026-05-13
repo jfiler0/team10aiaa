@@ -33,5 +33,5 @@ commandList = [];
 
 %commandList = ["load f18_superhornet","INSPECT","GRAPHING", "levelFlightPerformance"];
 
-commandList = ["load Hellstingerv3", "INSPECT","GRAPHING", "geomView"];
+%commandList = ["load Hellstingerv3", "INSPECT","GRAPHING", "geomView"];
 console.start(commandList);

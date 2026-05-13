@@ -57,10 +57,10 @@ plane.weights.w_fixed = json_entry("Fixed Weight", lb2N(2000), "N");
     % plane.elevator = assemble_surface([sec0, sec2]);
 
 % VTAIL DEFENITION
-    root_chord = 2.5;
-    tip_chord = 1;
+    root_chord = 3.5;
+    tip_chord = 1.85;
     sec0 = new_section(root_chord, plane.fuselage.length.v - root_chord, fus_rad/2, tc=0.04, dihedral=45);
-    sec3 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 2.25, tc=0.03, dihedral=45);
+    sec3 = new_section(tip_chord, plane.fuselage.length.v - tip_chord, 3.5, tc=0.03, dihedral=45);
     
     % Flap
     sec1 = btw_section(sec0, sec3, 0.1, flap_length=0.15, control_name="Rudder"); % vtail

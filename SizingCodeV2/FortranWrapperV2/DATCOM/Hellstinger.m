@@ -6,11 +6,7 @@ close all
 
 %% ---- Startup -----------------------------------------------------------
 initialize
-matlabSetup% build_kevin_cad
-
-% build_default_settings
-% settings = readSettings();
-% geom     = loadAircraft("Copy_of_kevin_cad", settings);
+matlabSetup
 build_hellstinger
 
 build_default_settings
@@ -25,20 +21,18 @@ thisDir     = fileparts(mfilename('fullpath'));
 examplesDir = fullfile(thisDir, 'Examples');
 perf.model.cond = levelFlightCondition(perf, 0, 0.3, model.geom.weights.mtow.v);
 
-displayAircraftGeom(geom)
-
 %% ========================================================================
 %%  Part 1 — JKayVLM  (M < 0.6)
 %% ========================================================================
 VLM_LIMIT = 0.60;
-alphaVec  = [-4, -2, 0, 2, 4, 8, 12, 16, 20, 40, 60, 80];
+alphaVec  = [-4, -2, 0, 2, 4, 8, 12, 16, 20];
 
-machVLM = [0.20, 0.30, 0.40, 0.50];
-reVLM   = [0.75e6, 0.9e6, 1.3e6, 1.6e6];
+machVLM = [0.30, 0.40, 0.50];
+reVLM   = [0.9e6, 1.3e6, 1.6e6];
 
 vlmCfg.machVec  = machVLM;
 vlmCfg.alphaVec = alphaVec;
-vlmCfg.xcg      = 32 * 0.3048;
+vlmCfg.xcg      = 34 * 0.3048;
 vlmCfg.zcg      = -0.003 * geom.fuselage.length.v;
 vlmCfg.Re       = reVLM;
 vlmCfg.icase    = 3;
@@ -89,9 +83,9 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
             cLa(iM) = (4 / sqrt(M^2 - 1)) * (pi/180);
         end
     end
-    clmaxWing = linspace(1.40, 0.90, nMach);
-    clmaxHT   = linspace(1.10, 0.75, nMach);
-
+    clmaxWing = linspace(1.40, 0.45, nMach);
+    clmaxHT   = linspace(1.10, 0.35, nMach);
+    
     c = struct();
     c.caseid = 'GENERIC SUPERSONIC FIGHTER - BASELINE';
     c.fltcon.nmach  = nMach;   c.fltcon.mach   = machVec;
@@ -103,7 +97,7 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     c.optins.cbarr = m2ft(geom.wing.average_chord.v);
     c.optins.blref = m2ft(geom.wing.span.v);
 
-    c.synths.xcg    = 32;
+    c.synths.xcg    = 34;
     c.synths.zcg    = m2ft(-0.003 * geom.fuselage.length.v);
     c.synths.xw     = m2ft(geom.wing.le_x.v);
     c.synths.zw     = m2ft(model.geom.wing.sections(1).le_z.v);
@@ -162,16 +156,11 @@ function tbl = runDatcomPass(cfg, geom, model, examplesDir, ...
     c.vtplnf.swafp  = 0.0;  c.vtplnf.twista = 0.0;
     c.vtplnf.type   = 1;
     c.vtschr.tovc   = model.geom.rudder.average_tc.v;
-    c.vtschr.tovco  = model.geom.rudder.average_tc.v;
     c.vtschr.xovc   = 0.40;
-    c.vtschr.deltay = 6.0;
-    c.vtschr.cli    = 0.0;
-    c.vtschr.alphai = 0.0;
-    c.vtschr.cmo    = 0.0;
-    c.vtschr.clamo  = 0.095;
     c.vtschr.clalpa = repmat(0.090, 1, nMach);
     c.vtschr.clmax  = repmat(0.80,  1, nMach);
     c.vtschr.leri   = 0.007;
+    c.vtplnf.nvert  = 2.0;  % twin vertical tails
 
     cfgPass  = struct(); cfgPass.dim = 'FT'; cfgPass.cases(1) = c;
     inpLocal = write_datcom_input(cfgPass, [passName '.inp']);
@@ -204,8 +193,8 @@ end
 % =========================================================================
 cfg = struct(); cfg.dim = 'FT';
 
-machA = [0.20, 0.30, 0.40, 0.50, 0.60, 0.75, 1.15, 1.30, 1.50];
-reA   = [2.0e6, 2.8e6, 3.5e6, 4.5e6, 5.5e6, 6.5e6, 7.5e6, 8.0e6, 8.5e6];
+machA = [0.60, 0.75, 1.15, 1.30, 1.50];
+reA   = [2.0e6, 2.8e6, 4.5e6, 5.5e6, 6.5e6];
 tblA  = runDatcomPass(cfg, geom, model, examplesDir, ...
                       machA, reA, alphaVec, xb, rb, xb_m, rb_m, ...
                       bln_ft, bla_ft, rb_at_wing_m, rb_at_ht_m, 'datcom_A');
@@ -308,8 +297,7 @@ legend('Interpreter','none');
 %%  Correct Static Margin vs Mach (REFERENCE SHIFTED TO CG)
 %% ========================================================================
 
-% xcg_ft  = 32;                               % ft from nose — UPDATE to your CG
-xcg_ft  = 32;   % <-- your CG from nose [ft]
+xcg_ft  = 30.8;   % <-- your CG from nose [ft]
 cbar_ft = m2ft(geom.wing.average_chord.v);
 
 machPts = [allTables.Mach];
@@ -480,8 +468,8 @@ CLalpha_B  = 2 * K2 * S_Bmax / model.geom.wing.area.v; % per radian
 x_ac_B = 0.25 * model.geom.fuselage.length.v;
 
 % Combined wing-body AC (area-weighted)
-x_ac_wb = m2ft((x_ac_w * CLalpha_w + x_ac_B * CLalpha_B) / CLalpha_wb);
-% x_ac_wb = 31.5;
+%x_ac_wb = m2ft((x_ac_w * CLalpha_w + x_ac_B * CLalpha_B) / CLalpha_wb);
+x_ac_wb = 31.5;
 % ---- Downwash gradient (Nelson/DATCOM) ----------------------------------
 K_A      = 1/AR_w - 1/(1 + AR_w^1.7);
 K_lambda = (10 - 3*lambda_w) / 7;
@@ -533,23 +521,23 @@ hold on; grid on; box on;
 plot(xcg_ac_norm_stab, SHSW_stab(xcg_ac_norm_stab), 'r-',  'LineWidth', 2.5, 'DisplayName', 'Stability Limit');
 plot(xcg_ac_norm_cntrl, SHSW_ctrl(xcg_ac_norm_cntrl), 'g-',  'LineWidth', 2.5, 'DisplayName', 'Control Limit');
 
-yline(SH_SW_actual, 'b--', 'LineWidth', 1.5,'DisplayName', sprintf('S_H/S_W design = %.3f', SH_design));
+yline(SH_SW_actual, 'b--', 'LineWidth', 1.5,'DisplayName', sprintf('$S_H/S_W$ design = %.3f', SH_design));
 
 plot(x_ctrl_cross, SH_design, 'gs', 'MarkerFaceColor','g','MarkerSize',9,'HandleVisibility','off','DisplayName','')
 % plot(0, (SHSW_stab(0) + SHSW_ctrl(0))/2, 'ks', 'MarkerFaceColor','k','MarkerSize',12,'HandleVisibility','off');
 xline(Xcg_full_norm,  'Color',[0.35 0.35 0.35],'LineWidth',2.5,'HandleVisibility','off');
 xline(Xcg_empty_norm, 'Color',[0.35 0.35 0.35],'LineWidth',2.5,'HandleVisibility','off');
 yl = ylim;
-text(Xcg_full_norm - 0.01,  -0.18, 'XCG at MGTOW', ...
+text(Xcg_full_norm - 0.01,  -0.03, 'MTOW', ...
      'Rotation',90,'HorizontalAlignment','right','FontSize',12,'Color',[0.35 0.35 0.35],'FontWeight','bold');
-text(Xcg_empty_norm - 0.01, -0.18, 'XCG at empty weight', ...
+text(Xcg_empty_norm - 0.01, -0.03, 'WE', ...
      'Rotation',90,'HorizontalAlignment','right','FontSize',12,'Color',[0.35 0.35 0.35],'FontWeight','bold');
 
 xline(0,'k:','LineWidth',0.8,'HandleVisibility','off');
-xlim([-0.35, 0.35]); ylim([-0.8, 0.8]);
-xlabel('x_{cg} - x_{ac} normalized','Interpreter','tex','FontSize',12);
-ylabel('S_H/S_W','Interpreter','tex','FontSize',12);
-title('Hellstinger Longitudinal Stability','FontSize',13);
+xlim([-0.25, 0.25]); ylim([-0.8, 0.5]);
+xlabel('$x_{cg}$ - $x_{ac}$ Normalized','Interpreter','latex');
+ylabel('$S_H / S_W$','Interpreter','latex');
+title('Longitudinal Stability');
 
 m_stab = CLalpha_wb*180/pi / K_stab;
 
@@ -574,17 +562,12 @@ x_int = SH_design / m_stab;
 static_margin = x_int - x_aft;
 
 
-y_arrow = SH_design -0.02;   % keep it on the design line
+y_arrow = SH_design;   % keep it on the design line
 
 
 dx = (x_int - x_aft);
 
-% Draw thick arrow
-% quiver(x_aft, y_arrow, ...
-%        (x_int - x_aft), 0, ...   % horizontal arrow
-%        0, ...                    % no auto scaling
-%        'k', 'LineWidth', 3, 'MaxHeadSize', 4);
-% 
+
 % % Arrow from intersection → aft CG (reverse direction)
 % quiver(x_int, y_arrow, -dx, 0, 0, ...
 %     'k','LineWidth',3,'MaxHeadSize',4,'HandleVisibility','off');
@@ -592,63 +575,27 @@ dx = (x_int - x_aft);
 % --- Text label ---
 x_mid = (x_aft + x_int)/2;
 
-text(0.2, y_arrow -0.2, ...
-    sprintf('STATIC MARGIN = %.3f', static_margin), ...
+text(0.17, y_arrow -0.2, ...
+    sprintf('SM= %.3f', static_margin), ...
     'HorizontalAlignment','center', ...
     'FontSize',15, ...
     'FontWeight','bold', ...
     'Color','k');
-legend();
+legend(FontSize=12);
+
+quiver(x_aft, y_arrow, ...
+       (x_int - x_aft), 0, ...   % horizontal arrow
+       0, ...                    % no auto scaling
+       'k', 'LineWidth', 3, 'MaxHeadSize', 4);
 
 text(0.009, 0.3, ...
     'CG TRAVEL', ...
     'HorizontalAlignment','center', ...
-    'FontSize',15, ...
+    'FontSize',10, ...
     'FontWeight','bold', ...
     'Color','b');
 
 %% CN_beta vs. alpha generation
-CN_beta = 180/pi *-1*[-0.0007911 -0.0007198 -0.0006842 -0.0007198 -0.0007882 -0.000919];
-Alpha_vec = [-4 -2 0 2 4 8, 10, 20, 40, 60, 80];
-figure; 
-plot(Alpha_vec,CN_beta);
-xlabel('alpha (deg)')
-ylabel('Cn_beta (/deg)')
-title('Cn_Beta vs. alpha');
-
-plot_0412_planform('datcom', xb, rb, x_cg_full, x_cg_empty, ...
-                   x_ac_wb, Xnp_ft, SM_mach, machPts, ...
-                   VLM_LIMIT, cbar_ft, validMask, isVLMpts)
-
-Alpha_vec = [-4 -2 0 2 4 8];
-
-figure;
-plot(Alpha_vec, CN_beta, 'b-o', 'LineWidth', 1.5);
-xlabel('alpha (deg)')
-ylabel('Cn\_beta (/deg)')
-title('Cn\_Beta vs. alpha');
-
-% Set y-axis lower limit to -0.01
-ylim([-0.01, max(ylim)]);
-
-% Horizontal line at y = 0 — Level 1 flying qualities requirement
-yline(0, 'r--', 'LineWidth', 1.5, 'Label', 'Level 1 Flying Qualities Requirement', ...
-    'LabelHorizontalAlignment', 'left', 'LabelVerticalAlignment', 'bottom');
-
-% Horizontal line at y = 0.04 — Navy preferred yaw stability value
-yline(0.04, 'k--', 'LineWidth', 1.5, 'Label', 'Navy Preferred Yaw Stability value', ...
-    'LabelHorizontalAlignment', 'left', 'LabelVerticalAlignment', 'bottom');
-legend('Cn_beta');
-grid on;
-% =========================================================================
-function v = getval(x)
-if isstruct(x), v = x.v; else, v = double(x); end
-end
-
-function s = ternary(cond, a, b)
-if cond, s = a; else, s = b; end
-end
-
 % CN_beta = 180/pi *-1*[-0.0007911 -0.0007198 -0.0006842 -0.0007198 -0.0007882 -0.000919];
 % %Alpha_vec = [-4 -2 0 2 4 8];
 % 

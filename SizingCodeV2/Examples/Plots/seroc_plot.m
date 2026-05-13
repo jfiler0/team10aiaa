@@ -28,14 +28,16 @@ function seroc_plot(perf, N)
     hold on
     plot(N2lb(W_vec)/1000, m2ft(excess_ab)*60/100, 'r-', DisplayName="Afterburning")
     plot(N2lb(W_vec)/1000, m2ft(excess_mil)*60/100, 'b-', DisplayName="Military")
-    plot(N2lb(W_vec)/1000, m2ft(excess_ab_tr)*60/100, 'r--', DisplayName="Afterburning (Tropical Day)")
-    plot(N2lb(W_vec)/1000, m2ft(excess_mil_tr)*60/100, 'b--', DisplayName="Military (Tropical Day)")
+    plot(N2lb(W_vec)/1000, m2ft(excess_ab_tr)*60/100, 'r--', HandleVisibility='off')
+    plot(N2lb(W_vec)/1000, m2ft(excess_mil_tr)*60/100, 'b--', HandleVisibility='off')
 
-    xline(49, 'k:', DisplayName="RFP Landing Weight", LineWidth=2)
+    plot(NaN, NaN, 'k--', DisplayName="Tropical Day")
+
+    % xline(49, 'k:', DisplayName="RFP Landing Weight", LineWidth=2)
 
     xlabel("Weight [1000 lb]");
     ylabel("Rate of Climb [100ft/min]")
-    title("Single Engine Rate of Climb at Approach Speed")
+    title("SEROC at Approach Speed")
     grid on
     axis tight
     ylim([0 100])

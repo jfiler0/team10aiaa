@@ -49,7 +49,7 @@ classdef model_class < handle
                 result = obj.mem.(property_name);
             else
                 % Compute the value using the provided function
-                result = compute_func() * scaler;
+                result = compute_func() .* scaler.ask(obj.cond.M.v); % now has the potential to be a vector and has ask command
                 
                 % Check if we should write to cache
                 should_write = (override ~= obj.settings.codes.OVER_NO_WRITE && ...
@@ -75,12 +75,12 @@ classdef model_class < handle
                 end
             end
         end
-        
+       
         function value = transonicMerge(obj, sub_fun, sup_fun)
             transonic_range = obj.settings.transonic_range;
             M = obj.cond.M.v;
-        
-            % Fast paths - avoid spline entirely for pure subsonic/supersonic
+
+            % Fast paths
             if all(M <= transonic_range(1))
                 value = sub_fun(M, true(size(M)));
                 return
@@ -89,13 +89,13 @@ classdef model_class < handle
                 value = sup_fun(M, true(size(M)));
                 return
             end
-        
+
             index_sub  = M <= transonic_range(1);
             index_sup  = M >= transonic_range(2);
             index_tran = ~index_sub & ~index_sup;
-        
+
             value = zeros(size(M));
-        
+
             if any(index_sub)
                 value(index_sub) = sub_fun(M(index_sub), index_sub);
             end
@@ -103,19 +103,30 @@ classdef model_class < handle
                 value(index_sup) = sup_fun(M(index_sup), index_sup);
             end
             if any(index_tran)
-                I_tran_start = find(index_tran, 2, 'first');
-                I_tran_end   = find(index_tran, 2, 'last');
-                index_tran_start = false(size(index_tran));
-                index_tran_end   = false(size(index_tran));
-                index_tran_start(I_tran_start) = true;
-                index_tran_end(I_tran_end)     = true;
-        
-                M_eps = obj.settings.transonic_M_eps;
-                M_vec = [transonic_range(1)-M_eps, transonic_range(1), ...
-                         transonic_range(2),       transonic_range(2)+M_eps];
-                value_spline_input = [ sub_fun(M_vec(1:2), index_tran_start), ...
-                                        sup_fun(M_vec(3:4), index_tran_end) ];
-                value(index_tran) = spline(M_vec, value_spline_input, M(index_tran));
+                M_t  = M(index_tran);
+                M0   = transonic_range(1);
+                M1   = transonic_range(2);
+                eps  = obj.settings.transonic_M_eps;
+
+                % Values at boundaries
+                f0 = sub_fun(M0,       index_tran);
+                f1 = sup_fun(M1,       index_tran);
+
+                % One-sided finite difference slopes at each boundary
+                f0m = sub_fun(M0 - eps, index_tran);
+                f1p = sup_fun(M1 + eps, index_tran);
+                d0  = (f0 - f0m) / eps;   % slope entering transonic from sub side
+                d1  = (f1p - f1) / eps;   % slope leaving transonic on sup side
+
+                % Hermite basis on t in [0,1]
+                t  = (M_t - M0) / (M1 - M0);
+                dM = M1 - M0;
+                h00 =  2*t.^3 - 3*t.^2 + 1;
+                h10 =     t.^3 - 2*t.^2 + t;
+                h01 = -2*t.^3 + 3*t.^2;
+                h11 =     t.^3 -   t.^2;
+
+                value(index_tran) = h00.*f0 + h10.*dM.*d0 + h01.*f1 + h11.*dM.*d1;
             end
         end
 
@@ -136,7 +147,7 @@ classdef model_class < handle
             % Define the computation as a nested function
             compute_CD0 = @() obj.compute_CD0_value(code);
             
-            CD0 = obj.compute_with_cache('CD0', override, compute_CD0, obj.settings.CD0_scaler);
+            CD0 = obj.compute_with_cache('CD0', override, compute_CD0, obj.settings.scalers.CD0_scaler);
         end
         
             function value = compute_CD0_value(obj, code)
@@ -168,7 +179,7 @@ classdef model_class < handle
             
             compute_CDi = @() obj.compute_CDi_value(code);
             
-            CDi = obj.compute_with_cache('CDi', override, compute_CDi, obj.settings.CDi_scaler);
+            CDi = obj.compute_with_cache('CDi', override, compute_CDi, obj.settings.scalers.CDi_scaler);
         end
         
             function value = compute_CDi_value(obj, code)
@@ -211,7 +222,7 @@ classdef model_class < handle
             
             compute_CDw = @() obj.compute_CDw_value(code);
             
-            CDw = obj.compute_with_cache('CDw', override, compute_CDw, obj.settings.CDw_scaler);
+            CDw = obj.compute_with_cache('CDw', override, compute_CDw, obj.settings.scalers.CDw_scaler);
         end
 
             function value = compute_CDw_value(obj, code)
@@ -245,7 +256,7 @@ classdef model_class < handle
             
             compute_CLa = @() obj.compute_CLa_value(code);
             
-            CLa = obj.compute_with_cache('CLa', override, compute_CLa, obj.settings.CLa_scaler);
+            CLa = obj.compute_with_cache('CLa', override, compute_CLa, obj.settings.scalers.CLa_scaler);
         end
 
             function value = compute_CLa_value(obj, code)
@@ -286,7 +297,7 @@ classdef model_class < handle
             
             compute_COST = @() obj.compute_COST_value(code);
             
-            COST = obj.compute_with_cache('COST', override, compute_COST, obj.settings.COST_scaler);
+            COST = obj.compute_with_cache('COST', override, compute_COST, obj.settings.scalers.COST_scaler);
         end
 
             function value = compute_COST_value(obj, code)
@@ -316,7 +327,7 @@ classdef model_class < handle
             
             % The scalers are embeded in the equations now
             % [TA, TSFC, alpha]
-            PROP = obj.compute_with_cache('PROP', override, compute_PROP, 1);
+            PROP = obj.compute_with_cache('PROP', override, compute_PROP, correction_factor(0, 1)); % add a correction factor of 1 since they are applied elsewhere for prop
         end
             
             % Note that TA is scaled
@@ -382,8 +393,8 @@ classdef model_class < handle
 
                 % seperating out the checks since they are the same across models
 
-                TA = TA * obj.settings.TA_scaler;
-                TSFC = TSFC * obj.settings.TSFC_scaler;
+                TA = TA .* obj.settings.scalers.TA_scaler.ask(obj.cond.M.v);
+                TSFC = TSFC .* obj.settings.scalers.TSFC_scaler.ask(obj.cond.M.v);
 
                 less_than_0 = TA < 0;
                 TA(less_than_0) = 0;
@@ -401,7 +412,7 @@ classdef model_class < handle
             
             compute_CDp = @() obj.compute_CDp_value(code);
             
-            CDp = obj.compute_with_cache('CDp', override, compute_CDp, obj.settings.CDp_scaler);
+            CDp = obj.compute_with_cache('CDp', override, compute_CDp, obj.settings.scalers.CDp_scaler);
         end
 
             function value = compute_CDp_value(obj, code)
@@ -412,8 +423,39 @@ classdef model_class < handle
                             store = obj.geom.stores(i);
                             value = value + store.frontal_area.v * obj.settings.CDp_CONST_CD / obj.geom.ref_area.v;
                         end
-                    case obj.settings.codes.CDp_IGNORE
-                        value = 0;
+                    case obj.settings.codes.CDp_WAVE
+                        if(isempty(obj.geom.stores))
+                            value = 0;
+                            return
+                        end
+                    
+                        % Vectorized field extraction from struct array
+                        frontal_areas  = [obj.geom.stores.frontal_area];
+                        frontal_vals   = [frontal_areas.v];
+                    
+                        lengths        = [obj.geom.stores.length];
+                        length_vals    = [lengths.v];
+                    
+                        diameters      = [obj.geom.stores.diameter];
+                        diameter_vals  = [diameters.v];
+
+                        area_scale = frontal_vals / obj.geom.ref_area.v;
+                    
+                        % Compute per-store constants (no Mach dependency)
+                        sub_vals      = obj.settings.CDp_CONST_CD;
+                        fineness_terms = (9 * pi^2 ./ (8 * (length_vals ./ diameter_vals).^2));
+                        sup_vals      = sub_vals + fineness_terms;
+                    
+                        % Sum across all stores — now just two scalar constants
+                        total_sub = sum(sub_vals.*area_scale);
+                        total_sup = sum(sup_vals.*area_scale);
+                    
+                        % Single transonicMerge call on the summed scalars
+                        sub_fun = @(M, I) M*0 + total_sub;
+
+                        M_ref = 1.5;
+                        sup_fun = @(M, I) obj.settings.scalers.CDp_EW_scaler.ask(M) .* total_sup * sqrt(M_ref^2 - 1) ./ sqrt(M.^2 - 1);
+                        value = obj.transonicMerge(sub_fun, sup_fun);
 
                     otherwise
                         error("Code '%i' has no recognized definition for the CDp model.", code)
@@ -430,7 +472,7 @@ classdef model_class < handle
             
             compute_SpotFactor = @() obj.compute_SpotFactor_value(code);
             
-            SpotFactor = obj.compute_with_cache('SpotFactor', override, compute_SpotFactor, obj.settings.SpotFactor_scaler);
+            SpotFactor = obj.compute_with_cache('SpotFactor', override, compute_SpotFactor, obj.settings.scalers.SpotFactor_scaler);
         end
 
             function value = compute_SpotFactor_value(obj, code)

@@ -16,6 +16,7 @@ function [W_final, empty_weight] = eval_air2gnd(perf, radius_nm, dash_radius_nm,
     fuel_weight = do_cruise(perf, empty_weight, fuel_weight, nm2m(radius_nm-dash_radius_nm)); % CURISE BACK
     fuel_weight = do_loiter(perf, empty_weight, fuel_weight, 20 * 60); % LOITER
     fuel_weight = fuel_weight * 0.98; % LANDING
+    % TODO: SHould this be two landings
     
     W_final = empty_weight + fuel_weight;
 end

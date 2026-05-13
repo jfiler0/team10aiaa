@@ -29,6 +29,7 @@ function codes = build_default_codes()
 
     codes.CDp_CONST = 801; % payload drag -> all payloads have the same CD0
     codes.CDp_IGNORE = 802;
+    codes.CDp_WAVE = 803; % has both const CDp for subsonic and wave drag with basic sears hack multiplier
 
     codes.SpotFactor_BASIC = 1001;
 
@@ -51,4 +52,18 @@ function codes = build_default_codes()
     codes.MV_DEC_UNKOWN = 2001; % for added stability in optimization, generateCondition now has an input that allows changing how the MV (mach or velocity) argument is handled
     codes.MV_DEC_VEL = 2002;
     codes.MV_DEC_MACH = 2003;
+
+    codes.LE_DEVICE_NONE = 0;
+    codes.LE_DEVICE_SLOT = 1;
+    codes.LE_DEVICE_FLAP = 2;
+    codes.LE_DEVICE_SLAT = 3;
+    codes.LE_DEVICE_KRUGER = 4;
+
+    codes.TE_DEVICE_NONE = 0;
+    codes.TE_DEVICE_PLAIN = 1;
+    codes.TE_DEVICE_FOWLER = 2;
+    codes.TE_DEVICE_SPLIT = 3;
+    codes.TE_DEVICE_SLOTTED = 4;
+    codes.TE_DEVICE_DOUBLE_SLOTTED = 5;
+    codes.TE_DEVICE_TRIPLE_SLOTTED = 6;
 end

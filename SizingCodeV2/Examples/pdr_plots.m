@@ -28,12 +28,12 @@ one_vec = ones(size(h_vec_long));
 perf.model.cond = generateCondition(perf.model.geom, h_vec_long, M_vec_long,one_vec, W * one_vec, one_vec);
 filter = -perf.ExcessPower; % When a filter is less than 0, it is plotted
 ydata = m2ft(H);
-general_contour("Mach Number", "Altitude [ft]", "TSFC [lbm/lbfhr]", "TSFC (Max Afterburner)", M, ydata, kgNs_2_lbmlbfhr(perf.TSFC), filter)
-xline(1.6, 'k:', LineWidth=2, DisplayName="M1.6 Req")
-legend(Location="northwest")
+general_contour("Mach Number", "Altitude [ft]", "TSFC [lbm/lbfhr]", "TSFC (Max AB)", M, ydata, kgNs_2_lbmlbfhr(perf.TSFC), filter);
 perf.model.clear_mem(); perf.clear_data();
 
-%% PLOT OF MAX MACH VS ALTITUDE. MIL & AB for CLEAN/STRIKE/COMBAT
+exportPDF("TSFC_MaxAB")
+
+%% SEROC
 loadout_clean = ["" "" "" "" "" "" "" ""];
 loadout_air2air = ["AIM-9X" "AIM-120" "AIM-120" "" "" "AIM-120" "AIM-120" "AIM-9X"];
 loadout_air2gnd = ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "Mk-83" "AIM-9x"];
@@ -41,8 +41,13 @@ loadout_air2gnd = ["AIM-9X" "Mk-83" "Mk-83" "FPU-12" "FPU-12" "FPU-12" "Mk-83" "
 geom = setLoadout(geom, loadout_air2gnd);
 perf.model.geom = geom;
 seroc_plot(perf, 20);
+
+exportPDF("SEROC")
+
 geom = setLoadout(geom, loadout_clean);
 perf.model.geom = geom;
+
+%% PLOT OF MAX MACH VS ALTITUDE. MIL & AB for CLEAN/STRIKE/COMBAT
 
 N = 150;
 M_vec = linspace(0.05, 2, N);
@@ -79,6 +84,9 @@ ylabel('Altitude [kft]'); ylim([0 100])
 title('Max Mach Contours')
 grid on;
 
+exportPDF("MaxMachContours")
+
+
 function plot_mach_contour(perf, loadout, T, W, M, H, line_spec)
     % T -> throttle
     % W -> weight
@@ -103,6 +111,8 @@ end
 
 %% PAYLOAD RANGE
 full_payload_range(perf)
+
+exportPDF("PayloadRange")
 
 %% RANGE VS COMBAT TIME
 N = 3;
@@ -145,6 +155,8 @@ xlabel("Combat Time [min]")
 ylabel("Combat Radius [nm]")
 legend("Location","southwest", FontSize=13)
 
+exportPDF("CombatTime")
+
 %% RANGE VS DASH DISTANCE
 perf.clear_data();
 N = 3;
@@ -185,6 +197,8 @@ title("Strike Mission (Air2Gnd)")
 xlabel("Dash Radius [nm]")
 ylabel("Combat Radius [nm]")
 legend("Location","southwest", FontSize=13)
+
+exportPDF("DashRadius")
 
 function range_nm = get_mission_range(fun, input, perf, loadout)
     try

@@ -6,7 +6,7 @@ plane.name = json_entry("Aircraft Name", "HellstingerV3", "s");
 plane.id = json_entry("Aircraft ID", "HellstingerV3", "s");
 
 plane.fuselage.length = json_entry("Fuselage Length", ft2m(50), "m");
-plane.fuselage.max_area = json_entry("Fuselage Max Area", in2m(in2m(4650)), "m2");
+plane.fuselage.max_area = json_entry("Fuselage Max Area", 3, "m2");
 plane.fuselage.E_WD = json_entry("Fuselage Wave Drag Efficency", 2.2, "");
 
 plane.input.g_limit = json_entry("Structural G-Limit", 7.5, "");

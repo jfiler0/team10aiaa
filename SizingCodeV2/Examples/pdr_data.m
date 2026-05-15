@@ -125,11 +125,22 @@ perf.model.clear_mem(); perf.clear_data();
 
 perf.model.cond = generateCondition(perf.model.geom, perf.model.settings.tropical_day_alt, v_land_rfp*1.05, 1, rfp_landing_weight, 1); % full weight
 ab_approach_seroc = perf.ExcessPower;
-fprintf("<30> [Powerplant Thrust/TSFC] AB SEROC (TROPICAL) = %.3f ft/min\n", m2ft(ab_approach_seroc)*60)
+fprintf("<30> [Powerplant Thrust/TSFC] Approch AB SEROC (TROPICAL) = %.3f ft/min\n", m2ft(ab_approach_seroc)*60)
 perf.clear_data();
 
 perf.model.cond = generateCondition(perf.model.geom, perf.model.settings.tropical_day_alt, v_land_rfp*1.05, 1, rfp_landing_weight, 0.9); % full weight
-fprintf("<30> [Powerplant Thrust/TSFC] MIL SEROC (TROPICAL) = %.3f ft/min\n", m2ft(perf.ExcessPower)*60)
+fprintf("<30> [Powerplant Thrust/TSFC] Approch MIL SEROC (TROPICAL) = %.3f ft/min\n", m2ft(perf.ExcessPower)*60)
+perf.clear_data(); 
+
+v_cmea_rfp = compute_cmea(perf, geom.weights.mtow.v);
+
+perf.model.cond = generateCondition(perf.model.geom, perf.model.settings.tropical_day_alt, v_cmea_rfp, 1, 1, 1); % full weight
+ab_approach_seroc = perf.ExcessPower;
+fprintf("<NEW> [Powerplant Thrust/TSFC] Takeoff AB SEROC (TROPICAL) = %.3f ft/min\n", m2ft(ab_approach_seroc)*60)
+perf.clear_data();
+
+perf.model.cond = generateCondition(perf.model.geom, perf.model.settings.tropical_day_alt, v_cmea_rfp, 1, 1, 0.9); % full weight
+fprintf("<NEW> [Powerplant Thrust/TSFC] Takeoff MIL SEROC (TROPICAL) = %.3f ft/min\n", m2ft(perf.ExcessPower)*60)
 perf.clear_data(); 
 
 perf.model.geom.prop.num_engine.v = 2;
@@ -268,7 +279,6 @@ fprintf("<77> [Why] (F18) APPROACH SEROC = %.3f ft/min\n", m2ft(ab_approach_sero
 
 [v_land, glide_angle, throttle, descent_rate] = compute_landing_speed(perf, geom.weights.mtow.v); perf.clear_data(); % landing at mtow
 fprintf("LANDING | MTOW (%.0f lb) | vel = %.3f kt , glide_angle = %.3f deg , throttle setting = %.1f perc, descent rate = %.2f ft/s\n", N2lb(geom.weights.mtow.v), ms2kt(v_land), glide_angle, 100*throttle, m2ft(descent_rate))
-v_cmea_rfp = compute_cmea(perf, geom.weights.mtow.v);
 fprintf("       CMEA = %.2f kt\n", ms2kt(v_cmea_rfp));
 
  [v_land, glide_angle, throttle, descent_rate] = compute_landing_speed(perf, 0); perf.clear_data(); % landing at empty weight

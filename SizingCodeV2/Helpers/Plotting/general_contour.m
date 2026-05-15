@@ -51,7 +51,6 @@ function general_contour(xname, yname, zname, title_name, X, Y, z_long, filter_v
     title(title_name);
     clim(limits);
     zlim(limits);
-    addSiddsShit(limits(2));
     hold off
 end
 

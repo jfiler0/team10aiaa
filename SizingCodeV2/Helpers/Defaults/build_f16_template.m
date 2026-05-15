@@ -56,7 +56,7 @@ fuse_offset = 6.537; % in vsp it is defined that far from the origin
     sec2 = btw_section(sec1, sec4, 0.1, flap_length=0.15, control_name="Rudder"); % vtail
     sec3 = btw_section(sec1, sec4, 0.9);
     
-    plane.rudder = assemble_surface([sec0, sec1, sec2, sec3, sec4], false); % false flag removes mirroring so it is just a vertical tail
+    plane.rudder = assemble_surface([sec0, sec1, sec2, sec3, sec4], readSettings(), false); % false flag removes mirroring so it is just a vertical tail
 
 plane.type = json_entry("Raymer Aircraft Type", "Jet fighter", "s"); % for coefficent lookups
 plane.weights.raymer.A = json_entry("Raymer A Coeff", getRaymerCoefficents(plane.type.v, 1), "");
@@ -65,7 +65,7 @@ plane.weights.raymer.C = json_entry("Raymer C Coeff", getRaymerCoefficents(plane
 plane.prop.num_engine = json_entry("Number of Engines", 1, "");
 plane.prop.engine = json_entry("Engine Name", "F100", "s");
 
-plane.racks = [-1 -0.7 -0.5 -0.2 0.2 0.5 0.7 1]; % spanwise position of the racks
+plane.racks = [-1 -0.7 -0.5 -0.2 0 0.2 0.5 0.7 1]; % spanwise position of the racks
 % plane.stores = []; % clean confiuration
 
 plane = setLoadout(plane, ["" "" "" "" "" "" "" ""]);

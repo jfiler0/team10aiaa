@@ -63,7 +63,7 @@ plane.weights.raymer.C = json_entry("Raymer C Coeff", getRaymerCoefficents(plane
 plane.prop.num_engine = json_entry("Number of Engines", 2, "");
 plane.prop.engine = json_entry("Engine Name", "F110", "s");
 
-plane.racks = [-1 -0.7 -0.5 -0.2 0.2 0.5 0.7 1]; % spanwise position of the racks
+plane.racks = [-1 -0.7 -0.5 -0.2 0 0.2 0.5 0.7 1]; % spanwise position of the racks
 % plane.stores = []; % clean confiuration
 
 plane = setLoadout(plane, ["" "" "" "" "" "" "" ""]);

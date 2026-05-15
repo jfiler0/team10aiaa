@@ -32,48 +32,29 @@ data = res_cal(data, max_mach, 2.05, "Max Mach");
 % [h_opt, ~] = compute_combat_ceiling(perf, 0.5);
 % data = res_cal(data, m2ft(h_opt), 54837, "Max Combat Celing");
 
-% perf.model.clear_mem(); perf.clear_data();
-% perf.model.cond = generateCondition(geom, 0, 0.5, 1, 0.5, 0.9); 
-% data = res_cal(data, m2ft(perf.ExcessPower)*60/1000, 11, "Military Sealevel ROC");
-% 
-% perf.model.clear_mem(); perf.clear_data();
-% perf.model.cond = generateCondition(geom, 0, 0.5, 1, 0.5, 1); 
-% data = res_cal(data, m2ft(perf.ExcessPower)*60/1000, 55, "Afterburning Sealevel ROC");
+perf.model.clear_mem(); perf.clear_data();
+perf.model.cond = generateCondition(geom, 0, 0.5, 1, 0.5, 0.9); 
+data = res_cal(data, m2ft(perf.ExcessPower)*60/1000, 11, "Military Sealevel ROC");
+
+perf.model.clear_mem(); perf.clear_data();
+perf.model.cond = generateCondition(geom, 0, 0.5, 1, 0.5, 1); 
+data = res_cal(data, m2ft(perf.ExcessPower)*60/1000, 55, "Afterburning Sealevel ROC");
 
 perf.model.clear_mem(); perf.clear_data();
 perf.model.geom = setLoadout(perf.model.geom, ["" "" "" "370GAL" "300GAL" "370GAL" "" ""]);
-[max_range_est, h_opt, ~, v_opt] = estimate_max_range(perf, 1);
 
-% data = res_cal(data, m2nm(max_range_est), 1654, "Ferry Max Range");
-% data = res_cal(data, m2ft(h_opt)/1000, 37, "Ferry Cruise Best Alt");
-data = res_cal(data, ms2kt(v_opt), 458.8, "Ferry Cruise Best Speed");
+ref_weight = geom.weights.max_fuel_weight.v; % leftover fuel
 
-%% Full Mission Simulations
-% data = compute_missions_res(data, readMissionStruct("Falcon_Hi_Hi_Hi"), perf, settings, "Hi-Hi-Hi Mission End Weight");
-% data = compute_missions_res(data, readMissionStruct("Falcon_Intercept"), perf, settings, "Intercept Mission End Weight");
+segObjs = [ missionSegObj('TAKEOFF') , ...
+            missionSegObj('CLIMB') , ...
+            missionSegObj('CRUISE', distance=nm2m(2071/2), h=ft2m(33514), vel=kt2ms(458.4)) , ... % fly at best cruise
+            missionSegObj('CRUISE', distance=nm2m(2071/2), h=ft2m(42761), vel=kt2ms(458.4)) , ... % cruise at 10000 feet
+            missionSegObj('LANDING') , ... % first landing attempt
+            missionSegObj('LOITER', time=1*60, h=ft2m(1000)) , ... % loiter at 1000 ft best velocity -> going around
+            missionSegObj('LANDING') ];
+
+ferry = buildMission("Ferry" , segObjs , ["" "" "" "370GAL" "300GAL" "370GAL" "" "" ""]);
+data = mission_res(data, eval_mission(perf, ferry, false, 1), "Ferry");
 
 
-end
-
-function data = res_cal(data, calc_val, target_val, des)
-    data.res = [data.res, (calc_val - target_val)/abs(target_val) ];
-    data.des = [data.des, des];
-    data.val = [data.val, calc_val];
-    data.tar = [data.tar, target_val];
-end
-
-function data = compute_missions_res(data, mission, perf, settings, des)
-    % copying performance is a bit safer
-    temp_perf = perf; % the loadout being set transfer back out cause yay memory based variables
-    temp_perf.clear_data; temp_perf.model.clear_mem();
-
-    temp_calc = mission_calculator(temp_perf, settings); % loadout is applied internally
-    temp_calc.record_hist = false; % true for plotting
-    temp_calc.do_print = false;
-    temp_calc.build_map(); % assembles v, h, W map for key performance info
-
-    W_final = temp_calc.solve_mission(mission, 0, kt2ms(135), 1); % starts at 135 kt at full weight
-    data = res_cal(data, W_final, weightRatio(0, temp_perf.model.geom), des);
-
-    % temp_calc.plot_hist
 end

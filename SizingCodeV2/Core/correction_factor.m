@@ -35,5 +35,20 @@ classdef correction_factor
                 output = obj.interpolant(mach);
             end
         end
+        function out = return_current_scalers(obj)
+            % this is mainly for settings tuning
+            out = obj.scale_vec;
+        end
+        function obj = set_current_scalers(obj, scale_vec)
+            obj.scale_vec = scale_vec;
+
+            if(length(obj.mach_vec) > 1)
+                obj.is_scaler = false;
+                obj.interpolant = griddedInterpolant(obj.mach_vec, scale_vec, 'linear', 'linear');
+            else
+                obj.is_scaler = true;
+                obj.interpolant = [];
+            end
+        end
     end
 end

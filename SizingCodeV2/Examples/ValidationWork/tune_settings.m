@@ -1,24 +1,34 @@
 matlabSetup();
+settings = readSettings();
 
-fun = @(X) settings_tuning(X, false);
+% currently 11 scalers
+enabled_scalers = [0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1];
+% enabled_scalers = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
 
-%     CD0,       CDi,   CDw, CLa,   CDp, TA_scale, TSFC_Scale, WE_scale, WF_scale
-X0 = [1.1743,  0.8929,  1.7,  1.0,  1.244,    0.9,    1.554,    0.9786,  0.44]; xs = X0;
-X0 = [1.26,      1,     1.85, 1.05,  1.35,    0.82,    1.7,    1.03,     0.41]; xs = X0;
-X0 = [1.1,      0.85,     1.75, 1.08,  1.2,    0.93,    1.5,    0.93,     0.43]; xs = X0;
-X0 = [1.2,      0.93,     1.8, 1.05,  1.3,    0.85,    1.6,    0.96,     0.42]; xs = X0;
+var_names = []; X0 = [];
+names = fieldnames(settings.scalers);
+for i = 1:length(names)
+    if(enabled_scalers(i)==1)
+        scale_len = length(settings.scalers.(names{i}).return_current_scalers()); % number of scalers
+        for j = 1:scale_len
+            if(scale_len > 1)
+                var_names = [var_names, sprintf("%s [%i]", names{i}, j)];
+            else
+                var_names = [var_names, names{i}];
+            end
+        end
+        X0 = [X0, settings.scalers.(names{i}).return_current_scalers()];
+    end
+end
 
-var_names = {'CD0', 'CDi', 'CDw', 'CLa','CDp','TA','TSFC','WE','WF'};
+fun = @(X) settings_tuning(X, false, enabled_scalers);
 
-% lb = 0.5* ones(size(X0));
-% ub = 2* ones(size(X0));
-
-lb = X0*1.2;
-up = X0*0.8;
+ub = X0*1.5;
+lb = X0*0.6;
 
 % ------------------------------------------------------------------ %
 %  Step 1 — 1D sweep along each variable from X0 to see sensitivity  %
-%  This tells you which variables actually matter and by how much     %
+%  This tells you which variables actually matter and by how much    %
 % ------------------------------------------------------------------ %
 n_vars    = length(X0);
 n_sweep   = 10;
@@ -46,23 +56,15 @@ sgtitle('Sensitivity sweep from X0');
 %  one variable by a meaningful amount (not the default 5%)           %
 % ------------------------------------------------------------------ %
 
-% opts = optimoptions('patternsearch', ...
-%     'Display',           'iter', ...
-%     'InitialMeshSize',   0.15,   ...   % this one actually exists
-%     'MeshTolerance',     1e-2,   ...
-%     'FunctionTolerance', 1e-2,   ...
-%     'MaxFunctionEvaluations', 300);
-% 
-% tic
-% xs = patternsearch(fun, X0, [], [], [], [], lb, ub, [], opts);
-% toc
-% xs
-settings_tuning(xs, true);
+opts = optimoptions('patternsearch', ...
+    'Display',           'iter', ...
+    'InitialMeshSize',   0.15,   ...   % this one actually exists
+    'MeshTolerance',     1e-2,   ...
+    'FunctionTolerance', 1e-2,   ...
+    'MaxFunctionEvaluations', 200);
 
-%    TSFC    CDp    CDw
-% XS = [0.7015 0.325 1.9872]; % 79.55
-% XS = [0.7015 0.4 1.9872]; % 96.78
-% XS = [1 0 1]; % ferry range 3196
-% XS = [1.5 1 1.5]; % ferry range 
-
-% settings_tuning(X0, true)
+tic
+xs = patternsearch(fun, X0, [], [], [], [], lb, ub, [], opts);
+toc
+xs
+settings_tuning(xs, true, enabled_scalers);

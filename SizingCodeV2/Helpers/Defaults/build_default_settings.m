@@ -22,8 +22,6 @@ set.be_imperial = true;
 
 set.spot_factor_reference = 84.517; % Folded wing area of an f18e
 
-X0 = [1.2,      0.93,     1.8, 1.05,  1.3,    0.85,    1.6,    0.96,     0.42]; xs = X0;
-
 % set.CD0_scaler = 1.1; % general scaler to parasite drag
 % set.CDi_scaler = 0.907;
 % set.CDw_scaler = 1.7; % general scaler to wave drag
@@ -51,6 +49,18 @@ set.scalers.TA_scaler = correction_factor(0, 0.98);
 set.scalers.TSFC_scaler = correction_factor(0, 1.6); % 1.3 1.554
 set.scalers.TSFC_AB_scaler = correction_factor(0, 1.5); % extra scaler applied to after burner (mainly for max prop condition)
 set.scalers.CDp_EW_scaler = correction_factor(0, 0);
+
+% set.scalers.CD0_scaler = correction_factor(mach_range, [2.4125, 0.8938, 2.3, 0.5]); % general scaler to parasite drag
+% set.scalers.CDi_scaler = correction_factor(0, 0.907);
+% set.scalers.CDw_scaler = correction_factor(0, 2.3); % general scaler to wave drag
+% set.scalers.CLa_scaler = correction_factor(0, 1.05);
+% set.scalers.CDp_scaler = correction_factor(0, 0.63);
+% set.scalers.SpotFactor_scaler = correction_factor(0, 1);
+% set.scalers.COST_scaler = correction_factor(0, 1);
+% set.scalers.TA_scaler = correction_factor(mach_range, [1.43, 0.98, 1.28, 1.43]);
+% set.scalers.TSFC_scaler = correction_factor(mach_range, [1.9375, 1.6375, 1.4875, 1]); % 1.3 1.554
+% set.scalers.TSFC_AB_scaler = correction_factor(0, 0.9); % extra scaler applied to after burner (mainly for max prop condition)
+% set.scalers.CDp_EW_scaler = correction_factor(0, 0.6062);
 
 % correction_factor(mach_vec, scale_vec)
 

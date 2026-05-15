@@ -195,7 +195,6 @@ plot_airfoil_detail(out_cg, 'CG + Armijo', xr, x_ctrl, N);
 
 end % ── main function ────────────────────────────────────────────────────
 
-
 %  STANDALONE PLOTTING FUNCTIONS
 
 function print_result(out, t_wall, target_cl, min_area)
@@ -209,7 +208,6 @@ function print_result(out, t_wall, target_cl, min_area)
     fprintf('    g2 (thick)  : %.5f\n',  out.g2);
     fprintf('    Wall time   : %.1f s\n', t_wall);
 end
-
 
 function plot_convergence(hist)
 % Plots objective and gradient norm histories for CG + Armijo
@@ -234,7 +232,6 @@ function plot_convergence(hist)
 
     sgtitle('CG + Armijo: Convergence');
 end
-
 
 function plot_airfoil_comparison(out_bfgs, out_cg, xr)
 % Side-by-side airfoil shapes for both solvers
@@ -263,7 +260,6 @@ function plot_airfoil_comparison(out_bfgs, out_cg, xr)
 
     sgtitle('Optimized Airfoil Shapes: fminunc vs CG + Armijo');
 end
-
 
 function data = foilData(x, yt, yb, alpha, M, D)
     data = struct();
@@ -337,7 +333,6 @@ function data = foilData(x, yt, yb, alpha, M, D)
     % evaluate thickness
     data.thickness = data.yt - data.yb;
 end
-
 
 function plot_airfoil_detail(out, solver_label, xr, x_ctrl, N)
 % Full two-panel figure (shape + Cp distribution) for one solution,
@@ -413,7 +408,6 @@ function [A, Nv] = panelInfo(x, y, is_top)
         Nv = -Nv; % need to flip if on the bottop
     end
 end
-
 
 function Cp = panelCp(Nv, alpha, M)
 % Hybrid tangent-wedge / Prandtl-Meyer panel pressure coefficient.
@@ -506,7 +500,6 @@ function Cp = panelCp(Nv, alpha, M)
     end
 end
 
-
 function nu = prandtlMeyerNu(M, gam)
     r   = sqrt((gam+1)/(gam-1));
     nu  = r * atan(sqrt((gam-1)/(gam+1) * (M^2-1))) - atan(sqrt(M^2-1));
@@ -531,7 +524,6 @@ function M = invertPrandtlMeyer(nu_target, gam)
     end
 end
 
-
 function theta_max = maxDeflectionAngle(M, gam)
     % Sweep beta from Mach angle to 89 deg; theta peaks then falls
     mu   = asin(1/M);                            % Mach angle
@@ -545,7 +537,6 @@ function th = thetaFromBeta(beta, M, gam)
                 M^2*(gam + cos(2*beta)) + 2 );
     th = max(th, 0);   % enforce non-negative (weak-shock branch)
 end
-
 
 function beta = solveBeta(theta, M, gam)
     mu = asin(1/M);                % lower bound: Mach angle (beta at theta=0+)

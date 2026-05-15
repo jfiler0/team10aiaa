@@ -10,7 +10,7 @@ console = console_class();
 % commandList = ["load HellstingerV3"];
 
 
-commandList = ["load f18_superhornet"];
+commandList = ["load HellstingerV3"];
 
 
 % commandList = ["load kevin_cad","INSPECT","GRAPHING", "maxPerformance"];
@@ -19,6 +19,7 @@ commandList = ["load f18_superhornet"];
 
 commandList = [];
 
+% 4.4824e-05 -> 5000m, M0.5, T0.9 , 2.8015E-5 / 3
 
 % commandList = ["load f18_superhornet", "INSPECT", "print"];
 
